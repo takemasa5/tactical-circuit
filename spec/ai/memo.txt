@@ -1,0 +1,16 @@
+# 2026-06-26
+一点だけ、この段階で追加を検討したい設計があります
+
+ロードマップでは Phase 3 が Program Validator、Phase 4 が AI Engine でしたが、この仕様を見る限り、AIエンジンはさらに次の4層に分割できます。
+
+AI Engine
+├── Scheduler           （実行ループ）
+├── Dispatcher          （命令呼び出し）
+├── Execution Context   （実行状態）
+└── Runtime             （CPU・レジスタ・メモリ・スタック）
+
+この4層に分けておくと、Codexに対しても「まずSchedulerだけ」「次にDispatcherだけ」と段階的に実装を依頼でき、テストもしやすくなります。
+
+ただし、これは概要ではなく実装設計の話になるため、現時点では ai/00_overview.md には記載せず、後続の個別仕様書で詳細化する のが適切だと思います。
+
+
