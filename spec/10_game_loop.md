@@ -44,6 +44,7 @@ ai, simulator, uiの順序性を示し、ゲーム全体の流れを明確にす
 ## tick開始
 
 ゲーム内時間を進め、このフレームにおけるセンサー情報をシミュレーターに生成させる。
+生成したセンサー情報はそのTickの間は更新せず、AI実行中は同じ値を参照する。
 
 ---
 
@@ -66,14 +67,27 @@ Execution Contextにセットされた行動要求を解釈し、ゲームルー
 
 ## リプレイ情報の生成（replay）
 
-シミュレーション結果を受け取り、リプレイできる形式で記録する。
+シミュレーション開始時のWorld StateをReplay Dataの初期状態として記録する。
+
+各TickでSimulatorがWorld Stateへ適用した変更内容を、適用順序を保持してReplay Dataへ記録する。
 
 ---
 
 ## 画面への反映（rendering）
 
-シミュレーション時とリプレイ時で結果に違いが起きないよう、シミュレーション結果をリプレイデータにし、リプレイデータを元に画面を更新する。
+シミュレーション時は、Simulatorが更新したWorld Stateを元に画面を更新する。
+
+リプレイ再生時は、SimulatorがReplay Dataの変更内容を再生用World Stateへ適用し、更新後のWorld Stateを元に画面を更新する。RenderingはReplay Dataを直接参照しない。
 画面更新が終わったらループの先頭に戻る。
 
 ---
 
+## リプレイ再生ループ
+
+リプレイ再生ではAI実行、センサー計算、物理演算、武器計算を再実行しない。
+
+1. Replay Dataから対象Tickの変更内容を取得する
+2. Simulatorが変更内容を再生用World Stateへ適用する
+3. Renderingが更新後のWorld Stateを描画する
+
+---

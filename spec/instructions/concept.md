@@ -297,7 +297,7 @@ Execution Context は以下の情報を保持する。
 
 ## 実行対象
 
-* 実行中ロボット
+* Tick開始時のRobot状態スナップショット
 * 実行中プログラム
 
 ---
@@ -309,6 +309,7 @@ Execution Context は以下の情報を保持する。
 * 一時変数
 * コールスタック
 * ジャンプ情報
+* 永続AIメモリの作業コピー
 
 ---
 
@@ -349,9 +350,9 @@ AI終了後にシミュレーターが行動要求を取得し、ゲーム世界
 
 # World Stateとの関係
 
-Execution Context は World State を読み取ることができる。
+Execution Context はSimulatorがWorld Stateから生成したRobot状態およびセンサー情報のスナップショットを読み取ることができる。
 
-ただし World State を直接変更してはならない。
+スナップショットは読み取り専用とし、Execution Contextは World State を直接参照または変更しない。
 
 ゲーム世界を変更する必要がある場合は行動要求を生成する。
 
@@ -453,14 +454,16 @@ Simulator
 
 Execution Context はレジスタへアクセスできる。
 
-またRobotに属する永続メモリにもアクセスできる。
+また、Tick開始時にWorld State内のRobotから取得した永続AIメモリの作業コピーにアクセスできる。
+
+AI実行中のメモリ更新は作業コピーに対して行い、AI実行終了後にSimulatorが更新結果をWorld Stateへ反映する。
 
 役割は以下の通りとする。
 
 | 種類          | 寿命       |
 | ----------- | -------- |
 | レジスタ        | AI実行中のみ  |
-| メモリ         | Tickをまたぐ |
+| 永続AIメモリ   | Tickをまたぐ |
 | World State | ゲーム全体    |
 
 ---
@@ -517,4 +520,3 @@ Execution Context は将来的に以下の情報を保持できる。
 既存命令を変更せず拡張可能な構造とする。
 
 ---
-

@@ -150,10 +150,11 @@ ProgramはAI実行中の状態を保持しない。
 * Program Counter
 * CPU使用量
 * レジスタ
-* メモリ
 * コールスタック
 
 Programは常に静的データである。
+
+Tickをまたぐ永続AIメモリはWorld State内のRobot状態が保持する。Programはその値を保持しない。
 
 ---
 

@@ -138,6 +138,10 @@
 * フレーム更新
 * 勝敗判定
 * オブジェクト管理
+* 命中およびダメージ発生の判定
+* ダメージのWorld Stateへの適用
+
+Battle SimulatorはPhysics EngineとCollision Systemを内部サブシステムとして利用し、その計算結果から衝突と命中を確定する。
 
 責務外
 
@@ -160,6 +164,10 @@
 
 * AI
 * 武器
+* 命中およびダメージ発生の判定
+* World Stateの直接更新
+
+Physics EngineはBattle Simulatorの内部サブシステムとして幾何計算を行い、計算結果をBattle Simulatorへ返す。
 
 ---
 
@@ -170,13 +178,16 @@
 * 発射
 * リロード
 * 弾生成
-* 命中判定
 * ダメージ計算
 
 責務外
 
 * 移動
 * AI
+* 衝突・命中判定
+* World Stateへのダメージ適用
+
+Weapon Systemのダメージ計算は、Simulatorが確定した命中情報とData Repositoryの武器・防御データを入力とする。計算結果のダメージ量のみをSimulatorへ返し、ゲーム状態を変更しない。
 
 ---
 
@@ -208,8 +219,9 @@
 責務外
 
 * ゲームロジック
+* Replay Dataの直接描画
 
-描画結果はゲーム進行へ影響を与えない。
+Renderingは通常シミュレーションとリプレイ再生のどちらでもWorld Stateのみを描画元とする。描画結果はゲーム進行へ影響を与えない。
 
 ---
 
@@ -217,7 +229,8 @@
 
 責務
 
-* フレーム記録
+* 初期World Stateの記録
+* TickごとのWorld State変更内容の記録
 * フレーム再生
 * シーク
 * 一時停止
@@ -226,6 +239,10 @@
 責務外
 
 * AI計算
+* 物理演算
+* World Stateの更新
+
+リプレイ再生時、Replay SystemはReplay DataからTickごとの変更内容をSimulatorへ供給する。Simulatorが再生用World Stateへ変更を適用する。
 
 ---
 
@@ -354,14 +371,36 @@ Renderer
 Screen
 ```
 
+リプレイ再生
+
+```
+Replay Data
+
+↓
+
+Replay System
+
+↓
+
+Simulator
+
+↓
+
+Replay Session World State
+
+↓
+
+Renderer
+```
+
 ---
 
 # 更新順序
 
 1. 入力受付（UI）
-2. AI更新
-3. 移動更新
-4. センサー更新
+2. Tick開始・センサー更新
+3. AI更新
+4. 移動更新
 5. 武器更新
 6. 衝突判定
 7. ダメージ処理
@@ -409,37 +448,10 @@ Renderer が AI Engine を直接参照してはならない。
 
 # データ共有
 
-モジュール間のデータ共有は World State を介して行う。
+ゲーム世界の状態は World State を介して共有する。
 
-World State はSimulatorだけが読み書きできるゲーム世界の唯一の状態とする。
+World State はSimulatorだけが更新できるゲーム世界の唯一の状態とする。他モジュールは読み取り専用として参照できる。
 各モジュールは他モジュールの内部状態を直接変更してはならない。
-
-
-例
-
-```
-AI
-
-↓
-
-Execution Context
-
-↓
-
-Action Queue
-
-↓
-
-Simulator
-
-↓
-
-World State
-
-↓
-
-Renderer
-```
 
 ---
 
