@@ -80,9 +80,9 @@ Program Counter は現在実行中の命令を指す。
 
 戦闘開始時はProgramの開始ノードを指す。Tick開始時はAI Runtime Stateに保存された次実行ノードから再開する。
 
-命令実行後は、命令が指定する接続先へ移動する。
+命令実行後は、命令が返した出力パスIDに対応する接続先Nodeへ移動する。
 
-Program Counterの更新方法は命令によって決定される。
+命令は接続先Nodeを直接指定しない。AI実行エンジンが、実行中Nodeの`connections`から出力パスIDに対応する接続先Node IDを取得し、Program Counterを更新する。
 
 ---
 
@@ -90,9 +90,9 @@ Program Counterの更新方法は命令によって決定される。
 
 AI実行エンジンは命令の意味を解釈しない。
 
-各命令へExecution Contextを渡し、命令がExecution Contextを更新する。
+各命令へExecution Contextを渡し、命令がExecution Contextを更新して、選択した出力パスIDを返す。
 
-命令実行後、Program Counterを更新し、次の命令へ進む。
+命令実行後、AI実行エンジンは選択された出力パスに対応する接続先へProgram Counterを更新し、次の命令へ進む。
 
 ---
 
