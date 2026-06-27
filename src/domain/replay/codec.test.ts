@@ -14,8 +14,12 @@ import type {
   InstructionId,
   MapDefinition,
   MapId,
+  ProjectileDefinition,
+  ProjectileId,
   RobotBodyDefinition,
   RobotBodyId,
+  WeaponDefinition,
+  WeaponId,
 } from "../masterData/models";
 import {
   createDataRepository,
@@ -24,7 +28,7 @@ import {
 } from "../masterData/repository";
 import type { Program } from "../program/models";
 import type { RobotDesign } from "../robotDesign/models";
-import type { RobotState, WorldState } from "../runtime/models";
+import type { BulletState, RobotState, WorldState } from "../runtime/models";
 import { loadReplay, saveReplay } from "./codec";
 import type { ReplaySaveData } from "./models";
 
@@ -37,6 +41,8 @@ const gameRuleId = `game_rule_${uuidA}` as GameRuleId;
 const designId = `robo_${uuidA}` as RobotDesignId;
 const programId = `program_${uuidA}` as ProgramId;
 const robotId = "robot_1" as RuntimeRobotId;
+const weaponId = `weapon_${uuidA}` as WeaponId;
+const projectileId = `projectile_${uuidA}` as ProjectileId;
 
 const body: RobotBodyDefinition = {
   id: bodyId,
@@ -78,11 +84,42 @@ const gameRule: GameRuleDefinition = {
   callStackSize: int32(20),
 };
 
+const projectile: ProjectileDefinition = {
+  id: projectileId,
+  displayName: "Projectile",
+  description: "",
+  enabled: true,
+  speed: int32(10),
+  size: { width: int32(1), height: int32(1) },
+  explosionRadius: int32(0),
+  explosionDamage: int32(0),
+};
+
+const weapon: WeaponDefinition = {
+  id: weaponId,
+  displayName: "Weapon",
+  description: "",
+  enabled: true,
+  projectileId,
+  damage: int32(10),
+  maxAmmunition: int32(1),
+  lifetimeTicks: int32(10),
+  fireIntervalTicks: int32(1),
+  reloadTicks: int32(1),
+  heatGeneration: int32(1),
+  energyConsumption: int32(1),
+  aimSpreadDegree: int32(0),
+  weight: int32(1),
+  ammunitionWeight: int32(1),
+};
+
 const repository = (): DataRepository => {
   const entries: MasterDataEntry[] = [
     { dataType: "robot_body", definition: body },
     { dataType: "map", definition: map },
     { dataType: "game_rule", definition: gameRule },
+    { dataType: "projectile", definition: projectile },
+    { dataType: "weapon", definition: weapon },
   ];
   const result = createDataRepository(entries, new Set());
   if (!result.success) throw new Error("Fixture repository is invalid");
@@ -160,6 +197,16 @@ const worldState: WorldState = {
   nextBulletSequence: int32(1),
 };
 
+const bullet = (ownerRobotId: RuntimeRobotId): BulletState => ({
+  id: "bullet_1" as BulletState["id"],
+  ownerRobotId,
+  weaponId,
+  projectileId,
+  position: { x: int32(10), y: int32(10) },
+  vector: { x: int32(1), y: int32(0) },
+  remainingLifetimeTicks: int32(10),
+});
+
 const replay = (): ReplaySaveData => ({
   replayData: {
     id: `replay_${uuidA}` as ReplayId,
@@ -228,6 +275,63 @@ describe("Replay codec", () => {
     if (!loaded.success) {
       expect(loaded.errors.map(({ code }) => code)).toContain(
         "invalid_replay_tick_order",
+      );
+    }
+  });
+
+  it("初期Bulletの発射元Robotが存在しないReplayを拒否する", () => {
+    const invalid = replay();
+    const loaded = loadReplay(
+      saveReplay({
+        ...invalid,
+        replayData: {
+          ...invalid.replayData,
+          initialWorldState: {
+            ...invalid.replayData.initialWorldState,
+            bullets: [bullet("robot_99" as RuntimeRobotId)],
+          },
+        },
+      }),
+      "0.1.1",
+      repository(),
+    );
+
+    expect(loaded.success).toBe(false);
+    if (!loaded.success) {
+      expect(loaded.errors.map(({ code }) => code)).toContain(
+        "missing_replay_bullet_owner",
+      );
+    }
+  });
+
+  it("Bullet生成イベントの発射元Robotが存在しないReplayを拒否する", () => {
+    const invalid = replay();
+    const loaded = loadReplay(
+      saveReplay({
+        ...invalid,
+        replayData: {
+          ...invalid.replayData,
+          frames: [
+            {
+              tick: int32(1),
+              events: [
+                {
+                  type: "bullet_created",
+                  bullet: bullet("robot_99" as RuntimeRobotId),
+                },
+              ],
+            },
+          ],
+        },
+      }),
+      "0.1.1",
+      repository(),
+    );
+
+    expect(loaded.success).toBe(false);
+    if (!loaded.success) {
+      expect(loaded.errors.map(({ code }) => code)).toContain(
+        "missing_replay_bullet_owner",
       );
     }
   });

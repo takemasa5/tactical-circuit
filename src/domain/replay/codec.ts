@@ -111,8 +111,20 @@ const validateBulletReference = (
   bullet: BulletState,
   path: string,
   repository: DataRepository,
+  robotIds: ReadonlySet<string>,
 ): DataValidationError[] => {
   const errors: DataValidationError[] = [];
+  if (!robotIds.has(bullet.ownerRobotId)) {
+    errors.push(
+      validationError(
+        "missing_replay_bullet_owner",
+        `${path}/ownerRobotId`,
+        "Bulletの発射元RobotがReplayの初期World Stateに存在しません",
+        bullet.ownerRobotId,
+        "初期World Stateに存在するRobot ID",
+      ),
+    );
+  }
   const weapon = repository.get("weapon", bullet.weaponId);
   if (weapon === undefined) {
     errors.push(
@@ -190,6 +202,9 @@ const validateReferences = (
 
   const designIds = new Set(data.robotDesigns.map(({ id }) => id));
   const programIds = new Set(data.programs.map(({ id }) => id));
+  const robotIds = new Set(
+    data.replayData.initialWorldState.robots.map(({ id }) => id),
+  );
   data.robotDesigns.forEach((design, index) => {
     errors.push(
       ...validateRobotDesignReferences(design, repository).map((error) => ({
@@ -228,6 +243,7 @@ const validateReferences = (
         bullet,
         `/replayData/initialWorldState/bullets/${index}`,
         repository,
+        robotIds,
       ),
     );
   });
@@ -254,6 +270,7 @@ const validateReferences = (
             event.bullet,
             `${eventPath}/bullet`,
             repository,
+            robotIds,
           ),
         );
       }
