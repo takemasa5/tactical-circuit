@@ -30,9 +30,10 @@
 2. spec/01_architecture.md
 3. spec/10_game_loop.md
 4. spec/11_coordinate_system.md
-5. 各 overview
-6. 各個別仕様
-7. 実装コード
+5. spec/12_common_data_conventions.md
+6. 各 overview
+7. 各個別仕様
+8. 実装コード
 
 コードより仕様書を正とする。
 

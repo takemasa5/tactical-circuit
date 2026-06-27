@@ -53,6 +53,7 @@
 
 ### 実装
 
+* 共通データ規約
 * Robot
 * Program
 * Instruction
