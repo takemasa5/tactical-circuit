@@ -1,1 +1,8 @@
+node_modules/
+dist/
+coverage/
+*.log
+.DS_Store
+.env*
+!.env.example
 DO_NOT_READ/

@@ -1,0 +1,47 @@
+.app-shell {
+  display: grid;
+  min-height: 100vh;
+  place-items: center;
+  padding: 24px;
+  background:
+    linear-gradient(rgba(76, 225, 171, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(76, 225, 171, 0.04) 1px, transparent 1px),
+    #0b1012;
+  background-size: 32px 32px;
+}
+
+.status-panel {
+  width: min(100%, 560px);
+  padding: 48px;
+  border: 1px solid #2f6655;
+  background: rgba(12, 24, 23, 0.92);
+  box-shadow: 0 20px 80px rgba(0, 0, 0, 0.35);
+}
+
+.eyebrow {
+  margin: 0 0 12px;
+  color: #4ce1ab;
+  font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
+  font-size: 0.75rem;
+  letter-spacing: 0.2em;
+}
+
+h1 {
+  margin: 0;
+  color: #f4faf7;
+  font-size: clamp(2.25rem, 8vw, 4.5rem);
+  line-height: 0.95;
+  letter-spacing: -0.05em;
+}
+
+.description {
+  margin: 24px 0 0;
+  color: #9cb4aa;
+  font-size: 1rem;
+}
+
+@media (max-width: 480px) {
+  .status-panel {
+    padding: 32px 24px;
+  }
+}
