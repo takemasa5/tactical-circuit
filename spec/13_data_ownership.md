@@ -70,7 +70,11 @@ AI Runtime StateはWorld State内のRobotが保持する、TickをまたぐAI実
 * コールスタック
 * 永続AIメモリ
 
-戦闘開始時は開始ノードを次実行ノードとする。CPU上限でAI実行を終了した場合は、中断時の次実行ノードから次Tickの実行を再開する。終了ノードへ到達した場合は、開始ノードを次Tickの実行ノードとする。
+戦闘開始時は開始ノードを次実行ノードとする。CPU不足で命令を実行できなかった場合は、そのNodeから次Tickの実行を再開する。
+
+命令実行結果の`interruptTick`が`true`の場合、`nextNodeId`がNode IDならそのNodeを次Tickの実行ノードとし、`null`なら開始ノードを次Tickの実行ノードとする。終了ノードは`nextNodeId`を`null`としてTickを中断する。
+
+実行時エラーの場合も開始ノードを次Tickの実行ノードとする。
 
 ---
 
@@ -104,7 +108,7 @@ Execution ContextはAI Engineが毎Tick作成するAI実行環境である。
 * そのTickの行動要求
 * 共通乱数生成器の内部状態の作業コピー
 
-AI命令はExecution Contextのみを読み書きする。AI EngineはAI実行終了後にExecution Contextを破棄する。
+AI命令はExecution Contextだけを読み取り、write、コールスタック操作、乱数内部状態の更新、行動要求の変更をExecution Context Changesとして返す。AI Engineは命令の正常終了後に変更要求をExecution Contextへ反映し、AI実行終了後にExecution Contextを破棄する。
 
 ---
 

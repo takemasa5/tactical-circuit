@@ -107,9 +107,11 @@ CPU量や消費値はAI実行エンジンで定義する。
 
 命令とは、AIが実行する処理単位である。
 
-命令は入力を受け取り、結果を出力し、必要に応じて内部状態やロボットへの指示を更新する。
+命令はExecution Contextを読み取り、`nextNodeId`、Execution Context Changes、`interruptTick`を含む命令実行結果を生成する。変更要求は命令の正常終了後にAI Engineが反映する。
 
 命令はカテゴリごとに分類される。
+
+Instruction Definitionと命令実行契約の詳細は`instruction_model.md`で定義する。
 
 ---
 
@@ -242,7 +244,7 @@ AIはワールド状態を直接変更してはならない。
 
 AI実行中の異常入力によってゲーム全体を停止させてはならない。
 
-命令は安全な既定値を返し、AI実行を継続する。
+実行時エラーになった命令のCPU消費とExecution Context Changesは反映しない。そのTickのAI実行を終了し、次TickはProgramのStart Nodeから開始する。それ以前に正常終了した命令の変更と行動要求は維持する。
 
 構文エラーや接続エラーは Program Validator が事前に検出する。
 
@@ -257,7 +259,7 @@ AIが命令を実行する際に必要な情報を一元管理し、命令間で
 
 Execution Contextはゲーム世界そのものではなく、AIがゲーム世界を解釈・操作するための実行環境である。
 
-AIのすべての命令は Execution Context を介して情報を取得し、結果を書き込む。
+AIのすべての命令はExecution Contextから情報を取得し、変更要求をExecution Context Changesとして返す。AI Engineが正常終了した命令の変更要求をExecution Contextへ反映する。
 
 ---
 
@@ -485,11 +487,11 @@ AI実行中の更新は作業コピーに対して行い、AI実行終了後にS
 
 CPU使用量はExecution Contextが管理する。
 
-命令実行ごとにCPU消費量を加算する。
+命令実行前にCPU残量を確認する。CPUコストが不足する場合は命令を実行せず、そのTickのAI実行を終了する。
 
-CPU上限へ達した場合、そのTickのAI実行を終了する。
+命令が正常終了した場合はCPUコストを加算する。実行時エラーの場合は、その命令のCPU消費を反映しない。
 
-CPU上限で終了した時点のProgram Counter、レジスタ、フラグ、コールスタック、永続AIメモリをAI Runtime StateとしてExecution Resultへ格納する。
+CPU不足で終了した時点の実行できなかったNode、レジスタ、フラグ、コールスタック、永続AIメモリをAI Runtime StateとしてExecution Resultへ格納する。
 
 CPU使用量とCPU残量はTickをまたがない。
 
