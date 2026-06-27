@@ -4,8 +4,9 @@ import { isMasterDataId } from "./id";
 import type {
   MasterDataByType,
   MasterDataDefinition,
-  MasterDataId,
   MasterDataType,
+  ParameterDefinition,
+  ParameterValueType,
   WeaponDefinition,
 } from "./models";
 
@@ -81,6 +82,306 @@ const validateUniqueStrings = (
   });
 };
 
+const numericParameterTypes: ReadonlySet<ParameterValueType> = new Set([
+  "distance",
+  "degree",
+  "tick",
+  "cpu_cost",
+  "count",
+  "speed",
+  "damage",
+  "heat",
+  "ammunition",
+]);
+
+const masterDataTypes: ReadonlySet<MasterDataType> = new Set([
+  "instruction",
+  "robot_body",
+  "weapon",
+  "sensor",
+  "engine",
+  "armor",
+  "option",
+  "projectile",
+  "map",
+  "game_rule",
+]);
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === "object" && value !== null && !Array.isArray(value);
+
+const hasExactProperties = (
+  value: Record<string, unknown>,
+  properties: readonly string[],
+): boolean => {
+  const keys = Object.keys(value);
+  return (
+    keys.length === properties.length &&
+    properties.every((property) => Object.hasOwn(value, property))
+  );
+};
+
+const isInt32 = (value: unknown): value is Int32 =>
+  typeof value === "number" &&
+  Number.isInteger(value) &&
+  value >= -2_147_483_648 &&
+  value <= 2_147_483_647;
+
+const pushInvalidDefault = (
+  parameter: ParameterDefinition,
+  path: string,
+  errors: DataValidationError[],
+  expected: string,
+): void => {
+  errors.push(
+    error(
+      "invalid_parameter_default",
+      `${path}/defaultValue`,
+      "Parameter Definitionの既定値が型または制約に適合しません",
+      parameter.defaultValue,
+      expected,
+    ),
+  );
+};
+
+const isReferenceDefault = (
+  value: unknown,
+  type: string,
+  field: string,
+  fieldValidator: (fieldValue: unknown) => boolean,
+): boolean =>
+  isRecord(value) &&
+  hasExactProperties(value, ["type", field]) &&
+  value.type === type &&
+  fieldValidator(value[field]);
+
+const validateNumericDefault = (
+  parameter: ParameterDefinition,
+  path: string,
+  errors: DataValidationError[],
+): void => {
+  const value = parameter.defaultValue;
+  if (!isInt32(value)) {
+    pushInvalidDefault(parameter, path, errors, "符号付き32bit整数");
+    return;
+  }
+  if (parameter.valueType === "degree" && (value < 0 || value >= 360)) {
+    pushInvalidDefault(parameter, path, errors, "0以上360未満の整数");
+  }
+  if (parameter.minValue !== undefined && value < parameter.minValue) {
+    pushInvalidDefault(
+      parameter,
+      path,
+      errors,
+      `${parameter.minValue}以上の整数`,
+    );
+  }
+  if (parameter.maxValue !== undefined && value > parameter.maxValue) {
+    pushInvalidDefault(
+      parameter,
+      path,
+      errors,
+      `${parameter.maxValue}以下の整数`,
+    );
+  }
+};
+
+const validateMasterDataReferenceDefault = (
+  parameter: ParameterDefinition,
+  path: string,
+  masterDataIds: ReadonlySet<string>,
+  errors: DataValidationError[],
+): void => {
+  const value = parameter.defaultValue;
+  if (
+    !isRecord(value) ||
+    !hasExactProperties(value, ["type", "dataType", "id"]) ||
+    value.type !== "master_data_reference" ||
+    typeof value.dataType !== "string" ||
+    !masterDataTypes.has(value.dataType as MasterDataType) ||
+    typeof value.id !== "string"
+  ) {
+    pushInvalidDefault(
+      parameter,
+      path,
+      errors,
+      "有効なMaster Data参照オブジェクト",
+    );
+    return;
+  }
+
+  const dataType = value.dataType as MasterDataType;
+  if (
+    !isMasterDataId(value.id, dataType) ||
+    (parameter.referenceDataType !== undefined &&
+      parameter.referenceDataType !== dataType)
+  ) {
+    pushInvalidDefault(
+      parameter,
+      path,
+      errors,
+      `${parameter.referenceDataType ?? dataType} Definitionへの参照`,
+    );
+    return;
+  }
+  if (!masterDataIds.has(value.id)) {
+    pushInvalidDefault(
+      parameter,
+      path,
+      errors,
+      "Data Repository内に存在するMaster Data ID",
+    );
+  }
+};
+
+const validateParameterDefault = (
+  parameter: ParameterDefinition,
+  path: string,
+  masterDataIds: ReadonlySet<string>,
+  errors: DataValidationError[],
+): void => {
+  if (parameter.defaultValue === undefined) return;
+
+  if (numericParameterTypes.has(parameter.valueType)) {
+    validateNumericDefault(parameter, path, errors);
+    return;
+  }
+
+  switch (parameter.valueType) {
+    case "boolean":
+      if (typeof parameter.defaultValue !== "boolean") {
+        pushInvalidDefault(parameter, path, errors, "boolean");
+      }
+      break;
+    case "enum":
+      if (
+        typeof parameter.defaultValue !== "string" ||
+        parameter.enumValues === undefined ||
+        !parameter.enumValues.includes(parameter.defaultValue)
+      ) {
+        pushInvalidDefault(
+          parameter,
+          path,
+          errors,
+          "enumValuesに定義された文字列",
+        );
+      }
+      break;
+    case "register_reference":
+      if (
+        !isReferenceDefault(
+          parameter.defaultValue,
+          "register_reference",
+          "registerName",
+          (value) => typeof value === "string" && value.length > 0,
+        )
+      ) {
+        pushInvalidDefault(parameter, path, errors, "有効なレジスタ参照");
+      }
+      break;
+    case "flag_reference":
+      if (
+        !isReferenceDefault(
+          parameter.defaultValue,
+          "flag_reference",
+          "flagName",
+          (value) => typeof value === "string" && value.length > 0,
+        )
+      ) {
+        pushInvalidDefault(parameter, path, errors, "有効なフラグ参照");
+      }
+      break;
+    case "memory_reference":
+      if (
+        !isReferenceDefault(
+          parameter.defaultValue,
+          "memory_reference",
+          "indexRegisterName",
+          (value) => typeof value === "string" && value.length > 0,
+        )
+      ) {
+        pushInvalidDefault(parameter, path, errors, "有効なメモリ参照");
+      }
+      break;
+    case "node_reference":
+      if (
+        !isReferenceDefault(
+          parameter.defaultValue,
+          "node_reference",
+          "nodeId",
+          (value) => typeof value === "string" && /^node_[1-9]\d*$/.test(value),
+        )
+      ) {
+        pushInvalidDefault(parameter, path, errors, "有効なNode参照");
+      }
+      break;
+    case "master_data_reference":
+      validateMasterDataReferenceDefault(
+        parameter,
+        path,
+        masterDataIds,
+        errors,
+      );
+      break;
+  }
+};
+
+const validateParameterDefinition = (
+  parameter: ParameterDefinition,
+  path: string,
+  masterDataIds: ReadonlySet<string>,
+  errors: DataValidationError[],
+): void => {
+  const isNumeric = numericParameterTypes.has(parameter.valueType);
+  if (
+    !isNumeric &&
+    (parameter.minValue !== undefined || parameter.maxValue !== undefined)
+  ) {
+    errors.push(
+      error(
+        "invalid_parameter_constraint",
+        path,
+        "数値型以外に値域は指定できません",
+        parameter.valueType,
+        "数値Parameter Value型",
+      ),
+    );
+  }
+  if (
+    parameter.minValue !== undefined &&
+    parameter.maxValue !== undefined &&
+    parameter.minValue > parameter.maxValue
+  ) {
+    errors.push(
+      error(
+        "invalid_parameter_range",
+        path,
+        "Parameter Definitionの最小値が最大値を超えています",
+        { minValue: parameter.minValue, maxValue: parameter.maxValue },
+        "minValue <= maxValue",
+      ),
+    );
+  }
+  if (parameter.enumValues !== undefined) {
+    const seen = new Set<string>();
+    parameter.enumValues.forEach((value, index) => {
+      if (seen.has(value)) {
+        errors.push(
+          error(
+            "duplicate_enum_value",
+            `${path}/enumValues/${index}`,
+            "列挙値が重複しています",
+            value,
+            "Parameter Definition内で一意な列挙値",
+          ),
+        );
+      }
+      seen.add(value);
+    });
+  }
+  validateParameterDefault(parameter, path, masterDataIds, errors);
+};
+
 const numericFields = (
   definition: MasterDataDefinition,
 ): readonly [string, Int32][] => {
@@ -95,6 +396,7 @@ const validateDefinition = (
   entry: MasterDataEntry,
   index: number,
   implementationIds: ReadonlySet<string>,
+  masterDataIds: ReadonlySet<string>,
   errors: DataValidationError[],
 ): void => {
   const basePath = `/definitions/${index}`;
@@ -160,6 +462,14 @@ const validateDefinition = (
           `${basePath}/outputPaths`,
           errors,
         );
+        definition.parameters.forEach((parameter, parameterIndex) => {
+          validateParameterDefinition(
+            parameter,
+            `${basePath}/parameters/${parameterIndex}`,
+            masterDataIds,
+            errors,
+          );
+        });
       }
       break;
     case "robot_body":
@@ -395,7 +705,7 @@ export const createDataRepository = (
   implementationIds: ReadonlySet<string>,
 ): LoadResult<DataRepository> => {
   const errors: DataValidationError[] = [];
-  const ids = new Set<MasterDataId>();
+  const ids = new Set<string>();
 
   entries.forEach((entry, index) => {
     if (ids.has(entry.definition.id)) {
@@ -410,8 +720,10 @@ export const createDataRepository = (
       );
     }
     ids.add(entry.definition.id);
-    validateDefinition(entry, index, implementationIds, errors);
   });
+  entries.forEach((entry, index) =>
+    validateDefinition(entry, index, implementationIds, ids, errors),
+  );
 
   const projectileIds = new Set(
     entries

@@ -119,4 +119,45 @@ describe("Master Data loader", () => {
 
     expect(result.success).toBe(true);
   });
+
+  it("型に適合しないInstruction既定値をRepository公開前に拒否する", () => {
+    const result = loadDataRepository(
+      saveJsonEnvelope("master_data_manifest", {
+        masterDataVersion: "0.1.1",
+      }),
+      [
+        {
+          dataType: "instruction",
+          json: saveJsonEnvelope("instruction", {
+            id: `instruction_${uuidA}`,
+            displayName: "Invalid Default",
+            description: "",
+            enabled: true,
+            implementationId: "invalid_default_test",
+            category: "arithmetic",
+            parameters: [
+              {
+                id: "angle",
+                displayName: "Angle",
+                description: "",
+                valueType: "degree",
+                required: false,
+                defaultValue: "left",
+              },
+            ],
+            outputPaths: [],
+            cpuCost: 1,
+          }),
+        },
+      ],
+      new Set(["invalid_default_test"]),
+    );
+
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.errors.map(({ code }) => code)).toContain(
+        "invalid_parameter_default",
+      );
+    }
+  });
 });

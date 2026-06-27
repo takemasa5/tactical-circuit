@@ -2,6 +2,9 @@ import { describe, expect, it } from "vitest";
 
 import type { Int32 } from "../data/common";
 import type {
+  InstructionDefinition,
+  InstructionId,
+  ParameterDefinition,
   ProjectileDefinition,
   ProjectileId,
   WeaponDefinition,
@@ -44,6 +47,31 @@ const weapon = (
   aimSpreadDegree: int32(0),
   weight: int32(10),
   ammunitionWeight: int32(1),
+});
+
+const parameter = (
+  overrides: Partial<ParameterDefinition> = {},
+): ParameterDefinition => ({
+  id: "value",
+  displayName: "Value",
+  description: "",
+  valueType: "count",
+  required: false,
+  ...overrides,
+});
+
+const instruction = (
+  parameters: readonly ParameterDefinition[],
+): InstructionDefinition => ({
+  id: `instruction_${uuidA}` as InstructionId,
+  displayName: "Test Instruction",
+  description: "",
+  enabled: true,
+  implementationId: "test_instruction",
+  category: "arithmetic",
+  parameters,
+  outputPaths: [],
+  cpuCost: int32(1),
 });
 
 const entry = <TEntry extends MasterDataEntry>(value: TEntry): TEntry => value;
@@ -118,5 +146,184 @@ describe("Data Repository", () => {
     if (!result.success) {
       expect(result.errors.map(({ code }) => code)).toContain("invalid_angle");
     }
+  });
+
+  it.each([
+    ["型が異なる", parameter({ valueType: "degree", defaultValue: "left" })],
+    [
+      "最小値を下回る",
+      parameter({ defaultValue: int32(4), minValue: int32(5) }),
+    ],
+    [
+      "最大値を上回る",
+      parameter({ defaultValue: int32(6), maxValue: int32(5) }),
+    ],
+    [
+      "未知の列挙値である",
+      parameter({
+        valueType: "enum",
+        defaultValue: "left",
+        enumValues: ["right"],
+      }),
+    ],
+    [
+      "参照形式が不正である",
+      parameter({
+        valueType: "register_reference",
+        defaultValue: { type: "register_reference", registerName: "" },
+      }),
+    ],
+  ])("既定値の%sParameter Definitionを拒否する", (_, invalidParameter) => {
+    const result = createDataRepository(
+      [
+        entry({
+          dataType: "instruction",
+          definition: instruction([invalidParameter]),
+        }),
+      ],
+      new Set(["test_instruction"]),
+    );
+
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.errors.map(({ code }) => code)).toContain(
+        "invalid_parameter_default",
+      );
+    }
+  });
+
+  it("最小値が最大値を超えるParameter Definitionを拒否する", () => {
+    const result = createDataRepository(
+      [
+        entry({
+          dataType: "instruction",
+          definition: instruction([
+            parameter({ minValue: int32(10), maxValue: int32(1) }),
+          ]),
+        }),
+      ],
+      new Set(["test_instruction"]),
+    );
+
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.errors.map(({ code }) => code)).toContain(
+        "invalid_parameter_range",
+      );
+    }
+  });
+
+  it("重複する列挙値を拒否する", () => {
+    const result = createDataRepository(
+      [
+        entry({
+          dataType: "instruction",
+          definition: instruction([
+            parameter({ valueType: "enum", enumValues: ["left", "left"] }),
+          ]),
+        }),
+      ],
+      new Set(["test_instruction"]),
+    );
+
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.errors.map(({ code }) => code)).toContain(
+        "duplicate_enum_value",
+      );
+    }
+  });
+
+  it("存在しないMaster Dataを参照する既定値を拒否する", () => {
+    const result = createDataRepository(
+      [
+        entry({
+          dataType: "instruction",
+          definition: instruction([
+            parameter({
+              valueType: "master_data_reference",
+              referenceDataType: "projectile",
+              defaultValue: {
+                type: "master_data_reference",
+                dataType: "projectile",
+                id: `projectile_${uuidB}`,
+              },
+            }),
+          ]),
+        }),
+      ],
+      new Set(["test_instruction"]),
+    );
+
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.errors.map(({ code }) => code)).toContain(
+        "invalid_parameter_default",
+      );
+    }
+  });
+
+  it("型と制約に適合する既定値を受け付ける", () => {
+    const validParameters = [
+      parameter({
+        id: "count",
+        defaultValue: int32(5),
+        minValue: int32(0),
+        maxValue: int32(10),
+      }),
+      parameter({ id: "degree", valueType: "degree", defaultValue: int32(90) }),
+      parameter({ id: "enabled", valueType: "boolean", defaultValue: false }),
+      parameter({
+        id: "direction",
+        valueType: "enum",
+        defaultValue: "left",
+        enumValues: ["left", "right"],
+      }),
+      parameter({
+        id: "register",
+        valueType: "register_reference",
+        defaultValue: { type: "register_reference", registerName: "A" },
+      }),
+      parameter({
+        id: "flag",
+        valueType: "flag_reference",
+        defaultValue: { type: "flag_reference", flagName: "F1" },
+      }),
+      parameter({
+        id: "memory",
+        valueType: "memory_reference",
+        defaultValue: {
+          type: "memory_reference",
+          indexRegisterName: "A",
+        },
+      }),
+      parameter({
+        id: "node",
+        valueType: "node_reference",
+        defaultValue: { type: "node_reference", nodeId: "node_1" },
+      }),
+      parameter({
+        id: "projectile",
+        valueType: "master_data_reference",
+        referenceDataType: "projectile",
+        defaultValue: {
+          type: "master_data_reference",
+          dataType: "projectile",
+          id: `projectile_${uuidA}`,
+        },
+      }),
+    ];
+    const result = createDataRepository(
+      [
+        entry({
+          dataType: "instruction",
+          definition: instruction(validParameters),
+        }),
+        entry({ dataType: "projectile", definition: projectile() }),
+      ],
+      new Set(["test_instruction"]),
+    );
+
+    expect(result.success).toBe(true);
   });
 });
