@@ -106,6 +106,8 @@ Programは以下で構成される。
 
 Validatorが検出したエラーは編集画面へ反映する。
 
+EditorはValidation Diagnosticの`nodeId`と`fieldPath`を使用して主な問題箇所を表示し、`relatedNodeIds`を使用して循環や複数Nodeにまたがる関連箇所を同時に強調できる。
+
 エディタ自身はProgramの妥当性を判断しない。
 
 ---
