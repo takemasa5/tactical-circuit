@@ -18,6 +18,7 @@
     "test:watch": "vitest"
   },
   "dependencies": {
+    "ajv": "^8.20.0",
     "react": "^19.2.7",
     "react-dom": "^19.2.7"
   },
