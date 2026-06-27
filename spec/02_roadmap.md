@@ -62,11 +62,16 @@
 * Bullet
 * WorldState
 * ReplayData
+* GameSession
+* AIRuntimeState
+* ExecutionInput
+* ExecutionContext
+* ExecutionResult
 
 ### 完了条件
 
 * 全データ型が定義される
-* JSON形式で保存・読込できる
+* 保存対象のデータ型をJSON形式で保存・読込できる
 
 ---
 

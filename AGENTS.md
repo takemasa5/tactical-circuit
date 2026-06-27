@@ -31,9 +31,10 @@
 3. spec/10_game_loop.md
 4. spec/11_coordinate_system.md
 5. spec/12_common_data_conventions.md
-6. 各 overview
-7. 各個別仕様
-8. 実装コード
+6. spec/13_data_ownership.md
+7. 各 overview
+8. 各個別仕様
+9. 実装コード
 
 コードより仕様書を正とする。
 
@@ -137,15 +138,29 @@ Programは静的データである。
 
 AI実行中に変更してはならない。
 
-Program Counter
+ProgramはAIの実行状態を保持しない。
 
-CPU
+---
 
-レジスタ
+# AI Runtime State
 
-スタック
+TickをまたぐAI実行状態はWorld State内のRobotが保持する。
 
-などの1Tick内の実行状態はExecution Contextが保持する。
+AI Runtime Stateは、次Tickで実行するノードID、レジスタ、フラグ、コールスタック、永続AIメモリを含む。
+
+戦闘開始時は、次に実行するノードをProgramの開始ノードとする。
+
+終了ノードへ到達した場合は、次Tickで実行するノードをProgramの開始ノードとする。
+
+---
+
+# Execution Input
+
+SimulatorはWorld StateからExecution Inputを生成する。
+
+Execution InputはRobot状態、AI Runtime State、センサー情報、Robotを中心とした座標系へ変換した情報を含む読み取り専用スナップショットである。
+
+AI EngineはWorld Stateを参照せず、ゲーム世界に関する入力はExecution Inputのみから取得する。
 
 ---
 
@@ -157,11 +172,13 @@ AI命令はExecution Contextのみを読み書きする。
 
 Execution Contextから直接World Stateを変更してはならない。
 
-Execution ContextはTick開始時のRobot状態とセンサー情報の読み取り専用スナップショットを保持する。
+Execution ContextはExecution Inputへの読み取り専用アクセスを提供する。
 
-TickをまたぐRobot状態および永続AIメモリはWorld State内のRobotが保持する。
+Execution ContextはAI Runtime Stateの作業コピーと、そのTickのCPU使用量、行動要求を保持する。センサー情報はExecution Inputを介して参照する。
 
-AI命令は永続AIメモリの作業コピーをExecution Context内で更新する。その更新結果はSimulatorがWorld Stateへ反映する。
+CPU使用量、センサー情報、行動要求はTickをまたがない。
+
+AI EngineはAI実行終了時にExecution Resultを生成する。Execution Resultは行動要求と更新後のAI Runtime Stateを含み、SimulatorがWorld Stateへ反映する。
 
 ---
 
@@ -183,7 +200,7 @@ AIはロボットを直接操作しない。
 
 Execution Contextへ行動要求を書き込む。
 
-Simulatorがその要求を実行する。
+AI Engineは行動要求をExecution ResultとしてSimulatorへ返す。Simulatorがその要求を実行する。
 
 ---
 

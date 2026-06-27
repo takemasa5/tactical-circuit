@@ -125,6 +125,8 @@
 * メモリ管理
 * レジスタ管理
 * 命令スケジューリング
+* Execution Contextの生成と破棄
+* Execution Resultの生成
 
 責務外
 
@@ -144,6 +146,8 @@
 * オブジェクト管理
 * 命中およびダメージ発生の判定
 * ダメージのWorld Stateへの適用
+* World StateからのExecution Inputの生成
+* Execution ResultのWorld Stateへの反映
 
 Battle SimulatorはPhysics EngineとCollision Systemを内部サブシステムとして利用し、その計算結果から衝突と命中を確定する。
 
@@ -338,11 +342,15 @@ Sensor System
 
 ↓
 
+Execution Input
+
+↓
+
 AI Engine
 
 ↓
 
-Command
+Execution Result
 
 ↓
 

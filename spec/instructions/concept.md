@@ -1,4 +1,4 @@
-# instructions/concepts.md
+# instructions/concept.md
 
 # AIプログラミング共通概念
 
@@ -128,7 +128,7 @@ CPU量や消費値はAI実行エンジンで定義する。
 
 # レジスタ
 
-レジスタとは、AIが一時的な計算結果を保持するための高速な作業領域である。
+レジスタとは、AIが計算結果を保持するための作業領域である。
 
 主な用途は以下とする。
 
@@ -137,6 +137,8 @@ CPU量や消費値はAI実行エンジンで定義する。
 * 命令間の値受け渡し
 
 レジスタ構成はAI実行エンジンが定義する。
+
+レジスタはAI Runtime Stateの一部としてTickをまたいで保持される。
 
 ---
 
@@ -151,7 +153,7 @@ CPU量や消費値はAI実行エンジンで定義する。
 * フラグ
 * タイマー
 
-メモリはレジスタより長い寿命を持つ。
+メモリとレジスタはどちらもTickをまたぐ。個数、型、アクセス方法の違いは個別仕様で定義する。
 
 ---
 
@@ -162,6 +164,8 @@ CPU量や消費値はAI実行エンジンで定義する。
 命令の結果やAI内部状態を保持する用途で使用する。
 
 実装方法はAI実行エンジンで定義する。
+
+フラグはAI Runtime Stateの一部としてTickをまたいで保持される。
 
 ---
 
@@ -275,9 +279,7 @@ AI実行終了時に破棄される。
 
 次のTickでは新しい Execution Context が生成される。
 
-Tickをまたいで保持される状態は保持しない。
-
-継続状態はメモリ領域またはRobot状態へ保存する。
+Execution Context自体はTickをまたがない。ただし、Execution Context内で更新したAI Runtime Stateの作業コピーはExecution Resultに含め、SimulatorがWorld State内のRobotへ反映する。
 
 ---
 
@@ -304,10 +306,10 @@ Execution Context は以下の情報を保持する。
 
 ## AI状態
 
-* レジスタ
-* フラグ
+* AI Runtime Stateから取得したレジスタの作業コピー
+* AI Runtime Stateから取得したフラグの作業コピー
 * 一時変数
-* コールスタック
+* AI Runtime Stateから取得したコールスタックの作業コピー
 * ジャンプ情報
 * 永続AIメモリの作業コピー
 
@@ -344,13 +346,13 @@ AIが決定した行動はExecution Contextへ蓄積する。
 
 命令は直接ロボットを動かさない。
 
-AI終了後にシミュレーターが行動要求を取得し、ゲーム世界へ反映する。
+AI実行エンジンはAI実行終了時に、行動要求と更新後のAI Runtime StateをExecution ResultとしてSimulatorへ返す。
 
 ---
 
 # World Stateとの関係
 
-Execution Context はSimulatorがWorld Stateから生成したRobot状態およびセンサー情報のスナップショットを読み取ることができる。
+Execution Context はSimulatorがWorld Stateから生成したExecution Inputを読み取ることができる。Execution InputはRobot状態、AI Runtime State、センサー情報、Robotを中心とした座標系に変換した情報を含む。
 
 スナップショットは読み取り専用とし、Execution Contextは World State を直接参照または変更しない。
 
@@ -361,11 +363,15 @@ World State
 
 ↓
 
+Execution Input
+
+↓
+
 Execution Context
 
 ↓
 
-Action Queue
+Execution Result
 
 ↓
 
@@ -412,7 +418,7 @@ Execution Context更新
 
 センサーはAI開始時に一括取得する。
 
-Execution Context はその結果を保持する。
+Execution Input はその結果を保持し、Execution ContextはExecution Inputを介して参照する。
 
 同一Tickではすべての命令が同じセンサー情報を参照する。
 
@@ -426,7 +432,7 @@ Execution Context はその結果を保持する。
 
 Execution Context に要求を書き込む。
 
-AI終了後、Simulator が要求を読み取り実行する。
+AI終了後、AI実行エンジンが要求をExecution ResultとしてSimulatorへ返し、Simulatorが実行する。
 
 例
 
@@ -441,6 +447,10 @@ moveForward = true
 
 ↓
 
+Execution Result
+
+↓
+
 Simulator
 
 ↓
@@ -452,17 +462,17 @@ Simulator
 
 # レジスタとメモリ
 
-Execution Context はレジスタへアクセスできる。
+Execution Context はAI Runtime Stateに含まれるレジスタ、フラグ、コールスタック、永続AIメモリの作業コピーへアクセスできる。
 
-また、Tick開始時にWorld State内のRobotから取得した永続AIメモリの作業コピーにアクセスできる。
-
-AI実行中のメモリ更新は作業コピーに対して行い、AI実行終了後にSimulatorが更新結果をWorld Stateへ反映する。
+AI実行中の更新は作業コピーに対して行い、AI実行終了後にSimulatorがExecution ResultのAI Runtime StateをWorld Stateへ反映する。
 
 役割は以下の通りとする。
 
 | 種類          | 寿命       |
 | ----------- | -------- |
-| レジスタ        | AI実行中のみ  |
+| レジスタ        | Tickをまたぐ |
+| フラグ          | Tickをまたぐ |
+| コールスタック | Tickをまたぐ |
 | 永続AIメモリ   | Tickをまたぐ |
 | World State | ゲーム全体    |
 
@@ -475,6 +485,10 @@ CPU使用量はExecution Contextが管理する。
 命令実行ごとにCPU消費量を加算する。
 
 CPU上限へ達した場合、そのTickのAI実行を終了する。
+
+CPU上限で終了した時点のProgram Counter、レジスタ、フラグ、コールスタック、永続AIメモリをAI Runtime StateとしてExecution Resultへ格納する。
+
+CPU使用量とCPU残量はTickをまたがない。
 
 ---
 

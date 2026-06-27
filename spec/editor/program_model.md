@@ -92,6 +92,8 @@ Programは終了ノードを持つことができる。
 
 終了ノードへ到達した場合、そのTickのAI実行は終了する。
 
+終了ノードへ到達した場合、次Tickで実行するノードはProgramの開始ノードとする。
+
 終了ノードは必須ではない。
 
 CPU上限などによって終了する場合もある。
@@ -149,16 +151,17 @@ Programはプログラム全体に関する情報を保持できる。
 
 ProgramはAI実行中の状態を保持しない。
 
-以下の情報はExecution Contextが管理する。
+以下の情報はProgramではなく、World State内のRobotがAI Runtime Stateとして保持する。
 
-* Program Counter
-* CPU使用量
+* 次Tickで実行するノードID
 * レジスタ
+* フラグ
 * コールスタック
+* 永続AIメモリ
 
 Programは常に静的データである。
 
-Tickをまたぐ永続AIメモリはWorld State内のRobot状態が保持する。Programはその値を保持しない。
+そのTickのCPU使用量と行動要求はExecution Contextが保持し、Tickをまたがない。
 
 ---
 
@@ -258,7 +261,7 @@ Programは命令内容ではなく、命令の配置と接続を表現する。
 Programの論理モデルは以下の仕様書から参照される。
 
 * instructions/00_overview.md
-* instructions/concepts.md
+* instructions/concept.md
 * editor/00_overview.md
 * validator/00_overview.md
 * ai/00_overview.md
