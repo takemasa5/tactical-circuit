@@ -230,7 +230,7 @@ AIはワールド状態を直接変更してはならない。
 
 ゲームは決定論的シミュレーションを基本とする。
 
-同じ初期状態・同じ入力・同じ乱数シードで実行した場合、常に同一結果を得られることを目標とする。
+同じmajorバージョン、初期状態、入力、乱数シードで実行した場合、常に同一結果を得られることを必須とする。
 
 これによりリプレイ、デバッグ、AI比較を容易にする。
 
@@ -279,7 +279,7 @@ AI実行終了時に破棄される。
 
 次のTickでは新しい Execution Context が生成される。
 
-Execution Context自体はTickをまたがない。ただし、Execution Context内で更新したAI Runtime Stateの作業コピーはExecution Resultに含め、SimulatorがWorld State内のRobotへ反映する。
+Execution Context自体はTickをまたがない。ただし、Execution Context内で更新したAI Runtime Stateと乱数内部状態の作業コピーはExecution Resultに含め、SimulatorがWorld Stateへ反映する。
 
 ---
 
@@ -312,6 +312,7 @@ Execution Context は以下の情報を保持する。
 * AI Runtime Stateから取得したコールスタックの作業コピー
 * ジャンプ情報
 * 永続AIメモリの作業コピー
+* 乱数内部状態の作業コピー
 
 ---
 
@@ -346,13 +347,13 @@ AIが決定した行動はExecution Contextへ蓄積する。
 
 命令は直接ロボットを動かさない。
 
-AI実行エンジンはAI実行終了時に、行動要求と更新後のAI Runtime StateをExecution ResultとしてSimulatorへ返す。
+AI実行エンジンはAI実行終了時に、行動要求、更新後のAI Runtime State、更新後の乱数内部状態をExecution ResultとしてSimulatorへ返す。
 
 ---
 
 # World Stateとの関係
 
-Execution Context はSimulatorがWorld Stateから生成したExecution Inputを読み取ることができる。Execution InputはRobot状態、AI Runtime State、センサー情報、Robotを中心とした座標系に変換した情報を含む。
+Execution Context はSimulatorがWorld Stateから生成したExecution Inputを読み取ることができる。Execution InputはRobot状態、AI Runtime State、センサー情報、Robotを中心とした座標系に変換した情報、乱数内部状態を含む。
 
 スナップショットは読み取り専用とし、Execution Contextは World State を直接参照または変更しない。
 

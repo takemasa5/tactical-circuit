@@ -56,7 +56,7 @@ AI実行エンジンは以下を入力として受け取る。
 
 Execution InputはSimulatorがWorld Stateから生成する読み取り専用スナップショットである。AI実行エンジンはWorld Stateを直接参照しない。
 
-AI実行終了後、行動要求と更新後のAI Runtime Stateを含むExecution ResultをSimulatorへ返却する。
+AI実行終了後、行動要求、更新後のAI Runtime State、更新後の乱数内部状態を含むExecution ResultをSimulatorへ返却する。
 
 ---
 
@@ -182,7 +182,7 @@ AI実行は決定論的でなければならない。
 
 同一Execution Context
 
-同一乱数シード
+同一majorバージョン
 
 で実行した場合、必ず同じ結果を返すこと。
 
@@ -228,7 +228,7 @@ AI実行エンジンは以下のモジュールで構成する。
 
 AI実行エンジンはSimulatorを直接操作しない。
 
-AI実行エンジンはSimulatorが生成したExecution Inputを受け取る。AI実行終了後、行動要求と更新後のAI Runtime StateをExecution ResultとしてSimulatorへ返す。
+AI実行エンジンはSimulatorが生成したExecution Inputを受け取る。AI実行終了後、行動要求、更新後のAI Runtime State、更新後の乱数内部状態をExecution ResultとしてSimulatorへ返す。
 
 両者は疎結合であることを原則とする。
 

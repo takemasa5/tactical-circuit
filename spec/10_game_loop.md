@@ -52,13 +52,13 @@ ai, simulator, uiの順序性を示し、ゲーム全体の流れを明確にす
 
 SimulatorはTick開始で生成したセンサー情報とRobot状態からExecution Inputを生成する。AI実行エンジンはProgramとExecution Inputを受け取り、Execution Contextを使用してAIを実行する。
 本ゲームは対戦ゲームであるため、実行すべきプログラムは自プレイヤーと相手プレイヤーの２つがある。
-このタイミングで自プレイヤーおよび相手プレイヤーの両方のAI実行エンジンを実行する。
+このタイミングでGame Sessionの参加者配列の先頭から順にAIを実行する。各AIのExecution Resultに含まれるAI Runtime Stateと乱数内部状態は、次のAIを実行する前にWorld Stateへ反映する。
 
 ---
 
 ## Execution Contextを元にしたシミュレーション（simulation）
 
-AI実行エンジンが返したExecution Resultに含まれる行動要求を解釈し、ゲームルールに従ってゲーム世界を更新する。また、更新後のAI Runtime StateをWorld State内のRobotへ反映する。
+AI実行エンジンが返したExecution Resultに含まれる行動要求を解釈し、ゲームルールに従ってゲーム世界を更新する。
 自プレイヤーおよび相手プレイヤーの行動、弾の移動は同時に行われたものとして扱う。
 
 ロボット同士やロボットと弾が同時に移動することで衝突判定のすり抜けが起きないように留意すること。
