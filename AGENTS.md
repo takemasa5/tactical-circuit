@@ -33,9 +33,10 @@
 5. spec/12_common_data_conventions.md
 6. spec/13_data_ownership.md
 7. spec/14_determinism_rules.md
-8. 各 overview
-9. 各個別仕様
-10. 実装コード
+8. spec/15_master_data.md
+9. 各 overview
+10. 各個別仕様
+11. 実装コード
 
 コードより仕様書を正とする。
 
@@ -211,13 +212,16 @@ AI Engineは行動要求をExecution ResultとしてSimulatorへ返す。Simulat
 
 同じ
 
-- majorバージョン
+- 完全なアプリケーションバージョン
 - Program
 - World State
 - Tick
 - 乱数シード
+- Master Data
 
 からは常に同じ結果を得られること。
+
+minorまたはbuildバージョンの変更でも、ロジックまたはMaster Dataの変更によってシミュレーション過程と結果が変わることを許容する。
 
 乱数は共通の乱数生成器を使用する。
 

@@ -30,7 +30,7 @@ Editorは作業中のRobot設計データを作成、読取、更新、削除す
 
 # Game Session
 
-Game Sessionは1回の通常シミュレーションを表す実行単位である。実行用Program、Robot設計データ、Robotの参加者配列、初期乱数シード、ゲームルール、World Stateを含む。
+Game Sessionは1回の通常シミュレーションを表す実行単位である。実行用Program、Robot設計データ、Robotの参加者配列、初期乱数シード、ゲームルール、Master Dataのバージョン、World Stateを含む。
 
 Simulatorはシミュレーション開始時にGame Sessionを作成し、シミュレーション終了後に破棄する。戦闘途中のGame Sessionは保存しない。
 
@@ -144,7 +144,9 @@ Save DataはSave Managerが所有する。保存形式はJSONとする。
 
 ## リプレイ保存データ
 
-Replay Data、使用したRobot設計データ、Program、マップ、ゲームルール、初期乱数シード、再生に必要なマスターデータを含む。
+Replay Data、使用したRobot設計データ、Program、マップID、ゲームルールID、初期乱数シード、`masterDataVersion`を含む。Master Data本体は含めない。
+
+リプレイ読込時に現在のData Repositoryの`masterDataVersion`が記録値と一致しない場合は、読込を安全に拒否する。
 
 シミュレーション終了時、Save ManagerはReplay SystemからReplay Dataを受け取り、リプレイ保存データを自動的に`localStorage`へ保存する。ユーザー操作によるexport、import、削除を可能とする。
 
@@ -157,6 +159,7 @@ Replay Data、使用したRobot設計データ、Program、マップ、ゲーム
 | データ | 作成 | 読取 | 更新 | 削除 |
 | --- | --- | --- | --- | --- |
 | Program作業データ | Editor | Editor / Validator | Editor | Editor |
+| Master Data | Data Repository | Simulator / AI Engine / Editor | 公開後はなし | 公開後はなし |
 | Program実行用スナップショット | Simulator | AI Engine | なし | Simulator |
 | Robot設計データ | Editor | Editor / Simulator | Editor | Editor |
 | Game Session | Simulator | Simulator | Simulator | Simulator |

@@ -54,6 +54,8 @@
 ### 実装
 
 * 共通データ規約
+* Master Data共通モデル
+* Data Repository
 * Robot
 * Program
 * Instruction
