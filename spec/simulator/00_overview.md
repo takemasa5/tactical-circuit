@@ -244,6 +244,7 @@ Replay Dataの読込時は以下を検証し、違反するデータを拒否す
 * 初期BulletおよびBulletの生成・更新イベントの`ownerRobotId`が、初期World Stateに存在するRobot IDを参照する
 * `bullet_created`が初期World Stateとそれ以前のイベントで一度も発番されていないBullet IDを使用する
 * `bullet_updated`と`bullet_removed`が、そのイベントの適用時点で存在するBullet IDだけを対象とする
+* `bullet_updated`の`ownerRobotId`、Weapon Definition ID、Projectile Definition IDが、初期World Stateまたは`bullet_created`で確定した値と一致する
 * 削除したBullet IDが後続イベントで再利用されない
 
 FrameはTick昇順に処理し、同一Frame内のイベントはイベント配列順に検証および適用する。初期World Stateに存在するBulletは、発番済みかつ存在中のBulletとしてイベントの検証を開始する。
