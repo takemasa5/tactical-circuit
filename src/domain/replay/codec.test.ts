@@ -197,8 +197,11 @@ const worldState: WorldState = {
   nextBulletSequence: int32(1),
 };
 
-const bullet = (ownerRobotId: RuntimeRobotId): BulletState => ({
-  id: "bullet_1" as BulletState["id"],
+const bullet = (
+  ownerRobotId: RuntimeRobotId,
+  id = "bullet_1" as BulletState["id"],
+): BulletState => ({
+  id,
   ownerRobotId,
   weaponId,
   projectileId,
@@ -420,5 +423,169 @@ describe("Replay codec", () => {
         "duplicate_replay_id",
       );
     }
+  });
+
+  it("初期World Stateで使用済みのBullet IDによる生成を拒否する", () => {
+    const invalid = replay();
+    const initialBullet = bullet(robotId);
+    const loaded = loadReplay(
+      saveReplay({
+        ...invalid,
+        replayData: {
+          ...invalid.replayData,
+          initialWorldState: {
+            ...invalid.replayData.initialWorldState,
+            bullets: [initialBullet],
+          },
+          frames: [
+            {
+              tick: int32(1),
+              events: [{ type: "bullet_created", bullet: initialBullet }],
+            },
+          ],
+        },
+      }),
+      "0.1.1",
+      repository(),
+    );
+
+    expect(loaded.success).toBe(false);
+    if (!loaded.success) {
+      expect(loaded.errors.map(({ code }) => code)).toContain(
+        "duplicate_replay_bullet_create",
+      );
+    }
+  });
+
+  it("以前のFrameで発番済みのBullet ID再利用を拒否する", () => {
+    const invalid = replay();
+    const createdBullet = bullet(robotId);
+    const loaded = loadReplay(
+      saveReplay({
+        ...invalid,
+        replayData: {
+          ...invalid.replayData,
+          frames: [
+            {
+              tick: int32(1),
+              events: [
+                { type: "bullet_created", bullet: createdBullet },
+                { type: "bullet_removed", bulletId: createdBullet.id },
+              ],
+            },
+            {
+              tick: int32(2),
+              events: [{ type: "bullet_created", bullet: createdBullet }],
+            },
+          ],
+        },
+      }),
+      "0.1.1",
+      repository(),
+    );
+
+    expect(loaded.success).toBe(false);
+    if (!loaded.success) {
+      expect(loaded.errors.map(({ code }) => code)).toContain(
+        "duplicate_replay_bullet_create",
+      );
+    }
+  });
+
+  it("未生成Bulletの更新を拒否する", () => {
+    const invalid = replay();
+    const loaded = loadReplay(
+      saveReplay({
+        ...invalid,
+        replayData: {
+          ...invalid.replayData,
+          frames: [
+            {
+              tick: int32(1),
+              events: [
+                {
+                  type: "bullet_updated",
+                  bullet: bullet(robotId, "bullet_99" as BulletState["id"]),
+                },
+              ],
+            },
+          ],
+        },
+      }),
+      "0.1.1",
+      repository(),
+    );
+
+    expect(loaded.success).toBe(false);
+    if (!loaded.success) {
+      expect(loaded.errors.map(({ code }) => code)).toContain(
+        "unknown_replay_bullet_update",
+      );
+    }
+  });
+
+  it("未生成Bulletの削除を拒否する", () => {
+    const invalid = replay();
+    const loaded = loadReplay(
+      saveReplay({
+        ...invalid,
+        replayData: {
+          ...invalid.replayData,
+          frames: [
+            {
+              tick: int32(1),
+              events: [
+                {
+                  type: "bullet_removed",
+                  bulletId: "bullet_99" as BulletState["id"],
+                },
+              ],
+            },
+          ],
+        },
+      }),
+      "0.1.1",
+      repository(),
+    );
+
+    expect(loaded.success).toBe(false);
+    if (!loaded.success) {
+      expect(loaded.errors.map(({ code }) => code)).toContain(
+        "unknown_replay_bullet_remove",
+      );
+    }
+  });
+
+  it("Bulletの生成・更新・削除を適用順に受け付ける", () => {
+    const valid = replay();
+    const createdBullet = bullet(robotId);
+    const loaded = loadReplay(
+      saveReplay({
+        ...valid,
+        replayData: {
+          ...valid.replayData,
+          frames: [
+            {
+              tick: int32(1),
+              events: [
+                { type: "bullet_created", bullet: createdBullet },
+                {
+                  type: "bullet_updated",
+                  bullet: {
+                    ...createdBullet,
+                    position: { x: int32(11), y: int32(10) },
+                  },
+                },
+                { type: "bullet_removed", bulletId: createdBullet.id },
+              ],
+            },
+          ],
+        },
+      }),
+      "0.1.1",
+      repository(),
+    );
+
+    expect(loaded.success).toBe(true);
   });
 });

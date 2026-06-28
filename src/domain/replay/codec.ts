@@ -107,6 +107,71 @@ const validateUniqueIds = (
   return errors;
 };
 
+const validateBulletLifecycle = (
+  data: ReplaySaveData,
+): DataValidationError[] => {
+  const errors: DataValidationError[] = [];
+  const initialBulletIds = data.replayData.initialWorldState.bullets.map(
+    ({ id }) => id,
+  );
+  const seenBulletIds = new Set(initialBulletIds);
+  const liveBulletIds = new Set(initialBulletIds);
+
+  data.replayData.frames.forEach((frame, frameIndex) => {
+    frame.events.forEach((event, eventIndex) => {
+      const eventPath = `/replayData/frames/${frameIndex}/events/${eventIndex}`;
+      if (event.type === "bullet_created") {
+        if (seenBulletIds.has(event.bullet.id)) {
+          errors.push(
+            validationError(
+              "duplicate_replay_bullet_create",
+              `${eventPath}/bullet/id`,
+              "発番済みのBullet IDは再利用できません",
+              event.bullet.id,
+              "Replay内で未発番のBullet ID",
+            ),
+          );
+          return;
+        }
+        seenBulletIds.add(event.bullet.id);
+        liveBulletIds.add(event.bullet.id);
+        return;
+      }
+      if (
+        event.type === "bullet_updated" &&
+        !liveBulletIds.has(event.bullet.id)
+      ) {
+        errors.push(
+          validationError(
+            "unknown_replay_bullet_update",
+            `${eventPath}/bullet/id`,
+            "存在しないBulletは更新できません",
+            event.bullet.id,
+            "現在のWorld Stateに存在するBullet ID",
+          ),
+        );
+        return;
+      }
+      if (event.type === "bullet_removed") {
+        if (!liveBulletIds.has(event.bulletId)) {
+          errors.push(
+            validationError(
+              "unknown_replay_bullet_remove",
+              `${eventPath}/bulletId`,
+              "存在しないBulletは削除できません",
+              event.bulletId,
+              "現在のWorld Stateに存在するBullet ID",
+            ),
+          );
+          return;
+        }
+        liveBulletIds.delete(event.bulletId);
+      }
+    });
+  });
+  return errors;
+};
+
 const validateBulletReference = (
   bullet: BulletState,
   path: string,
@@ -313,6 +378,7 @@ export const loadReplay = (
   const data = loaded.data.payload;
   const errors = [
     ...validateFrameOrder(data),
+    ...validateBulletLifecycle(data),
     ...validateReferences(data, repository),
   ];
   if (data.masterDataVersion !== currentMasterDataVersion) {
