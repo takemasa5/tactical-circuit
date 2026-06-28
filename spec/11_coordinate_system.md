@@ -20,6 +20,29 @@
 X成分、Y成分ともに論理的な単位とし、ピクセル等の物理量には依存しないものとする。
 小数点以下は持たず、常に整数とする。
 
+位置は`Position`、ベクトルは`Vector`、大きさは`Size`として以下の共通構造で表現する。
+
+```ts
+type Position = {
+  x: number;
+  y: number;
+};
+
+type Vector = {
+  x: number;
+  y: number;
+};
+
+type Size = {
+  width: number;
+  height: number;
+};
+```
+
+各フィールドは符号付き32bit整数とする。
+
+Robot、弾、障害物の当たり判定は、`Position`と`Size`で表す軸平行矩形を使用する。弾の進行方向と1Tickあたりの移動量は`Vector`で保持する。
+
 ---
 
 ## 角度

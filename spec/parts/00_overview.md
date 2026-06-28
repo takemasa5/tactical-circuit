@@ -81,6 +81,22 @@ Weaponは攻撃能力を提供する。
 
 Weaponは発射方法や弾の種類などを定義する。
 
+Weapon Definitionは少なくとも以下を定義する。
+
+* Projectile Definition ID
+* 威力
+* 装弾上限数
+* 弾の寿命Tick数
+* 発射間隔
+* リロード
+* 発熱量
+* 消費エネルギー
+* 発射時の照準ブレ角度
+* 装備重量
+* 弾1発あたりの重量
+
+Robot設計データは装弾上限数以下の初期装弾数を指定できる。Weaponと弾の合計重量は、装備重量と弾1発あたりの重量に初期装弾数を乗じた値から算出する。
+
 Weaponはダメージ計算に必要な性能値と計算規則を提供する。Weapon Systemはこれらのデータを使用してダメージ量を算出する。
 
 AIはWeapon固有の実装を意識せず、共通の行動命令を通じて利用する。
@@ -125,6 +141,23 @@ Armorは耐久性能を提供する。
 * 重量
 
 Armorはダメージ計算に影響を与える。
+
+Armor Definitionは排熱性能を定義する。防御性能と排熱性能は独立した性能値とし、両者のバランスはMaster Dataで調整する。
+
+---
+
+# Projectile
+
+Projectile Definitionは少なくとも以下を定義する。
+
+* 速度
+* 当たり判定の大きさ
+* 爆破半径
+* 爆破威力
+
+爆破半径と爆破威力は着弾時の効果であるため、Weapon DefinitionではなくProjectile Definitionが保持する。直撃しなかったRobotも、着弾位置から爆破半径以内にいる場合は爆破威力によるダメージの対象となる。
+
+同じProjectile Definitionを使用するWeaponでも射程を変えられるように、弾の寿命Tick数はWeapon Definitionが`lifetimeTicks`として保持する。弾の最大移動距離はProjectile Definitionの速度とWeapon Definitionの`lifetimeTicks`によって決まる。
 
 ---
 
