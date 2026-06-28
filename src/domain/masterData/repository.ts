@@ -31,6 +31,12 @@ const error = (
   expected: string,
 ): DataValidationError => ({ code, path, message, actualValue, expected });
 
+const compareIds = (left: string, right: string): number => {
+  if (left < right) return -1;
+  if (left > right) return 1;
+  return 0;
+};
+
 const validateNonNegative = (
   value: Int32,
   path: string,
@@ -758,7 +764,7 @@ export const createDataRepository = (
       entries
         .filter((entry) => entry.dataType === dataType)
         .sort((left, right) =>
-          left.definition.id.localeCompare(right.definition.id),
+          compareIds(left.definition.id, right.definition.id),
         )
         .map(({ definition }) => [
           definition.id,

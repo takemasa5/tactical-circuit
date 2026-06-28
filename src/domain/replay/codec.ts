@@ -176,6 +176,14 @@ const validateReferences = (
       data.programs.map(({ id }) => id),
       "/programs",
     ),
+    ...validateUniqueIds(
+      data.replayData.initialWorldState.robots.map(({ id }) => id),
+      "/replayData/initialWorldState/robots",
+    ),
+    ...validateUniqueIds(
+      data.replayData.initialWorldState.bullets.map(({ id }) => id),
+      "/replayData/initialWorldState/bullets",
+    ),
   );
   if (repository.get("map", data.mapId) === undefined) {
     errors.push(

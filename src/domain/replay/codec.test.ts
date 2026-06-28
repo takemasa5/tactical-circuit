@@ -370,4 +370,55 @@ describe("Replay codec", () => {
       );
     }
   });
+
+  it("初期World Stateで重複するRobot IDを拒否する", () => {
+    const invalid = replay();
+    const loaded = loadReplay(
+      saveReplay({
+        ...invalid,
+        replayData: {
+          ...invalid.replayData,
+          initialWorldState: {
+            ...invalid.replayData.initialWorldState,
+            robots: [robot, { ...robot }],
+          },
+        },
+      }),
+      "0.1.1",
+      repository(),
+    );
+
+    expect(loaded.success).toBe(false);
+    if (!loaded.success) {
+      expect(loaded.errors.map(({ code }) => code)).toContain(
+        "duplicate_replay_id",
+      );
+    }
+  });
+
+  it("初期World Stateで重複するBullet IDを拒否する", () => {
+    const invalid = replay();
+    const initialBullet = bullet(robotId);
+    const loaded = loadReplay(
+      saveReplay({
+        ...invalid,
+        replayData: {
+          ...invalid.replayData,
+          initialWorldState: {
+            ...invalid.replayData.initialWorldState,
+            bullets: [initialBullet, { ...initialBullet }],
+          },
+        },
+      }),
+      "0.1.1",
+      repository(),
+    );
+
+    expect(loaded.success).toBe(false);
+    if (!loaded.success) {
+      expect(loaded.errors.map(({ code }) => code)).toContain(
+        "duplicate_replay_id",
+      );
+    }
+  });
 });

@@ -100,6 +100,34 @@ describe("Data Repository", () => {
     }
   });
 
+  it("Master Data IDをロケール非依存の文字列昇順で公開する", () => {
+    const uppercaseId =
+      "projectile_AAAAAAAA-AAAA-AAAA-AAAA-AAAAAAAAAAAA" as ProjectileId;
+    const lowercaseId =
+      "projectile_aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa" as ProjectileId;
+    const result = createDataRepository(
+      [
+        entry({
+          dataType: "projectile",
+          definition: projectile(lowercaseId),
+        }),
+        entry({
+          dataType: "projectile",
+          definition: projectile(uppercaseId),
+        }),
+      ],
+      new Set(),
+    );
+
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.getAll("projectile").map(({ id }) => id)).toEqual([
+        uppercaseId,
+        lowercaseId,
+      ]);
+    }
+  });
+
   it("存在しないProjectile参照を拒否する", () => {
     const result = createDataRepository(
       [entry({ dataType: "weapon", definition: weapon() })],
