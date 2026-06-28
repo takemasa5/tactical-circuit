@@ -111,11 +111,11 @@ const validateBulletLifecycle = (
   data: ReplaySaveData,
 ): DataValidationError[] => {
   const errors: DataValidationError[] = [];
-  const initialBulletIds = data.replayData.initialWorldState.bullets.map(
-    ({ id }) => id,
+  const initialBullets = data.replayData.initialWorldState.bullets;
+  const seenBulletIds = new Set(initialBullets.map(({ id }) => id));
+  const liveBullets = new Map(
+    initialBullets.map((bullet) => [bullet.id, bullet] as const),
   );
-  const seenBulletIds = new Set(initialBulletIds);
-  const liveBulletIds = new Set(initialBulletIds);
 
   data.replayData.frames.forEach((frame, frameIndex) => {
     frame.events.forEach((event, eventIndex) => {
@@ -134,26 +134,48 @@ const validateBulletLifecycle = (
           return;
         }
         seenBulletIds.add(event.bullet.id);
-        liveBulletIds.add(event.bullet.id);
+        liveBullets.set(event.bullet.id, event.bullet);
         return;
       }
-      if (
-        event.type === "bullet_updated" &&
-        !liveBulletIds.has(event.bullet.id)
-      ) {
-        errors.push(
-          validationError(
-            "unknown_replay_bullet_update",
-            `${eventPath}/bullet/id`,
-            "存在しないBulletは更新できません",
-            event.bullet.id,
-            "現在のWorld Stateに存在するBullet ID",
-          ),
-        );
+      if (event.type === "bullet_updated") {
+        const currentBullet = liveBullets.get(event.bullet.id);
+        if (currentBullet === undefined) {
+          errors.push(
+            validationError(
+              "unknown_replay_bullet_update",
+              `${eventPath}/bullet/id`,
+              "存在しないBulletは更新できません",
+              event.bullet.id,
+              "現在のWorld Stateに存在するBullet ID",
+            ),
+          );
+          return;
+        }
+        if (
+          event.bullet.ownerRobotId !== currentBullet.ownerRobotId ||
+          event.bullet.weaponId !== currentBullet.weaponId ||
+          event.bullet.projectileId !== currentBullet.projectileId
+        ) {
+          errors.push(
+            validationError(
+              "replay_bullet_reference_changed",
+              `${eventPath}/bullet`,
+              "Bullet生成時の参照は変更できません",
+              {
+                ownerRobotId: event.bullet.ownerRobotId,
+                weaponId: event.bullet.weaponId,
+                projectileId: event.bullet.projectileId,
+              },
+              `ownerRobotId=${currentBullet.ownerRobotId}, weaponId=${currentBullet.weaponId}, projectileId=${currentBullet.projectileId}`,
+            ),
+          );
+          return;
+        }
+        liveBullets.set(event.bullet.id, event.bullet);
         return;
       }
       if (event.type === "bullet_removed") {
-        if (!liveBulletIds.has(event.bulletId)) {
+        if (!liveBullets.has(event.bulletId)) {
           errors.push(
             validationError(
               "unknown_replay_bullet_remove",
@@ -165,7 +187,7 @@ const validateBulletLifecycle = (
           );
           return;
         }
-        liveBulletIds.delete(event.bulletId);
+        liveBullets.delete(event.bulletId);
       }
     });
   });

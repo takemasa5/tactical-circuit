@@ -41,8 +41,11 @@ const gameRuleId = `game_rule_${uuidA}` as GameRuleId;
 const designId = `robo_${uuidA}` as RobotDesignId;
 const programId = `program_${uuidA}` as ProgramId;
 const robotId = "robot_1" as RuntimeRobotId;
+const otherRobotId = "robot_2" as RuntimeRobotId;
 const weaponId = `weapon_${uuidA}` as WeaponId;
 const projectileId = `projectile_${uuidA}` as ProjectileId;
+const otherWeaponId = `weapon_${uuidB}` as WeaponId;
+const otherProjectileId = `projectile_${uuidB}` as ProjectileId;
 
 const body: RobotBodyDefinition = {
   id: bodyId,
@@ -113,13 +116,26 @@ const weapon: WeaponDefinition = {
   ammunitionWeight: int32(1),
 };
 
+const otherProjectile: ProjectileDefinition = {
+  ...projectile,
+  id: otherProjectileId,
+};
+
+const otherWeapon: WeaponDefinition = {
+  ...weapon,
+  id: otherWeaponId,
+  projectileId: otherProjectileId,
+};
+
 const repository = (): DataRepository => {
   const entries: MasterDataEntry[] = [
     { dataType: "robot_body", definition: body },
     { dataType: "map", definition: map },
     { dataType: "game_rule", definition: gameRule },
     { dataType: "projectile", definition: projectile },
+    { dataType: "projectile", definition: otherProjectile },
     { dataType: "weapon", definition: weapon },
+    { dataType: "weapon", definition: otherWeapon },
   ];
   const result = createDataRepository(entries, new Set());
   if (!result.success) throw new Error("Fixture repository is invalid");
@@ -552,6 +568,85 @@ describe("Replay codec", () => {
     if (!loaded.success) {
       expect(loaded.errors.map(({ code }) => code)).toContain(
         "unknown_replay_bullet_remove",
+      );
+    }
+  });
+
+  it("Bullet更新による発射元Robotの変更を拒否する", () => {
+    const invalid = replay();
+    const initialBullet = bullet(robotId);
+    const loaded = loadReplay(
+      saveReplay({
+        ...invalid,
+        replayData: {
+          ...invalid.replayData,
+          initialWorldState: {
+            ...invalid.replayData.initialWorldState,
+            robots: [robot, { ...robot, id: otherRobotId }],
+            bullets: [initialBullet],
+          },
+          frames: [
+            {
+              tick: int32(1),
+              events: [
+                {
+                  type: "bullet_updated",
+                  bullet: { ...initialBullet, ownerRobotId: otherRobotId },
+                },
+              ],
+            },
+          ],
+        },
+      }),
+      "0.1.1",
+      repository(),
+    );
+
+    expect(loaded.success).toBe(false);
+    if (!loaded.success) {
+      expect(loaded.errors.map(({ code }) => code)).toContain(
+        "replay_bullet_reference_changed",
+      );
+    }
+  });
+
+  it("Bullet更新によるWeaponとProjectileの変更を拒否する", () => {
+    const invalid = replay();
+    const initialBullet = bullet(robotId);
+    const loaded = loadReplay(
+      saveReplay({
+        ...invalid,
+        replayData: {
+          ...invalid.replayData,
+          initialWorldState: {
+            ...invalid.replayData.initialWorldState,
+            bullets: [initialBullet],
+          },
+          frames: [
+            {
+              tick: int32(1),
+              events: [
+                {
+                  type: "bullet_updated",
+                  bullet: {
+                    ...initialBullet,
+                    weaponId: otherWeaponId,
+                    projectileId: otherProjectileId,
+                  },
+                },
+              ],
+            },
+          ],
+        },
+      }),
+      "0.1.1",
+      repository(),
+    );
+
+    expect(loaded.success).toBe(false);
+    if (!loaded.success) {
+      expect(loaded.errors.map(({ code }) => code)).toContain(
+        "replay_bullet_reference_changed",
       );
     }
   });

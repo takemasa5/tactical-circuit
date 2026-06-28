@@ -295,8 +295,9 @@ Data Repositoryは以下の順序でMaster Dataを読み込む。
 4. Data Repository全体のID重複を検証する
 5. `implementationId`を検証する
 6. ID参照先の存在とデータ種別を検証する
-7. 禁止された循環参照を検証する
-8. すべての検証成功後に読み取り専用Data Repositoryを公開する
+7. Instruction DefinitionのParameter Definitionについて、制約の整合性、列挙値の重複、および既定値の型と制約を検証する
+8. 禁止された循環参照を検証する
+9. すべての検証成功後に読み取り専用Data Repositoryを公開する
 
 検証途中の不完全なData Repositoryを他モジュールへ公開しない。
 
