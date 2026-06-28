@@ -250,19 +250,29 @@ const validateReferences = (
   data.replayData.frames.forEach((frame, frameIndex) => {
     frame.events.forEach((event, eventIndex) => {
       const eventPath = `/replayData/frames/${frameIndex}/events/${eventIndex}`;
-      if (
-        event.type === "robot_updated" &&
-        !designIds.has(event.robot.robotDesignId)
-      ) {
-        errors.push(
-          validationError(
-            "missing_replay_robot_design",
-            `${eventPath}/robot/robotDesignId`,
-            "Robot状態が参照するRobotDesignが保存されていません",
-            event.robot.robotDesignId,
-            "Replay保存データ内のRobotDesign ID",
-          ),
-        );
+      if (event.type === "robot_updated") {
+        if (!robotIds.has(event.robot.id)) {
+          errors.push(
+            validationError(
+              "missing_replay_robot",
+              `${eventPath}/robot/id`,
+              "更新対象RobotがReplayの初期World Stateに存在しません",
+              event.robot.id,
+              "初期World Stateに存在するRobot ID",
+            ),
+          );
+        }
+        if (!designIds.has(event.robot.robotDesignId)) {
+          errors.push(
+            validationError(
+              "missing_replay_robot_design",
+              `${eventPath}/robot/robotDesignId`,
+              "Robot状態が参照するRobotDesignが保存されていません",
+              event.robot.robotDesignId,
+              "Replay保存データ内のRobotDesign ID",
+            ),
+          );
+        }
       }
       if (event.type === "bullet_created" || event.type === "bullet_updated") {
         errors.push(

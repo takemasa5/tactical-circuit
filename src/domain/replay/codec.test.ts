@@ -335,4 +335,39 @@ describe("Replay codec", () => {
       );
     }
   });
+
+  it("更新対象Robotが初期World Stateに存在しないReplayを拒否する", () => {
+    const invalid = replay();
+    const loaded = loadReplay(
+      saveReplay({
+        ...invalid,
+        replayData: {
+          ...invalid.replayData,
+          frames: [
+            {
+              tick: int32(1),
+              events: [
+                {
+                  type: "robot_updated",
+                  robot: {
+                    ...robot,
+                    id: "robot_99" as RuntimeRobotId,
+                  },
+                },
+              ],
+            },
+          ],
+        },
+      }),
+      "0.1.1",
+      repository(),
+    );
+
+    expect(loaded.success).toBe(false);
+    if (!loaded.success) {
+      expect(loaded.errors.map(({ code }) => code)).toContain(
+        "missing_replay_robot",
+      );
+    }
+  });
 });
