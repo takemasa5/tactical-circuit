@@ -286,14 +286,33 @@ describe("ProgramEditor", () => {
     const user = userEvent.setup();
     renderEditor();
 
-    await user.click(screen.getByRole("textbox", { name: "名前" }));
+    const nameInput = screen.getByRole("textbox", { name: "名前" });
+    await user.clear(nameInput);
+    await user.type(nameInput, "Ctrl Saved");
     await user.keyboard("{Control>}s{/Control}");
     expect(window.localStorage.length).toBe(1);
     expect(screen.getByText("localStorageへ保存しました")).toBeInTheDocument();
+    const ctrlSavedJson = window.localStorage.getItem(
+      window.localStorage.key(0)!,
+    );
+    const ctrlSaved = loadProgram(ctrlSavedJson!);
+    expect(ctrlSaved.success).toBe(true);
+    if (!ctrlSaved.success) return;
+    expect(ctrlSaved.data.metadata.name).toBe("Ctrl Saved");
 
     window.localStorage.clear();
+    const updatedNameInput = screen.getByRole("textbox", { name: "名前" });
+    await user.clear(updatedNameInput);
+    await user.type(updatedNameInput, "Meta Saved");
     await user.keyboard("{Meta>}s{/Meta}");
     expect(window.localStorage.length).toBe(1);
+    const metaSavedJson = window.localStorage.getItem(
+      window.localStorage.key(0)!,
+    );
+    const metaSaved = loadProgram(metaSavedJson!);
+    expect(metaSaved.success).toBe(true);
+    if (!metaSaved.success) return;
+    expect(metaSaved.data.metadata.name).toBe("Meta Saved");
   });
 
   it("数値ParameterへInt32範囲外の整数を反映しない", async () => {

@@ -1,11 +1,13 @@
 import {
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
   type ChangeEvent,
   type PointerEvent as ReactPointerEvent,
 } from "react";
+import { flushSync } from "react-dom";
 
 import { toInt32, type Int32, type Position } from "../domain/data/common";
 import type { NodeId, ProgramId } from "../domain/data/ids";
@@ -125,7 +127,9 @@ const createInitialProgram = (
   return result.data;
 };
 
-const isTextInputTarget = (target: EventTarget | null): boolean => {
+const isTextInputTarget = (
+  target: EventTarget | null,
+): target is HTMLElement => {
   if (!(target instanceof HTMLElement)) return false;
   return (
     target.tagName === "INPUT" ||
@@ -333,6 +337,10 @@ export function ProgramEditor({
     createHistory(createInitialProgram(startInstructionId, createId, now)),
   );
   const program = history.present;
+  const programRef = useRef(program);
+  useLayoutEffect(() => {
+    programRef.current = program;
+  }, [program]);
   const [selection, setSelection] = useState<EditorSelection>(emptySelection);
   const [clipboard, setClipboard] = useState<EditorClipboard | null>(null);
   const [baselineJson, setBaselineJson] = useState<string | null>(null);
@@ -490,18 +498,20 @@ export function ProgramEditor({
     setMessage("Redoを実行しました");
   };
 
-  const handleSave = () => {
+  const saveCurrentProgram = (programToSave: Program) => {
     const storage = getStorage();
     if (storage === null) return;
-    const result = saveProgramToStorage(storage, program);
+    const result = saveProgramToStorage(storage, programToSave);
     if (!result.success) setMessage(result.message);
     else {
       setBaselineJson(result.data);
       setMessage("localStorageへ保存しました");
       refreshStoredPrograms();
-      setSelectedStoredId(program.id);
+      setSelectedStoredId(programToSave.id);
     }
   };
+
+  const handleSave = () => saveCurrentProgram(program);
 
   const handleLoad = () => {
     if (selectedStoredId === "" || !confirmDiscard()) return;
@@ -558,7 +568,11 @@ export function ProgramEditor({
       const command = event.metaKey || event.ctrlKey;
       if (command && event.key.toLowerCase() === "s") {
         event.preventDefault();
-        handleSave();
+        const target = event.target;
+        if (isTextInputTarget(target)) {
+          flushSync(() => target.blur());
+          saveCurrentProgram(programRef.current);
+        } else handleSave();
         return;
       }
       if (isTextInputTarget(event.target)) return;
