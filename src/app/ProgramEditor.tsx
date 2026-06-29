@@ -590,7 +590,7 @@ export function ProgramEditor({
       setSelection({ nodeIds: selected, connection: null });
     }
     const origins = Object.fromEntries(
-      [...selected].map((id) => [id, program.editorState.nodePositions[id]]),
+      [...selected].map((id) => [id, nodePosition(id)]),
     ) as Readonly<Record<NodeId, Position>>;
     event.currentTarget.setPointerCapture(event.pointerId);
     setDragState({ startX: event.clientX, startY: event.clientY, origins });

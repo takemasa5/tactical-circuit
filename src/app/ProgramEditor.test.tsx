@@ -1,6 +1,6 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { Int32 } from "../domain/data/common";
 import type { ProgramId } from "../domain/data/ids";
@@ -8,7 +8,8 @@ import type {
   InstructionDefinition,
   InstructionId,
 } from "../domain/masterData/models";
-import { loadProgram } from "../domain/program/codec";
+import { createProgram as createEditorProgram } from "../domain/editor/programOperations";
+import { loadProgram, saveProgram } from "../domain/program/codec";
 import { ProgramEditor } from "./ProgramEditor";
 
 class MemoryStorage implements Storage {
@@ -132,7 +133,10 @@ const renderEditor = () =>
   );
 
 describe("ProgramEditor", () => {
-  afterEach(cleanup);
+  afterEach(() => {
+    cleanup();
+    vi.restoreAllMocks();
+  });
 
   beforeEach(() => {
     Object.defineProperty(window, "localStorage", {
@@ -181,6 +185,41 @@ describe("ProgramEditor", () => {
 
     fireEvent.pointerUp(window);
     expect(container.querySelector("line.connection-preview")).toBeNull();
+  });
+
+  it("位置情報が欠けた読込済みNodeをフォールバック位置からドラッグする", async () => {
+    const user = userEvent.setup();
+    const created = createEditorProgram({
+      id: fixedProgramId,
+      startInstructionId,
+      metadata: { name: "Missing Position", author: "", description: "" },
+      createdAt: "2026-06-29T00:00:00.000Z",
+      startPosition: { x: 80 as Int32, y: 100 as Int32 },
+    });
+    if (!created.success) throw new Error(created.message);
+    const programWithoutPosition = {
+      ...created.data,
+      editorState: { ...created.data.editorState, nodePositions: {} },
+    };
+    window.localStorage.setItem(
+      `tactical-circuit:program:${fixedProgramId}`,
+      saveProgram(programWithoutPosition),
+    );
+    vi.spyOn(window, "confirm").mockReturnValue(true);
+    renderEditor();
+    await user.selectOptions(
+      screen.getByRole("combobox", { name: "保存済みProgram" }),
+      fixedProgramId,
+    );
+    await user.click(screen.getByRole("button", { name: "読込" }));
+
+    const node = screen.getByText("node_1").closest("article");
+    expect(node).not.toBeNull();
+    Object.defineProperty(node!, "setPointerCapture", { value: vi.fn() });
+    fireEvent.pointerDown(node!, { pointerId: 1, clientX: 10, clientY: 10 });
+    fireEvent.pointerMove(node!, { pointerId: 1, clientX: 30, clientY: 40 });
+
+    expect(node).toHaveStyle({ left: "20px", top: "30px" });
   });
 
   it("複数Connectionの接続線を各出力ポートの右辺中央へ接続する", async () => {
