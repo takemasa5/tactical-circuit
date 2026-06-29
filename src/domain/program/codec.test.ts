@@ -75,4 +75,34 @@ describe("Program codec", () => {
 
     expect(loadProgram(json).success).toBe(false);
   });
+
+  it("CALLの予約Parameter ID targetNodeIdを保存して読み戻す", () => {
+    const callProgram = program();
+    const value = {
+      ...callProgram,
+      nodes: callProgram.nodes.map((node) =>
+        node.id === node2
+          ? {
+              ...node,
+              parameterValues: {
+                targetNodeId: {
+                  type: "node_reference" as const,
+                  nodeId: node1,
+                },
+              },
+            }
+          : node,
+      ),
+    };
+
+    const loaded = loadProgram(saveProgram(value));
+
+    expect(loaded.success).toBe(true);
+    if (loaded.success) {
+      expect(loaded.data.nodes[1]?.parameterValues.targetNodeId).toEqual({
+        type: "node_reference",
+        nodeId: node1,
+      });
+    }
+  });
 });

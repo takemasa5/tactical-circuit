@@ -1,0 +1,41 @@
+{
+  "dataType": "instruction",
+  "formatVersion": "0.1.1",
+  "payload": {
+    "id": "instruction_5f91da24-816b-4e98-b16d-5d80a3c5d443",
+    "displayName": "Compare Distance",
+    "description": "Branches by comparing the sensed distance with a threshold",
+    "enabled": true,
+    "implementationId": "compare_distance",
+    "category": "branch",
+    "parameters": [
+      {
+        "id": "threshold",
+        "displayName": "Threshold",
+        "description": "Distance used for the comparison",
+        "valueType": "distance",
+        "required": true,
+        "defaultValue": 500,
+        "minValue": 0,
+        "maxValue": 10000
+      }
+    ],
+    "outputPaths": [
+      {
+        "id": "less_or_equal",
+        "displayName": "Less or Equal",
+        "description": "Sensed distance is less than or equal to the threshold",
+        "required": true,
+        "displayOrder": 0
+      },
+      {
+        "id": "greater",
+        "displayName": "Greater",
+        "description": "Sensed distance is greater than the threshold",
+        "required": true,
+        "displayOrder": 1
+      }
+    ],
+    "cpuCost": 1
+  }
+}

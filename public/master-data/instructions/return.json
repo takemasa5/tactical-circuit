@@ -1,0 +1,15 @@
+{
+  "dataType": "instruction",
+  "formatVersion": "0.1.1",
+  "payload": {
+    "id": "instruction_8c240d57-b49e-41cb-e490-80b3d6f80776",
+    "displayName": "RETURN",
+    "description": "Returns to the latest destination stored by CALL",
+    "enabled": true,
+    "implementationId": "return",
+    "category": "branch",
+    "parameters": [],
+    "outputPaths": [],
+    "cpuCost": 1
+  }
+}

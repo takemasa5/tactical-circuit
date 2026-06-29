@@ -114,4 +114,44 @@ describe("Master Data schemas", () => {
       expect(validator(value), JSON.stringify(validator.errors)).toBe(true);
     },
   );
+
+  it("CALLの予約Parameter ID targetNodeIdを受け付ける", () => {
+    const validator = getMasterDataValidator("instruction");
+
+    expect(
+      validator({
+        ...definitions.instruction,
+        implementationId: "call",
+        parameters: [
+          {
+            id: "targetNodeId",
+            displayName: "Target Node",
+            description: "",
+            valueType: "node_reference",
+            required: true,
+          },
+        ],
+      }),
+      JSON.stringify(validator.errors),
+    ).toBe(true);
+  });
+
+  it("CALL以外では予約Parameter ID targetNodeIdを拒否する", () => {
+    const validator = getMasterDataValidator("instruction");
+
+    expect(
+      validator({
+        ...definitions.instruction,
+        parameters: [
+          {
+            id: "targetNodeId",
+            displayName: "Target Node",
+            description: "",
+            valueType: "node_reference",
+            required: true,
+          },
+        ],
+      }),
+    ).toBe(false);
+  });
 });

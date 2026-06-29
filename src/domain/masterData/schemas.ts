@@ -69,7 +69,7 @@ const definitionSchema = (
   properties: { ...baseProperties, ...properties },
 });
 
-const instructionSchema = definitionSchema(
+const instructionBaseSchema = definitionSchema(
   {
     category: {
       enum: [
@@ -89,7 +89,10 @@ const instructionSchema = definitionSchema(
         additionalProperties: false,
         required: ["id", "displayName", "description", "valueType", "required"],
         properties: {
-          id: { type: "string", pattern: "^[a-z]+(?:_[a-z]+)*$" },
+          id: {
+            type: "string",
+            pattern: "^(?:[a-z]+(?:_[a-z]+)*|targetNodeId)$",
+          },
           displayName: { type: "string" },
           description: { type: "string" },
           valueType: {
@@ -149,6 +152,25 @@ const instructionSchema = definitionSchema(
   ["category", "parameters", "outputPaths", "cpuCost"],
   true,
 );
+
+const instructionSchema = {
+  ...instructionBaseSchema,
+  allOf: [
+    {
+      if: {
+        properties: {
+          parameters: {
+            contains: {
+              required: ["id"],
+              properties: { id: { const: "targetNodeId" } },
+            },
+          },
+        },
+      },
+      then: { properties: { implementationId: { const: "call" } } },
+    },
+  ],
+};
 
 const robotBodySchema = definitionSchema(
   {

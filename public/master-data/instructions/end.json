@@ -1,0 +1,15 @@
+{
+  "dataType": "instruction",
+  "formatVersion": "0.1.1",
+  "payload": {
+    "id": "instruction_6ba7b810-9dad-41d1-80b4-00c04fd430c8",
+    "displayName": "End",
+    "description": "Ends AI execution for the current tick",
+    "enabled": true,
+    "implementationId": "end",
+    "category": "control",
+    "parameters": [],
+    "outputPaths": [],
+    "cpuCost": 0
+  }
+}

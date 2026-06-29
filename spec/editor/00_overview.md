@@ -246,12 +246,14 @@ Programは保存後にAI実行エンジンへ渡される。
 
 プログラムエディタの詳細仕様は以下で定義する。
 
+* phase2.md
 * nodes.md
 * connections.md
 * selection.md
 * clipboard.md
 * history.md
 * property_editor.md
+* persistence.md
 * validator.md
 * search.md
 * layout.md

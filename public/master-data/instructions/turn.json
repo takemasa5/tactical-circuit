@@ -1,0 +1,43 @@
+{
+  "dataType": "instruction",
+  "formatVersion": "0.1.1",
+  "payload": {
+    "id": "instruction_3d7fb802-6f49-4c76-9f4b-3b6e81a3b221",
+    "displayName": "Turn",
+    "description": "Requests a turn in the selected direction",
+    "enabled": true,
+    "implementationId": "turn",
+    "category": "action",
+    "parameters": [
+      {
+        "id": "direction",
+        "displayName": "Direction",
+        "description": "Direction of rotation",
+        "valueType": "enum",
+        "required": true,
+        "defaultValue": "left",
+        "enumValues": ["left", "right"]
+      },
+      {
+        "id": "degree",
+        "displayName": "Degree",
+        "description": "Requested rotation angle",
+        "valueType": "degree",
+        "required": true,
+        "defaultValue": 90,
+        "minValue": 0,
+        "maxValue": 359
+      }
+    ],
+    "outputPaths": [
+      {
+        "id": "next",
+        "displayName": "Next",
+        "description": "Instruction after the turn request",
+        "required": true,
+        "displayOrder": 0
+      }
+    ],
+    "cpuCost": 1
+  }
+}
