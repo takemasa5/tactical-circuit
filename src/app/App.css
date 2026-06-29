@@ -9,6 +9,7 @@
   --accent: #55e0ac;
   --accent-dim: #1f755d;
   --warning: #f4c66a;
+  --error: #ff7b72;
 }
 
 button,
@@ -112,6 +113,14 @@ h2 {
 .program-status span {
   color: var(--warning);
   font-size: 0.75rem;
+}
+
+.program-status .validation-valid {
+  color: var(--accent);
+}
+
+.program-status .validation-invalid {
+  color: var(--error);
 }
 
 .toolbar {
@@ -246,6 +255,19 @@ h2 {
 .program-node.selected {
   border-color: var(--accent);
   box-shadow: 0 0 0 2px rgba(85, 224, 172, 0.17);
+}
+
+.program-node.validation-warning {
+  border-color: var(--warning);
+}
+
+.program-node.validation-error {
+  border-color: var(--error);
+}
+
+.program-node.selected.validation-warning,
+.program-node.selected.validation-error {
+  box-shadow: 0 0 0 2px rgba(85, 224, 172, 0.3);
 }
 
 .program-node header {
@@ -383,6 +405,65 @@ h2 {
   overflow-wrap: anywhere;
   color: var(--muted);
   background: #0a1114;
+}
+
+.validation-panel {
+  margin: 0 0 20px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  background: #0a1114;
+}
+
+.validation-panel h3 {
+  margin: 0 0 10px;
+  color: var(--muted);
+  font-size: 0.7rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.validation-empty {
+  margin: 0;
+  color: var(--accent);
+  font-size: 0.75rem;
+}
+
+.diagnostic-list {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.diagnostic-list li {
+  display: grid;
+  gap: 3px;
+  padding-left: 8px;
+  border-left: 2px solid;
+  font-size: 0.72rem;
+}
+
+.diagnostic-list .diagnostic-error {
+  border-color: var(--error);
+}
+
+.diagnostic-list .diagnostic-warning {
+  border-color: var(--warning);
+}
+
+.diagnostic-list button {
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  color: var(--text);
+  background: transparent;
+  text-align: left;
+}
+
+.diagnostic-list code {
+  color: var(--muted);
+  font-size: 0.64rem;
 }
 
 .editor-message {

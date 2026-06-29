@@ -60,7 +60,9 @@ import type {
   MasterDataId,
   ParameterDefinition,
 } from "../domain/masterData/models";
+import type { DataRepository } from "../domain/masterData/repository";
 import type { ParameterValue, Program } from "../domain/program/models";
+import { validateProgram } from "../domain/validator/validateProgram";
 
 const NODE_WIDTH = 190;
 const NODE_HEADER_HEIGHT = 52;
@@ -75,10 +77,11 @@ const MIN_ZOOM_PERCENT = 50;
 const MAX_ZOOM_PERCENT = 200;
 const ZOOM_STEP_PERCENT = 10;
 
-/** `spec/editor/phase2.md`のEditor起動入力。 */
+/** `spec/editor/phase2.md`と`spec/editor/validator.md`のEditor起動入力。 */
 type ProgramEditorProps = {
   readonly instructions: readonly InstructionDefinition[];
   readonly startInstructionId: InstructionId;
+  readonly repository: DataRepository;
   readonly createId?: () => ProgramId;
   readonly now?: () => string;
 };
@@ -325,6 +328,7 @@ const ParameterField = ({
 export function ProgramEditor({
   instructions,
   startInstructionId,
+  repository,
   createId = defaultCreateId,
   now = () => new Date().toISOString(),
 }: ProgramEditorProps) {
@@ -373,6 +377,37 @@ export function ProgramEditor({
     selection.nodeIds.size === 1
       ? program.nodes.find(({ id }) => selection.nodeIds.has(id))
       : undefined;
+  const validationResult = useMemo(
+    () => validateProgram(program, repository),
+    [program, repository],
+  );
+  const errorCount = validationResult.diagnostics.filter(
+    ({ severity }) => severity === "error",
+  ).length;
+  const warningCount = validationResult.diagnostics.length - errorCount;
+  const validationSeverityByNode = useMemo(() => {
+    const severities = new Map<NodeId, "error" | "warning">();
+    validationResult.diagnostics.forEach((item) => {
+      const nodeIds = [item.nodeId, ...item.relatedNodeIds].filter(
+        (nodeId): nodeId is NodeId => nodeId !== null,
+      );
+      nodeIds.forEach((nodeId) => {
+        if (item.severity === "error" || !severities.has(nodeId)) {
+          severities.set(nodeId, item.severity);
+        }
+      });
+    });
+    return severities;
+  }, [validationResult]);
+
+  const focusDiagnostic = (index: number) => {
+    const item = validationResult.diagnostics[index];
+    if (item?.nodeId === null || item === undefined) return;
+    setSelection({
+      nodeIds: new Set([item.nodeId, ...item.relatedNodeIds]),
+      connection: null,
+    });
+  };
 
   const getStorage = (): Storage | null => {
     try {
@@ -823,12 +858,20 @@ export function ProgramEditor({
     <main className="editor-app">
       <header className="editor-header">
         <div>
-          <p className="eyebrow">PROGRAM EDITOR / PHASE 2</p>
+          <p className="eyebrow">PROGRAM EDITOR / PHASE 3</p>
           <h1>Tactical Circuit</h1>
         </div>
         <div className="program-status">
           <strong>{program.metadata.name}</strong>
           <span>{dirty ? "未保存" : "保存済み"}</span>
+          <span
+            className={
+              errorCount > 0 ? "validation-invalid" : "validation-valid"
+            }
+            role="status"
+          >
+            Error {errorCount} / Warning {warningCount}
+          </span>
         </div>
       </header>
 
@@ -1080,7 +1123,11 @@ export function ProgramEditor({
                 );
                 return (
                   <article
-                    className={`program-node ${selection.nodeIds.has(node.id) ? "selected" : ""}`}
+                    className={`program-node ${selection.nodeIds.has(node.id) ? "selected" : ""} ${
+                      validationSeverityByNode.has(node.id)
+                        ? `validation-${validationSeverityByNode.get(node.id)}`
+                        : ""
+                    }`}
                     key={node.id}
                     style={{ left: position.x, top: position.y }}
                     onPointerDown={(event) => startDrag(event, node.id)}
@@ -1153,6 +1200,34 @@ export function ProgramEditor({
 
         <aside className="panel properties" aria-label="Property Editor">
           <h2>Properties</h2>
+          <section className="validation-panel" aria-label="Program診断">
+            <h3>Validation</h3>
+            {validationResult.diagnostics.length === 0 ? (
+              <p className="validation-empty">問題はありません</p>
+            ) : (
+              <ol className="diagnostic-list">
+                {validationResult.diagnostics.map((item, index) => (
+                  <li
+                    className={`diagnostic-${item.severity}`}
+                    key={`${item.code}:${item.nodeId ?? "program"}:${item.fieldPath ?? ""}:${index}`}
+                  >
+                    {item.nodeId === null ? (
+                      <span>{item.message}</span>
+                    ) : (
+                      <button
+                        type="button"
+                        aria-label={`${item.nodeId}の診断を表示`}
+                        onClick={() => focusDiagnostic(index)}
+                      >
+                        {item.message}
+                      </button>
+                    )}
+                    <code>{item.code}</code>
+                  </li>
+                ))}
+              </ol>
+            )}
+          </section>
           {selectedNode === undefined && selection.nodeIds.size > 1 ? (
             <p>{selection.nodeIds.size}件のNodeを選択中</p>
           ) : selectedNode === undefined && selection.connection !== null ? (

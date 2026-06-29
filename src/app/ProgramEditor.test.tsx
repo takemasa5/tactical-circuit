@@ -8,6 +8,10 @@ import type {
   InstructionDefinition,
   InstructionId,
 } from "../domain/masterData/models";
+import {
+  createDataRepository,
+  type MasterDataEntry,
+} from "../domain/masterData/repository";
 import { createProgram as createEditorProgram } from "../domain/editor/programOperations";
 import { loadProgram, saveProgram } from "../domain/program/codec";
 import { ProgramEditor } from "./ProgramEditor";
@@ -119,6 +123,17 @@ const instructions: readonly InstructionDefinition[] = [
     cpuCost: 1 as Int32,
   },
 ];
+const repositoryResult = createDataRepository(
+  instructions.map((definition): MasterDataEntry => ({
+    dataType: "instruction",
+    definition,
+  })),
+  new Set(instructions.map(({ implementationId }) => implementationId)),
+);
+if (!repositoryResult.success) {
+  throw new Error("テスト用Data Repositoryを作成できません");
+}
+const repository = repositoryResult.data;
 const fixedProgramId =
   "program_550e8400-e29b-41d4-a716-446655440000" as ProgramId;
 
@@ -127,6 +142,7 @@ const renderEditor = () =>
     <ProgramEditor
       instructions={instructions}
       startInstructionId={startInstructionId}
+      repository={repository}
       createId={() => fixedProgramId}
       now={() => "2026-06-29T00:00:00.000Z"}
     />,
@@ -152,6 +168,28 @@ describe("ProgramEditor", () => {
     expect(screen.getByText("node_1")).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Endcontrol" }));
     expect(screen.getAllByText("node_2")).not.toHaveLength(0);
+  });
+
+  it("編集後の診断集計を更新し、診断対象Nodeを強調する", async () => {
+    const user = userEvent.setup();
+    const { container } = renderEditor();
+
+    expect(screen.getByText("Error 1 / Warning 0")).toBeInTheDocument();
+    expect(
+      container.querySelector(".program-node.validation-error"),
+    ).not.toBeNull();
+
+    await user.click(
+      screen.getByRole("button", { name: "node_1の診断を表示" }),
+    );
+    expect(container.querySelector(".program-node.selected")).not.toBeNull();
+
+    await user.click(screen.getByRole("button", { name: "Endcontrol" }));
+    fireEvent.pointerDown(screen.getByRole("button", { name: "Next" }));
+    fireEvent.pointerUp(screen.getByRole("button", { name: "node_2へ接続" }));
+
+    expect(screen.getByText("Error 0 / Warning 0")).toBeInTheDocument();
+    expect(screen.getByText("問題はありません")).toBeInTheDocument();
   });
 
   it("Nodeを接続し、UndoとRedoを実行できる", async () => {

@@ -1,4 +1,5 @@
 import { loadDataRepository } from "../domain/masterData/loader";
+import type { DataRepository } from "../domain/masterData/repository";
 import type {
   InstructionDefinition,
   InstructionId,
@@ -63,10 +64,11 @@ const editorImplementationIds = new Set([
   "return",
 ]);
 
-/** `spec/editor/phase2.md`のEditor起動用Master Data。 */
+/** `spec/editor/phase2.md`と`spec/editor/validator.md`のEditor起動用Master Data。 */
 export type EditorMasterData = {
   readonly instructions: readonly InstructionDefinition[];
   readonly startInstructionId: InstructionId;
+  readonly repository: DataRepository;
 };
 
 /** 取得済みJSONをData Repositoryで検証してEditor入力へ変換する。 */
@@ -88,10 +90,11 @@ export const parseEditorMasterData = (
   return {
     instructions: loaded.data.repository.getAll("instruction"),
     startInstructionId: START_INSTRUCTION_ID,
+    repository: loaded.data.repository,
   };
 };
 
-/** Phase 2 Editorで使用する検証済みMaster Dataを読み込む。 */
+/** Program Editorで使用する検証済みMaster Dataを読み込む。 */
 export const loadEditorMasterData = async (): Promise<EditorMasterData> => {
   const [manifestResponse, ...documentResponses] = await Promise.all([
     fetch("/master-data/manifest.json"),
