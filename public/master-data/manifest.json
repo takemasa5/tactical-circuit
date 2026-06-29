@@ -1,0 +1,7 @@
+{
+  "dataType": "master_data_manifest",
+  "formatVersion": "0.1.1",
+  "payload": {
+    "masterDataVersion": "0.1.1"
+  }
+}

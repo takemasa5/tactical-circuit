@@ -114,4 +114,24 @@ describe("Master Data schemas", () => {
       expect(validator(value), JSON.stringify(validator.errors)).toBe(true);
     },
   );
+
+  it("CALLの予約Parameter ID targetNodeIdを受け付ける", () => {
+    const validator = getMasterDataValidator("instruction");
+
+    expect(
+      validator({
+        ...definitions.instruction,
+        parameters: [
+          {
+            id: "targetNodeId",
+            displayName: "Target Node",
+            description: "",
+            valueType: "node_reference",
+            required: true,
+          },
+        ],
+      }),
+      JSON.stringify(validator.errors),
+    ).toBe(true);
+  });
 });

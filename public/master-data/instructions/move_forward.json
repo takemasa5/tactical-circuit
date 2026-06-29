@@ -1,0 +1,34 @@
+{
+  "dataType": "instruction",
+  "formatVersion": "0.1.1",
+  "payload": {
+    "id": "instruction_1b671a64-40d5-491e-99b0-da01ff1f3341",
+    "displayName": "Move Forward",
+    "description": "Requests forward movement",
+    "enabled": true,
+    "implementationId": "move_forward",
+    "category": "action",
+    "parameters": [
+      {
+        "id": "speed",
+        "displayName": "Speed",
+        "description": "Requested forward speed",
+        "valueType": "speed",
+        "required": true,
+        "defaultValue": 100,
+        "minValue": 0,
+        "maxValue": 1000
+      }
+    ],
+    "outputPaths": [
+      {
+        "id": "next",
+        "displayName": "Next",
+        "description": "Instruction after the movement request",
+        "required": true,
+        "displayOrder": 0
+      }
+    ],
+    "cpuCost": 1
+  }
+}

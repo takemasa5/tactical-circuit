@@ -72,6 +72,8 @@ Instruction Definitionの`category`は次の文字列列挙値とする。
 
 Parameter IDはInstruction Definition内で一意な小文字の英単語またはスネークケース文字列とする。
 
+CALL命令の`targetNodeId`は特殊制御命令の共通契約で使用する予約Parameter IDとし、この命名規則の例外とする。
+
 NodeはParameter IDをキーとしてParameter Valueを保持する。定義されていないParameter IDをNodeへ保存してはならない。
 
 必須パラメータの欠損、型の不一致、値域外の値、不正な参照、未知の列挙値はProgram ValidatorのErrorとする。

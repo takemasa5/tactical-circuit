@@ -89,7 +89,10 @@ const instructionSchema = definitionSchema(
         additionalProperties: false,
         required: ["id", "displayName", "description", "valueType", "required"],
         properties: {
-          id: { type: "string", pattern: "^[a-z]+(?:_[a-z]+)*$" },
+          id: {
+            type: "string",
+            pattern: "^(?:[a-z]+(?:_[a-z]+)*|targetNodeId)$",
+          },
           displayName: { type: "string" },
           description: { type: "string" },
           valueType: {

@@ -1,0 +1,41 @@
+{
+  "dataType": "instruction",
+  "formatVersion": "0.1.1",
+  "payload": {
+    "id": "instruction_4e80c913-705a-4d87-a05c-4c7f92b4c332",
+    "displayName": "Detect Enemy",
+    "description": "Branches according to whether an enemy is detected",
+    "enabled": true,
+    "implementationId": "detect_enemy",
+    "category": "sensor",
+    "parameters": [
+      {
+        "id": "distance",
+        "displayName": "Distance",
+        "description": "Maximum detection distance",
+        "valueType": "distance",
+        "required": true,
+        "defaultValue": 1000,
+        "minValue": 0,
+        "maxValue": 10000
+      }
+    ],
+    "outputPaths": [
+      {
+        "id": "detected",
+        "displayName": "Detected",
+        "description": "Enemy was detected",
+        "required": true,
+        "displayOrder": 0
+      },
+      {
+        "id": "not_detected",
+        "displayName": "Not Detected",
+        "description": "Enemy was not detected",
+        "required": true,
+        "displayOrder": 1
+      }
+    ],
+    "cpuCost": 1
+  }
+}
