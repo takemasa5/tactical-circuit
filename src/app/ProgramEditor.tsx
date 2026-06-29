@@ -7,7 +7,7 @@ import {
   type PointerEvent as ReactPointerEvent,
 } from "react";
 
-import type { Int32, Position } from "../domain/data/common";
+import { toInt32, type Int32, type Position } from "../domain/data/common";
 import type { NodeId, ProgramId } from "../domain/data/ids";
 import {
   copyNodes,
@@ -229,8 +229,8 @@ const ParameterField = ({
         onCommit={(draft) => {
           if (draft === "") onCommit(undefined);
           else {
-            const parsed = Number(draft);
-            if (Number.isInteger(parsed)) onCommit(parsed as Int32);
+            const parsed = toInt32(Number(draft));
+            if (parsed.success) onCommit(parsed.data);
           }
         }}
       />
@@ -555,12 +555,14 @@ export function ProgramEditor({
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (isTextInputTarget(event.target)) return;
       const command = event.metaKey || event.ctrlKey;
       if (command && event.key.toLowerCase() === "s") {
         event.preventDefault();
         handleSave();
-      } else if (command && event.key.toLowerCase() === "c") handleCopy();
+        return;
+      }
+      if (isTextInputTarget(event.target)) return;
+      if (command && event.key.toLowerCase() === "c") handleCopy();
       else if (command && event.key.toLowerCase() === "v") handlePaste();
       else if (command && event.key.toLowerCase() === "z" && event.shiftKey)
         handleRedo();

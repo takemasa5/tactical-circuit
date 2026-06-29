@@ -8,6 +8,7 @@ import type {
   InstructionDefinition,
   InstructionId,
 } from "../domain/masterData/models";
+import { loadProgram } from "../domain/program/codec";
 import { ProgramEditor } from "./ProgramEditor";
 
 class MemoryStorage implements Storage {
@@ -38,6 +39,8 @@ const endInstructionId =
   "instruction_6ba7b810-9dad-41d1-80b4-00c04fd430c8" as InstructionId;
 const detectEnemyInstructionId =
   "instruction_4e80c913-705a-4d87-a05c-4c7f92b4c332" as InstructionId;
+const moveForwardInstructionId =
+  "instruction_1b671a64-40d5-491e-99b0-da01ff1f3341" as InstructionId;
 const outputPath = {
   id: "next",
   displayName: "Next",
@@ -92,6 +95,26 @@ const instructions: readonly InstructionDefinition[] = [
         displayOrder: 1 as Int32,
       },
     ],
+    cpuCost: 1 as Int32,
+  },
+  {
+    id: moveForwardInstructionId,
+    displayName: "Move Forward",
+    description: "",
+    enabled: true,
+    implementationId: "move_forward",
+    category: "action",
+    parameters: [
+      {
+        id: "speed",
+        displayName: "Speed",
+        description: "",
+        valueType: "speed",
+        required: true,
+        defaultValue: 100,
+      },
+    ],
+    outputPaths: [outputPath],
     cpuCost: 1 as Int32,
   },
 ];
@@ -215,5 +238,45 @@ describe("ProgramEditor", () => {
     expect(screen.getByText("localStorageへ保存しました")).toBeInTheDocument();
     expect(window.localStorage.length).toBe(1);
     expect(screen.getByText("保存済み")).toBeInTheDocument();
+  });
+
+  it("入力欄の編集中も保存ショートカットでlocalStorageへ保存する", async () => {
+    const user = userEvent.setup();
+    renderEditor();
+
+    await user.click(screen.getByRole("textbox", { name: "名前" }));
+    await user.keyboard("{Control>}s{/Control}");
+    expect(window.localStorage.length).toBe(1);
+    expect(screen.getByText("localStorageへ保存しました")).toBeInTheDocument();
+
+    window.localStorage.clear();
+    await user.keyboard("{Meta>}s{/Meta}");
+    expect(window.localStorage.length).toBe(1);
+  });
+
+  it("数値ParameterへInt32範囲外の整数を反映しない", async () => {
+    const user = userEvent.setup();
+    renderEditor();
+    await user.click(
+      screen.getByRole("button", { name: "Move Forwardaction" }),
+    );
+
+    const speedInput = screen.getByRole("textbox", { name: "Speed" });
+    await user.clear(speedInput);
+    await user.type(speedInput, "2147483647");
+    await user.tab();
+
+    const updatedSpeedInput = screen.getByRole("textbox", { name: "Speed" });
+    await user.clear(updatedSpeedInput);
+    await user.type(updatedSpeedInput, "2147483648");
+    await user.tab();
+    await user.click(screen.getByRole("button", { name: "保存" }));
+
+    const key = window.localStorage.key(0);
+    expect(key).not.toBeNull();
+    const loaded = loadProgram(window.localStorage.getItem(key!)!);
+    expect(loaded.success).toBe(true);
+    if (!loaded.success) return;
+    expect(loaded.data.nodes[1]?.parameterValues.speed).toBe(2_147_483_647);
   });
 });
