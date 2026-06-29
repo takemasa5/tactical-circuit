@@ -102,7 +102,10 @@ export const loadProgramFromStorage = (
       validationErrors: loaded.errors,
     };
   }
-  return { success: true, data: { program: loaded.data, json } };
+  return {
+    success: true,
+    data: { program: loaded.data, json: saveProgram(loaded.data) },
+  };
 };
 
 /** 現在のProgramをファイル出力可能な値へ変換する。 */

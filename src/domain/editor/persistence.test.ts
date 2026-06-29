@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import type { Int32 } from "../data/common";
 import type { NodeId, ProgramId } from "../data/ids";
 import type { InstructionId } from "../masterData/models";
+import { saveProgram } from "../program/codec";
 import type { Program } from "../program/models";
 import {
   exportProgram,
@@ -85,6 +86,24 @@ describe("Program persistence", () => {
     const loaded = loadProgramFromStorage(storage, programId);
     expect(loaded.success).toBe(true);
     if (loaded.success) expect(loaded.data.program).toEqual(program);
+  });
+
+  it("非canonicalな保存JSONを読込後の比較基準として正規化する", () => {
+    const storage = new MemoryStorage();
+    const program = createProgram();
+    const canonicalJson = saveProgram(program);
+    const nonCanonicalJson = JSON.stringify(JSON.parse(canonicalJson), null, 2);
+    storage.setItem(`tactical-circuit:program:${programId}`, nonCanonicalJson);
+
+    const loaded = loadProgramFromStorage(storage, programId);
+
+    expect(nonCanonicalJson).not.toBe(canonicalJson);
+    expect(loaded.success).toBe(true);
+    if (!loaded.success) return;
+    expect(loaded.data.json).toBe(canonicalJson);
+    expect(hasUnsavedChanges(loaded.data.json, loaded.data.program)).toBe(
+      false,
+    );
   });
 
   it("JSONファイル向けにExportしてImportする", () => {

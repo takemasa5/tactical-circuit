@@ -732,6 +732,22 @@ export function ProgramEditor({
     }
   };
 
+  useEffect(() => {
+    const handleWindowPointerUp = (event: PointerEvent) => {
+      const current = pendingConnectionRef.current;
+      if (current === null) return;
+      const releasedOnSource =
+        !current.dragged &&
+        event.target instanceof Element &&
+        event.target.closest(".output-port") !== null;
+      if (releasedOnSource) return;
+      pendingConnectionRef.current = null;
+      setPendingConnection(null);
+    };
+    window.addEventListener("pointerup", handleWindowPointerUp);
+    return () => window.removeEventListener("pointerup", handleWindowPointerUp);
+  }, []);
+
   const startRangeSelection = (event: ReactPointerEvent<HTMLElement>) => {
     if (event.target !== event.currentTarget) return;
     const { x, y } = pointerPosition(event);

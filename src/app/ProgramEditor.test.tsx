@@ -178,6 +178,9 @@ describe("ProgramEditor", () => {
     expect(preview).toHaveAttribute("y1", "172");
     expect(preview).toHaveAttribute("x2", "400");
     expect(preview).toHaveAttribute("y2", "250");
+
+    fireEvent.pointerUp(window);
+    expect(container.querySelector("line.connection-preview")).toBeNull();
   });
 
   it("複数Connectionの接続線を各出力ポートの右辺中央へ接続する", async () => {
