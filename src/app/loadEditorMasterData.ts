@@ -108,6 +108,21 @@ export const parseEditorMasterData = (
         .join(", ")}`,
     );
   }
+  const startInstruction = loaded.data.repository.get(
+    "instruction",
+    START_INSTRUCTION_ID,
+  );
+  if (startInstruction?.implementationId !== "start") {
+    const error = new Error(
+      "Start Instruction Definition is missing or invalid",
+    );
+    console.error("[editor-master-data] start instruction invalid", {
+      instructionId: START_INSTRUCTION_ID,
+      implementationId: startInstruction?.implementationId ?? null,
+      error,
+    });
+    throw error;
+  }
   return {
     instructions: loaded.data.repository.getAll("instruction"),
     startInstructionId: START_INSTRUCTION_ID,

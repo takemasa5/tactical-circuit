@@ -1235,6 +1235,9 @@ export function ProgramEditor({
                     className={`diagnostic-${item.severity}`}
                     key={`${item.code}:${item.nodeId ?? "program"}:${item.fieldPath ?? ""}:${index}`}
                   >
+                    <strong className="diagnostic-severity">
+                      {item.severity === "error" ? "Error" : "Warning"}
+                    </strong>
                     {item.nodeId === null ? (
                       <span>{item.message}</span>
                     ) : (

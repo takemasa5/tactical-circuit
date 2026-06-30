@@ -421,6 +421,24 @@ describe("validateProgram", () => {
     ).toEqual(["invalid_connection_target", "unknown_instruction_id"]);
   });
 
+  it("未知命令がある場合は制御フロー由来のWarningを生成しない", () => {
+    const unknownInstructionId = instructionId("999");
+    const target = program([
+      node(1, startInstruction, { next: nodeId(2) }),
+      {
+        id: nodeId(2),
+        instructionId: unknownInstructionId,
+        parameterValues: {},
+        connections: {},
+      },
+      node(3, actionInstruction, { next: nodeId(3) }, { speed: 10 as Int32 }),
+    ]);
+
+    expect(
+      validateProgram(target, repository).diagnostics.map(({ code }) => code),
+    ).toEqual(["unknown_instruction_id"]);
+  });
+
   it("列挙値、Node参照、Master Data参照の不正を検出する", () => {
     const target = program([
       node(1, startInstruction, { next: nodeId(2) }),

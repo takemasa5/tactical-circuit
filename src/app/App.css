@@ -488,6 +488,19 @@ h2 {
   font-size: 0.64rem;
 }
 
+.diagnostic-severity {
+  font-size: 0.66rem;
+  text-transform: uppercase;
+}
+
+.diagnostic-error .diagnostic-severity {
+  color: var(--error);
+}
+
+.diagnostic-warning .diagnostic-severity {
+  color: var(--warning);
+}
+
 .editor-message {
   min-height: 34px;
   padding: 8px 16px;

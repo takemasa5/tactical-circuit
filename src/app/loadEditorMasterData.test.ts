@@ -66,6 +66,44 @@ describe("Editor Master Data", () => {
     ).toThrow("duplicate file names");
   });
 
+  it("固定Start Instructionが存在しない場合は拒否する", () => {
+    const errorLog = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => undefined);
+
+    expect(() =>
+      parseEditorMasterData(readPublicFile("/master-data/manifest.json"), [
+        {
+          path: "/master-data/instructions/end.json",
+          json: readPublicFile("/master-data/instructions/end.json"),
+        },
+      ]),
+    ).toThrow("Start Instruction Definition is missing or invalid");
+    expect(errorLog).toHaveBeenCalledWith(
+      "[editor-master-data] start instruction invalid",
+      expect.objectContaining({
+        implementationId: null,
+      }),
+    );
+  });
+
+  it("固定Start Instructionの実装IDがstartでない場合は拒否する", () => {
+    const startDocument = JSON.parse(
+      readPublicFile("/master-data/instructions/start.json"),
+    ) as { payload: { implementationId: string } };
+    startDocument.payload.implementationId = "end";
+    vi.spyOn(console, "error").mockImplementation(() => undefined);
+
+    expect(() =>
+      parseEditorMasterData(readPublicFile("/master-data/manifest.json"), [
+        {
+          path: "/master-data/instructions/start.json",
+          json: JSON.stringify(startDocument),
+        },
+      ]),
+    ).toThrow("Start Instruction Definition is missing or invalid");
+  });
+
   it("ブラウザ読込ではInstruction manifestに記載されたファイルだけを取得する", async () => {
     const responses = new Map<string, string>([
       [

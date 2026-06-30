@@ -559,7 +559,11 @@ export const validateProgram = (
     }
   });
 
-  if (validNodeIds && validStartNode) {
+  if (
+    validNodeIds &&
+    validStartNode &&
+    resolved.size === program.nodes.length
+  ) {
     const instructionMap = new Map(
       [...resolved].map(([nodeId, instruction]) => [
         program.nodes.find(({ id }) => id === nodeId)!.instructionId,

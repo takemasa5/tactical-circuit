@@ -222,6 +222,7 @@ describe("ProgramEditor", () => {
     const { container } = renderEditor();
 
     expect(screen.getByText("Error 1 / Warning 0")).toBeInTheDocument();
+    expect(screen.getByText("Error", { exact: true })).toBeInTheDocument();
     expect(
       container.querySelector(".program-node.validation-error"),
     ).not.toBeNull();
