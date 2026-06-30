@@ -31,6 +31,7 @@ export function App() {
       <ProgramEditor
         instructions={masterData.instructions}
         startInstructionId={masterData.startInstructionId}
+        repository={masterData.repository}
       />
     );
   }
@@ -38,7 +39,7 @@ export function App() {
   return (
     <main className="loading-shell">
       <section className="loading-panel" aria-labelledby="app-title">
-        <p className="eyebrow">PROGRAM EDITOR / PHASE 2</p>
+        <p className="eyebrow">PROGRAM EDITOR / PHASE 3</p>
         <h1 id="app-title">Tactical Circuit</h1>
         <p role={error === null ? "status" : "alert"}>
           {error ?? "Master Dataを読み込んでいます…"}

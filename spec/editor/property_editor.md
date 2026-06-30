@@ -56,6 +56,8 @@ Phase 2で最低限提供する入力は以下とする。
 
 読込済みProgramにInstruction Definitionで未定義のParameter IDが存在する場合、その値を削除せず、読み取り専用の未定義項目として表示する。
 
+Parameter名へマウスポインターを重ねた場合、対応するParameter Definitionの`description`をツールチップとして表示する。説明表示はParameter Valueを変更しない。
+
 ---
 
 # コメント変更

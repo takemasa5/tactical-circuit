@@ -7,13 +7,17 @@
     "node": ">=24 <25"
   },
   "scripts": {
+    "generate:instruction-manifest": "node scripts/generate-instruction-manifest.mjs",
+    "predev": "npm run generate:instruction-manifest",
     "dev": "vite",
+    "prebuild": "npm run generate:instruction-manifest",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
     "typecheck": "tsc -b",
     "lint": "eslint .",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
+    "pretest": "npm run generate:instruction-manifest",
     "test": "vitest run",
     "test:watch": "vitest"
   },

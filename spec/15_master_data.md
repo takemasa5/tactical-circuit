@@ -87,6 +87,8 @@ masterdata/
 
 各データ種別フォルダ直下の`.json`ファイルをすべて読み込む。子フォルダは読み込まない。
 
+ブラウザからファイルシステムの一覧を取得しない。Instruction Definitionについては、開発サーバー起動前とProduction build前にNode.jsスクリプトが`public/master-data/instructions`直下を列挙し、同フォルダの`manifest.json`へ対象ファイル名をASCII文字列昇順で出力する。ブラウザは生成されたmanifestに記載されたJSONを読み込む。Instruction Definitionを追加または削除した場合は、開発サーバーを再起動するかProduction buildを再実行する。
+
 ファイル名は識別、参照解決、処理順に使用しない。ファイル名は`{uuid}.json`を推奨するが、Master DataのIDはJSON内の`id`を正とする。
 
 1ファイルへ複数定義を格納する形式は将来拡張とし、初期バージョンでは扱わない。
@@ -300,6 +302,8 @@ Data Repositoryは以下の順序でMaster Dataを読み込む。
 9. すべての検証成功後に読み取り専用Data Repositoryを公開する
 
 検証途中の不完全なData Repositoryを他モジュールへ公開しない。
+
+Master Dataのmanifest生成処理と読込処理は開始と正常終了をログへ記録する。ファイル取得、JSON構造検証、意味検証のいずれかに失敗した場合は、対象ファイル、エラーコード、フィールドパス、期待値を含む原因調査可能なエラーログを記録する。
 
 ---
 

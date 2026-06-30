@@ -4,7 +4,7 @@
   "payload": {
     "id": "instruction_2c6ea7f1-5e38-4b65-8e3a-2a5d70f2a110",
     "displayName": "Move Backward",
-    "description": "Requests backward movement",
+    "description": "自機を後退させます",
     "enabled": true,
     "implementationId": "move_backward",
     "category": "action",
@@ -12,7 +12,7 @@
       {
         "id": "speed",
         "displayName": "Speed",
-        "description": "Requested backward speed",
+        "description": "後退する速度",
         "valueType": "speed",
         "required": true,
         "defaultValue": 100,
@@ -24,7 +24,7 @@
       {
         "id": "next",
         "displayName": "Next",
-        "description": "Instruction after the movement request",
+        "description": "次のノード",
         "required": true,
         "displayOrder": 0
       }

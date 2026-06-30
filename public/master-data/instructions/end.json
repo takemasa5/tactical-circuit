@@ -4,7 +4,7 @@
   "payload": {
     "id": "instruction_6ba7b810-9dad-41d1-80b4-00c04fd430c8",
     "displayName": "End",
-    "description": "Ends AI execution for the current tick",
+    "description": "このTickのAI処理を終了させます",
     "enabled": true,
     "implementationId": "end",
     "category": "control",

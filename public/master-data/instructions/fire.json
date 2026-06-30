@@ -4,35 +4,16 @@
   "payload": {
     "id": "instruction_f47ac10b-58cc-4372-a567-0e02b2c3d479",
     "displayName": "Fire",
-    "description": "Requests an attack with the selected weapon",
+    "description": "敵機の現在位置に向けて、選択している武器を発射します",
     "enabled": true,
     "implementationId": "fire",
     "category": "action",
-    "parameters": [
-      {
-        "id": "weapon",
-        "displayName": "Weapon",
-        "description": "Weapon used for the attack",
-        "valueType": "master_data_reference",
-        "required": true,
-        "referenceDataType": "weapon"
-      },
-      {
-        "id": "direction",
-        "displayName": "Direction",
-        "description": "Attack direction in degrees",
-        "valueType": "degree",
-        "required": true,
-        "defaultValue": 0,
-        "minValue": 0,
-        "maxValue": 359
-      }
-    ],
+    "parameters": [],
     "outputPaths": [
       {
         "id": "next",
         "displayName": "Next",
-        "description": "Instruction after the attack request",
+        "description": "次のノード",
         "required": true,
         "displayOrder": 0
       }
