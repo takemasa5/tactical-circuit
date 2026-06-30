@@ -18,6 +18,7 @@ export type MasterDataManifest = {
 export type MasterDataDocument = {
   readonly dataType: MasterDataType;
   readonly json: string;
+  readonly sourcePath?: string;
 };
 
 const manifestValidator = compileJsonSchema<MasterDataManifest>({
@@ -41,6 +42,11 @@ export const loadMasterDataDefinition = <TType extends MasterDataType>(
     getMasterDataValidator(document.dataType),
   );
   if (!result.success) {
+    console.error("[master-data] definition validation failed", {
+      sourcePath: document.sourcePath ?? null,
+      dataType: document.dataType,
+      errors: result.errors,
+    });
     return result;
   }
   return { success: true, data: result.data.payload };
@@ -54,12 +60,19 @@ export const loadDataRepository = (
   readonly masterDataVersion: FormatVersion;
   readonly repository: DataRepository;
 }> => {
+  console.info("[master-data] repository load start", {
+    documentCount: documents.length,
+    sourcePaths: documents.map(({ sourcePath }) => sourcePath ?? null),
+  });
   const manifest = loadJsonEnvelope(
     manifestJson,
     "master_data_manifest",
     manifestValidator,
   );
   if (!manifest.success) {
+    console.error("[master-data] manifest validation failed", {
+      errors: manifest.errors,
+    });
     return manifest;
   }
 
@@ -77,14 +90,30 @@ export const loadDataRepository = (
     }
   });
   if (errors.length > 0) {
+    console.error("[master-data] definition load failed", { errors });
     return { success: false, errors };
   }
 
   const repository = createDataRepository(entries, implementationIds);
   if (!repository.success) {
+    console.error("[master-data] repository validation failed", {
+      errors: repository.errors.map((validationError) => {
+        const definitionIndex = Number(
+          /^\/definitions\/(\d+)/.exec(validationError.path)?.[1] ?? -1,
+        );
+        return {
+          sourcePath: documents[definitionIndex]?.sourcePath ?? null,
+          ...validationError,
+        };
+      }),
+    });
     return repository;
   }
 
+  console.info("[master-data] repository load complete", {
+    documentCount: documents.length,
+    masterDataVersion: manifest.data.payload.masterDataVersion,
+  });
   return {
     success: true,
     data: {

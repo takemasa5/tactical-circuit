@@ -4,7 +4,7 @@
   "payload": {
     "id": "instruction_7b13fc46-a38d-40ba-d38f-7fa2c5e7f665",
     "displayName": "CALL",
-    "description": "Calls the target Node and stores the return destination",
+    "description": "サブルーチンを呼び出します",
     "enabled": true,
     "implementationId": "call",
     "category": "branch",
@@ -12,7 +12,7 @@
       {
         "id": "targetNodeId",
         "displayName": "Target Node",
-        "description": "Node called by this instruction",
+        "description": "サブルーチンとして呼び出すノード",
         "valueType": "node_reference",
         "required": true
       }
@@ -21,7 +21,7 @@
       {
         "id": "next",
         "displayName": "Return To",
-        "description": "Node executed after RETURN",
+        "description": "RETURNノードで復帰するノード",
         "required": true,
         "displayOrder": 0
       }

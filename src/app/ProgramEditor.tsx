@@ -144,11 +144,13 @@ const isTextInputTarget = (
 
 const TextCommitField = ({
   label,
+  description,
   value,
   multiline = false,
   onCommit,
 }: {
   readonly label: string;
+  readonly description?: string;
   readonly value: string;
   readonly multiline?: boolean;
   readonly onCommit: (value: string) => void;
@@ -168,7 +170,7 @@ const TextCommitField = ({
   );
   return (
     <label className="field">
-      <span>{label}</span>
+      <span title={description}>{label}</span>
       {field}
     </label>
   );
@@ -201,7 +203,7 @@ const ParameterField = ({
   if (definition.valueType === "boolean") {
     return (
       <label className="field field-inline">
-        <span>{definition.displayName}</span>
+        <span title={definition.description}>{definition.displayName}</span>
         <input
           type="checkbox"
           checked={value === true}
@@ -213,7 +215,7 @@ const ParameterField = ({
   if (definition.valueType === "enum") {
     return (
       <label className="field">
-        <span>{definition.displayName}</span>
+        <span title={definition.description}>{definition.displayName}</span>
         <select
           value={stringValue}
           onChange={(event) => onCommit(event.target.value)}
@@ -232,6 +234,7 @@ const ParameterField = ({
     return (
       <TextCommitField
         label={definition.displayName}
+        description={definition.description}
         value={typeof value === "number" ? String(value) : ""}
         onCommit={(draft) => {
           if (draft === "") onCommit(undefined);
@@ -250,7 +253,7 @@ const ParameterField = ({
         : "";
     return (
       <label className="field">
-        <span>{definition.displayName}</span>
+        <span title={definition.description}>{definition.displayName}</span>
         <select
           value={selectedNodeId}
           onChange={(event) =>
@@ -292,6 +295,7 @@ const ParameterField = ({
   return (
     <TextCommitField
       label={definition.displayName}
+      description={definition.description}
       value={referenceValue}
       onCommit={(draft) => {
         if (draft === "") {
@@ -992,6 +996,7 @@ export function ProgramEditor({
               className="instruction-card"
               type="button"
               key={instruction.id}
+              title={instruction.description}
               onClick={() => handleAddNode(instruction)}
             >
               <strong>{instruction.displayName}</strong>
@@ -1044,30 +1049,47 @@ export function ProgramEditor({
                         source.id,
                         outputPathId,
                       );
+                      const outputPath = instructionMap
+                        .get(source.instructionId)
+                        ?.outputPaths.find(({ id }) => id === outputPathId);
                       return [
-                        <line
-                          key={`${source.id}:${outputPathId}`}
-                          data-source-node-id={source.id}
-                          data-output-path-id={outputPathId}
-                          className={
-                            selection.connection?.sourceNodeId === source.id &&
-                            selection.connection.outputPathId === outputPathId
-                              ? "connection selected"
-                              : "connection"
-                          }
-                          x1={sourcePosition.x}
-                          y1={sourcePosition.y}
-                          x2={targetPosition.x}
-                          y2={targetPosition.y + INPUT_PORT_CENTER_Y}
-                          onClick={() =>
-                            setSelection(
-                              selectConnection({
-                                sourceNodeId: source.id,
-                                outputPathId,
-                              }),
-                            )
-                          }
-                        />,
+                        <g key={`${source.id}:${outputPathId}`}>
+                          {outputPath?.description !== undefined && (
+                            <title>{outputPath.description}</title>
+                          )}
+                          <line
+                            data-source-node-id={source.id}
+                            data-output-path-id={outputPathId}
+                            className="connection-hit-area"
+                            x1={sourcePosition.x}
+                            y1={sourcePosition.y}
+                            x2={targetPosition.x}
+                            y2={targetPosition.y + INPUT_PORT_CENTER_Y}
+                            onClick={() =>
+                              setSelection(
+                                selectConnection({
+                                  sourceNodeId: source.id,
+                                  outputPathId,
+                                }),
+                              )
+                            }
+                          />
+                          <line
+                            data-source-node-id={source.id}
+                            data-output-path-id={outputPathId}
+                            className={
+                              selection.connection?.sourceNodeId ===
+                                source.id &&
+                              selection.connection.outputPathId === outputPathId
+                                ? "connection selected"
+                                : "connection"
+                            }
+                            x1={sourcePosition.x}
+                            y1={sourcePosition.y}
+                            x2={targetPosition.x}
+                            y2={targetPosition.y + INPUT_PORT_CENTER_Y}
+                          />
+                        </g>,
                       ];
                     },
                   ),
@@ -1129,6 +1151,7 @@ export function ProgramEditor({
                         : ""
                     }`}
                     key={node.id}
+                    title={instruction?.description}
                     style={{ left: position.x, top: position.y }}
                     onPointerDown={(event) => startDrag(event, node.id)}
                     onPointerMove={updateDrag}
@@ -1170,6 +1193,7 @@ export function ProgramEditor({
                               : ""
                           }`}
                           key={outputPath.id}
+                          title={outputPath.description}
                           onPointerDown={(event) => {
                             event.stopPropagation();
                             beginConnection(node.id, outputPath.id);

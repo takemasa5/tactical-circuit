@@ -212,6 +212,23 @@ const validateStartNode = (
   resolved: ReadonlyMap<NodeId, InstructionDefinition>,
   diagnostics: ValidationDiagnostic[],
 ): boolean => {
+  let valid = true;
+  const referencedNode = program.nodes.find(
+    ({ id }) => id === program.startNodeId,
+  );
+  if (referencedNode === undefined) {
+    diagnostics.push(
+      diagnostic(
+        program,
+        "error",
+        "invalid_start_node_id",
+        "startNodeIdの参照先が存在しません",
+        null,
+        "startNodeId",
+      ),
+    );
+    valid = false;
+  }
   const startNodes = program.nodes
     .filter(({ id }) => resolved.get(id)?.implementationId === "start")
     .sort((left, right) => compareNodeIds(left.id, right.id));
@@ -242,23 +259,7 @@ const validateStartNode = (
     );
     return false;
   }
-  const referencedNode = program.nodes.find(
-    ({ id }) => id === program.startNodeId,
-  );
-  if (referencedNode === undefined) {
-    diagnostics.push(
-      diagnostic(
-        program,
-        "error",
-        "invalid_start_node_id",
-        "startNodeIdの参照先が存在しません",
-        null,
-        "startNodeId",
-      ),
-    );
-    return false;
-  }
-  if (referencedNode.id !== startNodes[0]!.id) {
+  if (referencedNode !== undefined && referencedNode.id !== startNodes[0]!.id) {
     diagnostics.push(
       diagnostic(
         program,
@@ -272,7 +273,7 @@ const validateStartNode = (
     );
     return false;
   }
-  return true;
+  return valid;
 };
 
 const validateReferenceTarget = (
@@ -389,8 +390,7 @@ const validateParameters = (
       if (typeof value === "number") {
         const outOfRange =
           (definition.minValue !== undefined && value < definition.minValue) ||
-          (definition.maxValue !== undefined && value > definition.maxValue) ||
-          (definition.valueType === "degree" && (value < 0 || value >= 360));
+          (definition.maxValue !== undefined && value > definition.maxValue);
         if (outOfRange) {
           diagnostics.push(
             diagnostic(
@@ -454,12 +454,24 @@ const validateConnections = (
   const nodeIds = new Set(program.nodes.map(({ id }) => id));
   program.nodes.forEach((node) => {
     const instruction = resolved.get(node.id);
-    if (instruction === undefined) return;
-    const outputPaths = new Map(
-      instruction.outputPaths.map((outputPath) => [outputPath.id, outputPath]),
-    );
     Object.entries(node.connections).forEach(([outputPathId, targetNodeId]) => {
       const fieldPath = `connections.${outputPathId}`;
+      if (!nodeIds.has(targetNodeId)) {
+        diagnostics.push(
+          diagnostic(
+            program,
+            "error",
+            "invalid_connection_target",
+            "接続先Nodeが存在しません",
+            node.id,
+            fieldPath,
+          ),
+        );
+      }
+      if (instruction === undefined) return;
+      const outputPaths = new Set(
+        instruction.outputPaths.map((outputPath) => outputPath.id),
+      );
       if (instruction.outputPaths.length === 0) {
         diagnostics.push(
           diagnostic(
@@ -483,19 +495,8 @@ const validateConnections = (
           ),
         );
       }
-      if (!nodeIds.has(targetNodeId)) {
-        diagnostics.push(
-          diagnostic(
-            program,
-            "error",
-            "invalid_connection_target",
-            "接続先Nodeが存在しません",
-            node.id,
-            fieldPath,
-          ),
-        );
-      }
     });
+    if (instruction === undefined) return;
     instruction.outputPaths.forEach((outputPath) => {
       if (node.connections[outputPath.id] !== undefined) return;
       diagnostics.push(

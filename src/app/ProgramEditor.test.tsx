@@ -46,10 +46,12 @@ const detectEnemyInstructionId =
   "instruction_4e80c913-705a-4d87-a05c-4c7f92b4c332" as InstructionId;
 const moveForwardInstructionId =
   "instruction_1b671a64-40d5-491e-99b0-da01ff1f3341" as InstructionId;
+const turnInstructionId =
+  "instruction_3d7fb802-6f49-4c76-9f4b-3b6e81a3b221" as InstructionId;
 const outputPath = {
   id: "next",
   displayName: "Next",
-  description: "",
+  description: "次の命令へ進みます",
   required: true,
   displayOrder: 0 as Int32,
 };
@@ -57,7 +59,7 @@ const instructions: readonly InstructionDefinition[] = [
   {
     id: startInstructionId,
     displayName: "Start",
-    description: "",
+    description: "Programの開始地点です",
     enabled: true,
     implementationId: "start",
     category: "control",
@@ -88,7 +90,7 @@ const instructions: readonly InstructionDefinition[] = [
       {
         id: "detected",
         displayName: "Detected",
-        description: "",
+        description: "敵を検出した場合に進みます",
         required: true,
         displayOrder: 0 as Int32,
       },
@@ -113,10 +115,30 @@ const instructions: readonly InstructionDefinition[] = [
       {
         id: "speed",
         displayName: "Speed",
-        description: "",
+        description: "移動速度を指定します",
         valueType: "speed",
         required: true,
         defaultValue: 100,
+      },
+    ],
+    outputPaths: [outputPath],
+    cpuCost: 1 as Int32,
+  },
+  {
+    id: turnInstructionId,
+    displayName: "Turn",
+    description: "",
+    enabled: true,
+    implementationId: "turn",
+    category: "action",
+    parameters: [
+      {
+        id: "degree",
+        displayName: "Degree",
+        description: "",
+        valueType: "degree",
+        required: true,
+        defaultValue: 90,
       },
     ],
     outputPaths: [outputPath],
@@ -166,8 +188,33 @@ describe("ProgramEditor", () => {
     renderEditor();
 
     expect(screen.getByText("node_1")).toBeInTheDocument();
+    expect(screen.getByText("node_1").closest("article")).toHaveAttribute(
+      "title",
+      "Programの開始地点です",
+    );
+    expect(screen.getByRole("button", { name: "Next" })).toHaveAttribute(
+      "title",
+      "次の命令へ進みます",
+    );
+    expect(
+      screen.getByRole("button", { name: "Startcontrol" }),
+    ).toHaveAttribute("title", "Programの開始地点です");
     await user.click(screen.getByRole("button", { name: "Endcontrol" }));
     expect(screen.getAllByText("node_2")).not.toHaveLength(0);
+  });
+
+  it("Parameter名にParameter Definitionの説明を表示する", async () => {
+    const user = userEvent.setup();
+    renderEditor();
+
+    await user.click(
+      screen.getByRole("button", { name: "Move Forwardaction" }),
+    );
+
+    expect(screen.getByText("Speed")).toHaveAttribute(
+      "title",
+      "移動速度を指定します",
+    );
   });
 
   it("編集後の診断集計を更新し、診断対象Nodeを強調する", async () => {
@@ -190,6 +237,22 @@ describe("ProgramEditor", () => {
 
     expect(screen.getByText("Error 0 / Warning 0")).toBeInTheDocument();
     expect(screen.getByText("問題はありません")).toBeInTheDocument();
+  });
+
+  it("0以上360未満の範囲外の角度を値域エラーにしない", async () => {
+    const user = userEvent.setup();
+    renderEditor();
+
+    await user.click(screen.getByRole("button", { name: "Turnaction" }));
+    const degree = screen.getByRole("textbox", { name: "Degree" });
+    await user.clear(degree);
+    await user.type(degree, "1000");
+    await user.tab();
+
+    expect(degree).toHaveValue("1000");
+    expect(
+      screen.queryByText("Parameter Valueが値域外です"),
+    ).not.toBeInTheDocument();
   });
 
   it("Nodeを接続し、UndoとRedoを実行できる", async () => {
@@ -290,10 +353,19 @@ describe("ProgramEditor", () => {
     const notDetected = container.querySelector(
       'line.connection[data-output-path-id="not_detected"]',
     );
+    const detectedHitArea = container.querySelector(
+      'line.connection-hit-area[data-output-path-id="detected"]',
+    );
     expect(detected).toHaveAttribute("x1", "510");
     expect(detected).toHaveAttribute("y1", "172");
     expect(notDetected).toHaveAttribute("x1", "510");
     expect(notDetected).toHaveAttribute("y1", "200");
+
+    fireEvent.click(detectedHitArea!);
+    expect(detected).toHaveClass("selected");
+    expect(
+      detectedHitArea?.parentElement?.querySelector("title"),
+    ).toHaveTextContent("敵を検出した場合に進みます");
   });
 
   it("キャンバス全体をZoom InとZoom Outする", async () => {

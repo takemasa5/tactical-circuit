@@ -4,7 +4,7 @@
   "payload": {
     "id": "instruction_3d7fb802-6f49-4c76-9f4b-3b6e81a3b221",
     "displayName": "Turn",
-    "description": "Requests a turn in the selected direction",
+    "description": "指定方向にその場で旋回します",
     "enabled": true,
     "implementationId": "turn",
     "category": "action",
@@ -12,7 +12,7 @@
       {
         "id": "direction",
         "displayName": "Direction",
-        "description": "Direction of rotation",
+        "description": "旋回方向",
         "valueType": "enum",
         "required": true,
         "defaultValue": "left",
@@ -21,19 +21,17 @@
       {
         "id": "degree",
         "displayName": "Degree",
-        "description": "Requested rotation angle",
+        "description": "旋回する角度",
         "valueType": "degree",
         "required": true,
-        "defaultValue": 90,
-        "minValue": 0,
-        "maxValue": 359
+        "defaultValue": 90
       }
     ],
     "outputPaths": [
       {
         "id": "next",
         "displayName": "Next",
-        "description": "Instruction after the turn request",
+        "description": "次のノード",
         "required": true,
         "displayOrder": 0
       }

@@ -172,6 +172,32 @@ const callInstruction: InstructionDefinition = {
   ],
 };
 
+const degreeInstruction: InstructionDefinition = {
+  ...actionInstruction,
+  id: instructionId("7"),
+  displayName: "Turn",
+  implementationId: "turn",
+  parameters: [
+    {
+      id: "degree",
+      displayName: "Degree",
+      description: "",
+      valueType: "degree",
+      required: true,
+      defaultValue: 0,
+    },
+  ],
+  outputPaths: [
+    {
+      id: "next",
+      displayName: "Next",
+      description: "",
+      required: true,
+      displayOrder: 0 as Int32,
+    },
+  ],
+};
+
 const instructions = [
   startInstruction,
   endInstruction,
@@ -179,6 +205,7 @@ const instructions = [
   branchInstruction,
   referenceInstruction,
   callInstruction,
+  degreeInstruction,
 ];
 
 const repository = (() => {
@@ -249,6 +276,24 @@ describe("validateProgram", () => {
       "optional_connection_missing",
       "unreachable_node",
     ]);
+  });
+
+  it.each([-90, 1000])("角度%dを値域エラーにしない", (degree) => {
+    const target = program([
+      node(1, startInstruction, { next: nodeId(2) }),
+      node(
+        2,
+        degreeInstruction,
+        { next: nodeId(3) },
+        { degree: degree as Int32 },
+      ),
+      node(3, endInstruction),
+    ]);
+
+    expect(validateProgram(target, repository)).toEqual({
+      isValid: true,
+      diagnostics: [],
+    });
   });
 
   it("到達可能な終了経路のない自己ループをWarningにする", () => {
@@ -346,6 +391,34 @@ describe("validateProgram", () => {
         ({ code }) => code === "start_node_mismatch",
       ),
     ).toBe(true);
+  });
+
+  it("Start命令がなくてもstartNodeIdの参照不在を独立して検出する", () => {
+    const target = {
+      ...program([node(1, endInstruction)]),
+      startNodeId: nodeId(99),
+    };
+
+    expect(
+      validateProgram(target, repository).diagnostics.map(({ code }) => code),
+    ).toEqual(["invalid_start_node_id", "missing_start_node"]);
+  });
+
+  it("未知命令でも接続先Nodeの存在確認を継続する", () => {
+    const unknownInstructionId = instructionId("999");
+    const target = program([
+      node(1, startInstruction, { next: nodeId(2) }),
+      {
+        id: nodeId(2),
+        instructionId: unknownInstructionId,
+        parameterValues: {},
+        connections: { next: nodeId(99) },
+      },
+    ]);
+
+    expect(
+      validateProgram(target, repository).diagnostics.map(({ code }) => code),
+    ).toEqual(["invalid_connection_target", "unknown_instruction_id"]);
   });
 
   it("列挙値、Node参照、Master Data参照の不正を検出する", () => {

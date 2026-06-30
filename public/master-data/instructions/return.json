@@ -4,7 +4,7 @@
   "payload": {
     "id": "instruction_8c240d57-b49e-41cb-e490-80b3d6f80776",
     "displayName": "RETURN",
-    "description": "Returns to the latest destination stored by CALL",
+    "description": "サブルーチンを終了させ、呼び出しノードに戻します",
     "enabled": true,
     "implementationId": "return",
     "category": "branch",

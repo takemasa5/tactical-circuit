@@ -50,6 +50,8 @@ Editorは編集後とProgram読込後にProgram全体を検証し、以下を表
 * `nodeId`が示す主Nodeの強調
 * `relatedNodeIds`が示す関連Nodeの同時強調
 
+ErrorまたはWarningがあるNodeは、枠線だけでなく背景色と文字色もseverityに応じて変更する。選択状態はseverityの色と異なる外周線で表示し、診断状態と選択状態を同時に識別できるようにする。
+
 診断一覧からNode単位の診断を選択した場合は、`nodeId`と`relatedNodeIds`のNodeを同時に選択する。Program全体の診断はNode選択を変更しない。
 
 ValidatorのErrorが存在しても編集と保存は継続できる。AI実行だけを禁止する。WarningはAI実行を禁止しない。

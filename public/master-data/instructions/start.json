@@ -4,7 +4,7 @@
   "payload": {
     "id": "instruction_550e8400-e29b-41d4-a716-446655440000",
     "displayName": "Start",
-    "description": "AI execution entry point",
+    "description": "AI処理の開始ノードです",
     "enabled": true,
     "implementationId": "start",
     "category": "control",
@@ -13,7 +13,7 @@
       {
         "id": "next",
         "displayName": "Next",
-        "description": "First instruction",
+        "description": "次のノード",
         "required": true,
         "displayOrder": 0
       }

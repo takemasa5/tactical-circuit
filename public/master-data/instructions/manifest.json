@@ -1,0 +1,14 @@
+{
+  "files": [
+    "call.json",
+    "detect_bullet.json",
+    "detect_enemy.json",
+    "end.json",
+    "fire.json",
+    "move_backward.json",
+    "move_forward.json",
+    "return.json",
+    "start.json",
+    "turn.json"
+  ]
+}

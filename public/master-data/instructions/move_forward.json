@@ -4,7 +4,7 @@
   "payload": {
     "id": "instruction_1b671a64-40d5-491e-99b0-da01ff1f3341",
     "displayName": "Move Forward",
-    "description": "Requests forward movement",
+    "description": "自機を前進させます",
     "enabled": true,
     "implementationId": "move_forward",
     "category": "action",
@@ -12,7 +12,7 @@
       {
         "id": "speed",
         "displayName": "Speed",
-        "description": "Requested forward speed",
+        "description": "前進する速度",
         "valueType": "speed",
         "required": true,
         "defaultValue": 100,
@@ -24,7 +24,7 @@
       {
         "id": "next",
         "displayName": "Next",
-        "description": "Instruction after the movement request",
+        "description": "次のノード",
         "required": true,
         "displayOrder": 0
       }

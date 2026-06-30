@@ -2,20 +2,20 @@
   "dataType": "instruction",
   "formatVersion": "0.1.1",
   "payload": {
-    "id": "instruction_4e80c913-705a-4d87-a05c-4c7f92b4c332",
-    "displayName": "Detect Enemy",
-    "description": "範囲内に敵機が存在するかどうかを判断します",
+    "id": "instruction_5f91da24-816b-4e98-b16d-5d80a3c5d443",
+    "displayName": "Detect Bullet",
+    "description": "範囲内に弾が存在するかどうかを判断します。敵弾、自弾のどちらにも反応します",
     "enabled": true,
-    "implementationId": "detect_enemy",
-    "category": "sensor",
+    "implementationId": "detect_bullet",
+    "category": "branch",
     "parameters": [
       {
-        "id": "distance",
-        "displayName": "Distance",
+        "id": "threshold",
+        "displayName": "Threshold",
         "description": "判定距離",
         "valueType": "distance",
         "required": true,
-        "defaultValue": 1000,
+        "defaultValue": 500,
         "minValue": 0,
         "maxValue": 10000
       },

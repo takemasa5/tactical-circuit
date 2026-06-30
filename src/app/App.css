@@ -217,7 +217,14 @@ h2 {
 .connection {
   stroke: #527274;
   stroke-width: 3;
+  pointer-events: none;
+}
+
+.connection-hit-area {
+  stroke: transparent;
+  stroke-width: 16;
   pointer-events: stroke;
+  cursor: pointer;
 }
 
 .connection.selected {
@@ -254,20 +261,35 @@ h2 {
 
 .program-node.selected {
   border-color: var(--accent);
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
   box-shadow: 0 0 0 2px rgba(85, 224, 172, 0.17);
 }
 
 .program-node.validation-warning {
   border-color: var(--warning);
+  color: #fff4ce;
+  background: #4a3b19;
 }
 
 .program-node.validation-error {
   border-color: var(--error);
+  color: #ffe9e7;
+  background: #51262a;
 }
 
 .program-node.selected.validation-warning,
 .program-node.selected.validation-error {
+  outline-color: var(--accent);
   box-shadow: 0 0 0 2px rgba(85, 224, 172, 0.3);
+}
+
+.program-node.validation-warning small {
+  color: #f8dda0;
+}
+
+.program-node.validation-error small {
+  color: #ffc6c1;
 }
 
 .program-node header {

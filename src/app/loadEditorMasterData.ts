@@ -1,68 +1,30 @@
-import { loadDataRepository } from "../domain/masterData/loader";
+import {
+  loadDataRepository,
+  loadMasterDataDefinition,
+} from "../domain/masterData/loader";
 import type { DataRepository } from "../domain/masterData/repository";
 import type {
   InstructionDefinition,
   InstructionId,
 } from "../domain/masterData/models";
 
+const MASTER_DATA_MANIFEST_PATH = "/master-data/manifest.json";
+const INSTRUCTION_MANIFEST_PATH = "/master-data/instructions/manifest.json";
+const INSTRUCTION_FILE_PATTERN = /^[^/\\]+\.json$/;
+
 export const START_INSTRUCTION_ID =
   "instruction_550e8400-e29b-41d4-a716-446655440000" as InstructionId;
 
-export const EDITOR_MASTER_DATA_DOCUMENTS = [
-  {
-    dataType: "instruction" as const,
-    path: "/master-data/instructions/start.json",
-  },
-  {
-    dataType: "instruction" as const,
-    path: "/master-data/instructions/end.json",
-  },
-  {
-    dataType: "instruction" as const,
-    path: "/master-data/instructions/fire.json",
-  },
-  {
-    dataType: "instruction" as const,
-    path: "/master-data/instructions/move_forward.json",
-  },
-  {
-    dataType: "instruction" as const,
-    path: "/master-data/instructions/move_backward.json",
-  },
-  {
-    dataType: "instruction" as const,
-    path: "/master-data/instructions/turn.json",
-  },
-  {
-    dataType: "instruction" as const,
-    path: "/master-data/instructions/detect_enemy.json",
-  },
-  {
-    dataType: "instruction" as const,
-    path: "/master-data/instructions/compare_distance.json",
-  },
-  {
-    dataType: "instruction" as const,
-    path: "/master-data/instructions/call.json",
-  },
-  {
-    dataType: "instruction" as const,
-    path: "/master-data/instructions/return.json",
-  },
-] as const;
+/** build前に生成するInstruction Definitionファイル一覧。 */
+export type InstructionDocumentManifest = {
+  readonly files: readonly string[];
+};
 
-const editorImplementationIds = new Set([
-  "start",
-  "end",
-  "fire",
-  "move_forward",
-  "move_backward",
-  "turn",
-  "detect_enemy",
-  "compare_distance",
-  "call",
-  "return",
-]);
+/** 取得元ファイルを保持するEditor用Master Data文書。 */
+export type EditorMasterDataDocument = {
+  readonly path: string;
+  readonly json: string;
+};
 
 /** `spec/editor/phase2.md`と`spec/editor/validator.md`のEditor起動用Master Data。 */
 export type EditorMasterData = {
@@ -71,21 +33,80 @@ export type EditorMasterData = {
   readonly repository: DataRepository;
 };
 
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === "object" && value !== null && !Array.isArray(value);
+
+export const parseInstructionDocumentManifest = (
+  json: string,
+): InstructionDocumentManifest => {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(json) as unknown;
+  } catch (error) {
+    throw new Error("Instruction manifest is not valid JSON", { cause: error });
+  }
+  if (!isRecord(parsed) || !Array.isArray(parsed.files)) {
+    throw new Error("Instruction manifest must contain a files array");
+  }
+  const files = parsed.files;
+  if (
+    files.some(
+      (file) =>
+        typeof file !== "string" ||
+        !INSTRUCTION_FILE_PATTERN.test(file) ||
+        file === "manifest.json",
+    )
+  ) {
+    throw new Error("Instruction manifest contains an invalid file name");
+  }
+  if (new Set(files).size !== files.length) {
+    throw new Error("Instruction manifest contains duplicate file names");
+  }
+  return { files };
+};
+
+const collectEditorImplementationIds = (
+  documents: readonly EditorMasterDataDocument[],
+): ReadonlySet<string> => {
+  const implementationIds = new Set<string>();
+  const failedPaths: string[] = [];
+  documents.forEach((document) => {
+    const loaded = loadMasterDataDefinition({
+      dataType: "instruction",
+      json: document.json,
+      sourcePath: document.path,
+    });
+    if (loaded.success) implementationIds.add(loaded.data.implementationId);
+    else failedPaths.push(document.path);
+  });
+  if (failedPaths.length > 0) {
+    throw new Error(
+      `Instruction Definition validation failed: ${failedPaths.join(", ")}`,
+    );
+  }
+  return implementationIds;
+};
+
 /** 取得済みJSONをData Repositoryで検証してEditor入力へ変換する。 */
 export const parseEditorMasterData = (
   manifestJson: string,
-  documentJson: readonly string[],
+  documents: readonly EditorMasterDataDocument[],
 ): EditorMasterData => {
   const loaded = loadDataRepository(
     manifestJson,
-    EDITOR_MASTER_DATA_DOCUMENTS.map(({ dataType }, index) => ({
-      dataType,
-      json: documentJson[index] ?? "",
+    documents.map(({ path, json }) => ({
+      dataType: "instruction" as const,
+      json,
+      sourcePath: path,
     })),
-    editorImplementationIds,
+    collectEditorImplementationIds(documents),
   );
   if (!loaded.success) {
-    throw new Error("Master Dataの検証に失敗しました");
+    throw new Error(
+      `Master Data validation failed: ${loaded.errors
+        .map(({ code, path }) => `${code}@${path}`)
+        .join(", ")}`,
+    );
   }
   return {
     instructions: loaded.data.repository.getAll("instruction"),
@@ -94,21 +115,68 @@ export const parseEditorMasterData = (
   };
 };
 
+const fetchText = async (path: string): Promise<string> => {
+  let response: Response;
+  try {
+    response = await fetch(path);
+  } catch (error) {
+    console.error("[editor-master-data] fetch failed", { path, error });
+    throw error;
+  }
+  if (!response.ok) {
+    const error = new Error(`HTTP ${response.status} ${response.statusText}`);
+    console.error("[editor-master-data] fetch failed", { path, error });
+    throw error;
+  }
+  try {
+    return await response.text();
+  } catch (error) {
+    console.error("[editor-master-data] response read failed", { path, error });
+    throw error;
+  }
+};
+
 /** Program Editorで使用する検証済みMaster Dataを読み込む。 */
 export const loadEditorMasterData = async (): Promise<EditorMasterData> => {
-  const [manifestResponse, ...documentResponses] = await Promise.all([
-    fetch("/master-data/manifest.json"),
-    ...EDITOR_MASTER_DATA_DOCUMENTS.map(({ path }) => fetch(path)),
-  ]);
-  if (
-    !manifestResponse.ok ||
-    documentResponses.some((response) => !response.ok)
-  ) {
-    throw new Error("Master Dataを取得できませんでした");
+  console.info("[editor-master-data] load start", {
+    masterDataManifestPath: MASTER_DATA_MANIFEST_PATH,
+    instructionManifestPath: INSTRUCTION_MANIFEST_PATH,
+  });
+  try {
+    const [manifestJson, instructionManifestJson] = await Promise.all([
+      fetchText(MASTER_DATA_MANIFEST_PATH),
+      fetchText(INSTRUCTION_MANIFEST_PATH),
+    ]);
+    let instructionManifest: InstructionDocumentManifest;
+    try {
+      instructionManifest = parseInstructionDocumentManifest(
+        instructionManifestJson,
+      );
+    } catch (error) {
+      console.error("[editor-master-data] instruction manifest invalid", {
+        path: INSTRUCTION_MANIFEST_PATH,
+        error,
+      });
+      throw error;
+    }
+    const paths = instructionManifest.files.map(
+      (file) => `/master-data/instructions/${file}`,
+    );
+    const jsonDocuments = await Promise.all(paths.map(fetchText));
+    const masterData = parseEditorMasterData(
+      manifestJson,
+      paths.map((path, index) => ({
+        path,
+        json: jsonDocuments[index] ?? "",
+      })),
+    );
+    console.info("[editor-master-data] load complete", {
+      instructionCount: masterData.instructions.length,
+      paths,
+    });
+    return masterData;
+  } catch (error) {
+    console.error("[editor-master-data] load failed", { error });
+    throw error;
   }
-  const manifestJson = await manifestResponse.text();
-  const documentJson = await Promise.all(
-    documentResponses.map((response) => response.text()),
-  );
-  return parseEditorMasterData(manifestJson, documentJson);
 };
