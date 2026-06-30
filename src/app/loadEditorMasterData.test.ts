@@ -45,6 +45,16 @@ describe("Editor Master Data", () => {
       instructionManifest.files.length,
     );
     expect(byImplementationId.get("fire")?.category).toBe("action");
+    expect(byImplementationId.get("detect_bullet")).toMatchObject({
+      id: "instruction_73d91875-a82c-4c91-b41f-c7598191bbff",
+      outputPaths: [
+        { id: "detected", description: "弾が範囲内に存在した場合" },
+        {
+          id: "not_detected",
+          description: "範囲内に弾が存在しなかった場合",
+        },
+      ],
+    });
     expect(byImplementationId.get("detect_enemy")?.outputPaths).toHaveLength(2);
     expect(byImplementationId.get("call")?.parameters[0]?.id).toBe(
       "targetNodeId",

@@ -2,7 +2,7 @@
   "dataType": "instruction",
   "formatVersion": "0.1.1",
   "payload": {
-    "id": "instruction_5f91da24-816b-4e98-b16d-5d80a3c5d443",
+    "id": "instruction_73d91875-a82c-4c91-b41f-c7598191bbff",
     "displayName": "Detect Bullet",
     "description": "範囲内に弾が存在するかどうかを判断します。敵弾、自弾のどちらにも反応します",
     "enabled": true,
@@ -40,14 +40,14 @@
       {
         "id": "detected",
         "displayName": "Detected",
-        "description": "敵機が範囲内に存在した場合",
+        "description": "弾が範囲内に存在した場合",
         "required": true,
         "displayOrder": 0
       },
       {
         "id": "not_detected",
         "displayName": "Not Detected",
-        "description": "範囲内に敵機が存在しなかった場合",
+        "description": "範囲内に弾が存在しなかった場合",
         "required": true,
         "displayOrder": 1
       }
