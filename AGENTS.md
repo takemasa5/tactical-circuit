@@ -185,3 +185,11 @@ AI Engineでは構造エラーを前提としない。
 ## Review guidelines
 
 - レビューコメントは日本語で書いてください。
+
+
+---
+## Loop Engineering
+
+ループエンジニアリングの依頼では、次の Skill を読むこと。
+
+- `.codex/skills/loop-engineering/SKILL.md`
