@@ -36,6 +36,10 @@ type MoveBackwardRequest = {
 
 `distance`にはParameter Valueをそのまま設定する。移動速度はRobotに装備されたEngine DefinitionからSimulatorが決定するため、行動要求へ含めない。
 
+現在のMove Backward行動と新しい要求は、`type`が`backward`であれば同一と判定する。`distance`は完了条件であり同一判定に使用しない。実行中に異なる`distance`のMove Backward要求を受けても新しい要求を無視し、現在の行動が保持する`distance`を変更しない。
+
+Move Backwardの実動作はキャンセル可能とする。異なる`type`の移動系要求を実動作中に受けた場合は、現在のMove Backward行動をキャンセルして事後動作へ移し、新しい要求を次動作として保持する。
+
 同一Tickですでに移動系行動要求が生成されている場合は、Move Backward命令の要求で上書きする。戦闘系行動要求は変更しない。
 
 ## CPU消費量
