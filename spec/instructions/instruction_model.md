@@ -329,7 +329,13 @@ RETURN命令はコールスタックをpopし、取得した復帰先Node IDを`
 
 行動命令は行動要求を生成するまでを担当する。残弾不足など、行動要求が現在のゲーム状態では実行できない場合、Simulatorはその要求を実行しない。これはAI命令の実行時エラーではない。
 
-空のコールスタックに対するRETURN、コールスタック上限を超えるpush、範囲外メモリインデックスへのアクセスを実行時エラーとする。
+次を実行時エラーとする。
+
+* 空のコールスタックに対するRETURN：`empty_call_stack`
+* コールスタック上限を超えるpush：`call_stack_overflow`
+* 範囲外メモリインデックスへのアクセス：`invalid_memory_access`
+* 共通契約に違反する命令実行結果：`invalid_instruction_result`
+* 命令実装の予期しない例外または内部エラー：`internal_instruction_error`
 
 実行時エラーになった命令は原子的に失敗する。
 
