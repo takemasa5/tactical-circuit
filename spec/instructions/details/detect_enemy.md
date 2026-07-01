@@ -22,7 +22,7 @@ ProgramはProgram Validatorを通過済みであることを前提とし、Param
 
 - 型: `distance`
 - 必須: true
-- 範囲: 0以上の符号付き32bit整数
+- 範囲: 0以上10000以下
 - 単位: ワールド座標系の距離
 
 対象の`distance`がこの値以下の場合に距離条件を満たす。境界値を含む。
