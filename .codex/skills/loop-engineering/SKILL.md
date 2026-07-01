@@ -1,6 +1,6 @@
 ---
 name: loop-engineering
-description: Use when running loop engineering for GitHub Issues and pull requests: select the next actionable Issue, skip blocked or question-labeled work, implement missing PRs, handle review comments, request Codex review, and merge when ready.
+description: "Use when running loop engineering for GitHub Issues and pull requests: select the next actionable Issue, skip blocked or question-labeled work, implement missing PRs, handle review comments, request Codex review, and merge when ready."
 ---
 
 # Loop Engineering
@@ -33,15 +33,20 @@ Continuously advance GitHub Issues by selecting an actionable Issue, implementin
 
 ## Review Feedback Workflow
 
-1. Inspect the pull request review comments.
-2. If there are no actionable review comments:
+1. Inspect the pull request head commit, review status, checks, and review comments.
+2. If review for the latest head commit is pending or has not run:
+   - Do not treat the absence of review comments as review completion.
+   - Wait for review completion before merging.
+3. If review for the latest head commit is complete, all checks pass, and there are no actionable or unclassified review comments:
    - Merge the pull request into `develop`.
    - Report that the Issue is complete.
-3. If there are actionable review comments:
+4. If there are actionable review comments:
    - Address the comments with minimal, focused changes.
    - Run appropriate tests, checks, or builds when possible.
    - Push the updates.
-4. If a review comment requires specification clarification:
+   - Comment `@codex review` on the pull request to request review of the updated head commit.
+   - Return to step 1 and do not merge until that review is complete.
+5. If a review comment requires specification clarification:
    - Add a comment explaining what needs clarification.
    - Add the `question` label to the pull request.
    - Stop work on that Issue and report the blocker.
