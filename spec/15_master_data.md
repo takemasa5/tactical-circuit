@@ -109,7 +109,9 @@ masterdata/
 }
 ```
 
-Master Dataの追加、削除、性能値、表示情報など内容を変更した場合は`masterDataVersion`のminorを1増加し、buildを1に戻す。
+初期公開に向けた開発期間中は、Master Dataの追加、削除、性能値、表示情報または構造を変更した場合も`masterDataVersion`を`0.1.1`に固定する。この期間は開発中のMaster Dataに対する後方互換性を保証しない。
+
+プロジェクトオーナーが初期公開とバージョン更新の開始を明示した後は、Master Dataの追加、削除、性能値、表示情報など内容を変更した場合に`masterDataVersion`のminorを1増加し、buildを1に戻す。
 
 Master DataのJSON構造など互換性を壊す変更でも、majorの固定期間中はmajorを変更しない。変更後のminorとbuildは、構造変更前にプロジェクトオーナーが決定する。majorはプロジェクトオーナーの明示的な指示がある場合のみ変更する。
 
@@ -193,7 +195,9 @@ Instruction Definitionの`cpuCost`はData Repositoryで0以上であることを
 * `size`
 * `slots`
 
-各Slot Definitionは`id`、`displayName`、`category`を持つ。`category`は`weapon`、`sensor`、`engine`、`armor`、`option`のいずれかとする。すべてのスロットは空を許容する。
+各Slot Definitionは`id`、`displayName`、`category`、任意の`weaponMount`を持つ。`category`は`weapon`、`sensor`、`engine`、`armor`、`option`のいずれかとする。すべてのスロットは空を許容する。
+
+`category`が`weapon`のSlotは`weaponMount`を必須とし、`right_hand`または`left_hand`のいずれかとする。Weapon以外のSlotは`weaponMount`を持ってはならない。Robot Body Definitionは`right_hand`と`left_hand`のWeapon Slotをそれぞれ1つずつ定義し、同じ`weaponMount`を重複させてはならない。Weapon Slot自体が存在していても、Robot設計データでは空スロットとすることを許容する。
 
 ### Weapon Definition
 
