@@ -50,6 +50,10 @@ Switch Weapon要求をExecution Context Changesへ設定し、`connections.next`
 
 指定したWeapon Slotが空である場合、または切替を実行できない場合の処理はSimulatorの行動処理に従う。これはAI命令の実行時エラーではない。
 
+Switch Weaponの実動作は、指定した手に対応するWeapon Slotへの切替を1回試行した時点で完了する。Slotが空であるなどの理由で選択中Weaponを変更できなかった場合も切替試行は完了したものとする。実動作の後は事後動作へ移り、事後動作の完了後に現在のcombat行動を終了する。次動作が存在する場合は、その予備動作へ移る。
+
+予備動作、切替試行を行うTick、事後動作の長さ、および実動作のキャンセル可否は、`PHASE_HANDOFFS.md`の`PH-003`に従ってPhase 8で定義する。
+
 ## 実行時エラー
 
 検証済みProgramとMaster Dataを前提とするため、通常実行では実行時エラーを発生させない。

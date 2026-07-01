@@ -33,7 +33,9 @@
         "description": "センシング範囲。中心角±指定角度までをセンシングする",
         "valueType": "degree",
         "required": true,
-        "defaultValue": 90
+        "defaultValue": 90,
+        "minValue": 0,
+        "maxValue": 180
       }
     ],
     "outputPaths": [

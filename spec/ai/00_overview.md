@@ -113,7 +113,7 @@ AI実行エンジンは命令の意味を解釈しない。
 
 `interruptTick`が`true`なら、そのTickのAI実行を終了する。`nextNodeId`がNode IDなら次TickはそのNodeから、`null`ならProgramのStart Nodeから開始する。
 
-1Tickで正常終了できるCPUコスト0のNode数の上限は、選択中のGame Rule Definitionの`cpuLimit`と同じ値とする。正常終了したCPUコスト0の命令だけを上限判定用の実行Node数へ加算し、次のCPUコスト0のNodeを実行する前に上限を確認する。CPUコスト1以上のNodeはこの上限へ数えず、CPU残量によって実行可否を判定する。
+1Tickで正常終了できるCPUコスト0のNode数の上限は、選択中のGame Rule Definitionの`cpuLimit`と2の大きい方とする。これにより`cpuLimit`が1の場合もStartからEndまでを同一Tickで実行できる。正常終了したCPUコスト0の命令だけを上限判定用の実行Node数へ加算し、次のCPUコスト0のNodeを実行する前に上限を確認する。CPUコスト1以上のNodeはこの上限へ数えず、CPU残量によって実行可否を判定する。
 
 CPUコスト0の実行Node数上限への到達は実行時エラーとしない。上限到達までのExecution Context Changes、行動要求、CPU消費を維持し、次に実行予定だったNodeを次Tickの再開位置とする。上限と同じ件数目のCPUコスト0命令が`interruptTick`によってTickを終了した場合は、命令による終了を優先する。
 

@@ -56,6 +56,11 @@ describe("Editor Master Data", () => {
       ],
     });
     expect(byImplementationId.get("detect_enemy")?.outputPaths).toHaveLength(2);
+    expect(
+      byImplementationId
+        .get("detect_enemy")
+        ?.parameters.find(({ id }) => id === "sensing_degree"),
+    ).toMatchObject({ minValue: 0, maxValue: 180 });
     expect(byImplementationId.get("call")?.parameters[0]?.id).toBe(
       "targetNodeId",
     );
@@ -65,6 +70,15 @@ describe("Editor Master Data", () => {
         .get("turn")
         ?.parameters.find(({ id }) => id === "degree"),
     ).not.toHaveProperty("maxValue");
+    expect(byImplementationId.get("move_forward")?.parameters).toEqual([
+      expect.objectContaining({
+        id: "distance",
+        valueType: "distance",
+        defaultValue: 100,
+        minValue: 0,
+        maxValue: 10000,
+      }),
+    ]);
   });
 
   it("manifestに不正なファイル名または重複がある場合は拒否する", () => {

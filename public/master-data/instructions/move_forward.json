@@ -10,14 +10,14 @@
     "category": "action",
     "parameters": [
       {
-        "id": "speed",
-        "displayName": "Speed",
-        "description": "前進する速度",
-        "valueType": "speed",
+        "id": "distance",
+        "displayName": "Distance",
+        "description": "前進する距離",
+        "valueType": "distance",
         "required": true,
         "defaultValue": 100,
         "minValue": 0,
-        "maxValue": 1000
+        "maxValue": 10000
       }
     ],
     "outputPaths": [
