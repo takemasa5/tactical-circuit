@@ -18,34 +18,57 @@ import type { RobotDesign, SlotId } from "../robotDesign/models";
 /** `spec/simulator/00_overview.md`のWorld State内Bullet ID。 */
 export type BulletId = string & { readonly __brand: "BulletId" };
 
+/** `spec/instructions/details/move_forward.md`と`move_backward.md`の移動要求。 */
+export type MoveRequest =
+  | {
+      readonly type: "forward";
+      readonly distance: Int32;
+    }
+  | {
+      readonly type: "backward";
+      readonly distance: Int32;
+    };
+
+/** `spec/instructions/details/turn.md`の旋回要求。 */
+export type TurnRequest =
+  | {
+      readonly type: "turn_left";
+      readonly turnTo: Int32;
+    }
+  | {
+      readonly type: "turn_right";
+      readonly turnTo: Int32;
+    };
+
 /** `spec/instructions/concept.md`の移動系行動要求。 */
-export type MovementRequest = {
-  readonly type:
-    | "forward"
-    | "backward"
-    | "turn_left"
-    | "turn_right"
-    | "strafe_left"
-    | "strafe_right"
-    | "stop";
-};
+export type MovementRequest =
+  | MoveRequest
+  | TurnRequest
+  | { readonly type: "strafe_left" }
+  | { readonly type: "strafe_right" }
+  | { readonly type: "stop" };
 
-/** `spec/instructions/concept.md`のWeapon切替要求。 */
-export type SwitchRequest = {
+/** `spec/instructions/details/switch_weapon.md`のWeapon切替要求。 */
+export type SwitchWeaponRequest = {
   readonly type: "switch_weapon";
-  readonly slotId: SlotId;
+  readonly hand: "right" | "left";
 };
 
-/** `spec/instructions/concept.md`の攻撃系行動要求。 */
-export type AttackRequest = {
-  readonly type: "fire" | "melee";
+/** `spec/instructions/details/fire.md`の発射要求。 */
+export type FireRequest = {
+  readonly type: "fire";
+  readonly targetDirection: Int32;
+  readonly targetPosition: Position;
 };
+
+/** `spec/instructions/concept.md`の戦闘系行動要求。 */
+export type CombatRequest =
+  SwitchWeaponRequest | FireRequest | { readonly type: "melee" };
 
 /** `spec/instructions/concept.md`のカテゴリ別行動要求。 */
 export type ActionRequests = {
   readonly movement: MovementRequest | null;
-  readonly switching: SwitchRequest | null;
-  readonly attack: AttackRequest | null;
+  readonly combat: CombatRequest | null;
 };
 
 /** `spec/14_determinism_rules.md`のxorshift32内部状態。 */
@@ -174,8 +197,7 @@ export type ExecutionContextChanges = {
   readonly memoryWrites: readonly MemoryWrite[];
   readonly stackOperations: readonly StackOperation[];
   readonly movementRequest?: MovementRequest;
-  readonly switchRequest?: SwitchRequest;
-  readonly attackRequest?: AttackRequest;
+  readonly combatRequest?: CombatRequest;
   readonly randomState: RandomState | null;
 };
 

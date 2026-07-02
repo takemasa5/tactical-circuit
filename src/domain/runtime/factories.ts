@@ -6,8 +6,7 @@ import type { AIRuntimeState, ActionRequests, BulletId } from "./models";
 /** `spec/instructions/concept.md`に従い空のカテゴリ別行動要求を生成する。 */
 export const createEmptyActionRequests = (): ActionRequests => ({
   movement: null,
-  switching: null,
-  attack: null,
+  combat: null,
 });
 
 /** `spec/ai/00_overview.md`に従い戦闘開始時のAI Runtime Stateを生成する。 */

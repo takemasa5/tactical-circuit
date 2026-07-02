@@ -39,8 +39,7 @@ describe("runtime factories", () => {
   it("カテゴリごとに要求なしの初期値を生成する", () => {
     expect(createEmptyActionRequests()).toEqual({
       movement: null,
-      switching: null,
-      attack: null,
+      combat: null,
     });
   });
 

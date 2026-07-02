@@ -6,6 +6,7 @@ const int32 = {
 const nonNegativeInt32 = { ...int32, minimum: 0 } as const;
 const positiveInt32 = { ...int32, minimum: 1 } as const;
 const angle = { ...int32, minimum: 0, maximum: 359 } as const;
+const movementDistance = { ...int32, minimum: 0, maximum: 10_000 } as const;
 const nodeId = { type: "string", pattern: "^node_[1-9]\\d*$" } as const;
 const robotId = { type: "string", pattern: "^robot_[1-9]\\d*$" } as const;
 const bulletId = { type: "string", pattern: "^bullet_[1-9]\\d*$" } as const;
@@ -29,47 +30,76 @@ export const randomStateSchema = {
   properties: { value: int32 },
 } as const;
 
-const movementRequestSchema = {
+const moveRequestSchema = {
   type: "object",
   additionalProperties: false,
-  required: ["type"],
+  required: ["type", "distance"],
   properties: {
-    type: {
-      enum: [
-        "forward",
-        "backward",
-        "turn_left",
-        "turn_right",
-        "strafe_left",
-        "strafe_right",
-        "stop",
-      ],
-    },
+    type: { enum: ["forward", "backward"] },
+    distance: movementDistance,
   },
 } as const;
 
-const switchRequestSchema = {
+const turnRequestSchema = {
   type: "object",
   additionalProperties: false,
-  required: ["type", "slotId"],
-  properties: { type: { const: "switch_weapon" }, slotId },
+  required: ["type", "turnTo"],
+  properties: {
+    type: { enum: ["turn_left", "turn_right"] },
+    turnTo: angle,
+  },
 } as const;
 
-const attackRequestSchema = {
+const basicMovementRequestSchema = {
   type: "object",
   additionalProperties: false,
   required: ["type"],
-  properties: { type: { enum: ["fire", "melee"] } },
+  properties: { type: { enum: ["strafe_left", "strafe_right", "stop"] } },
+} as const;
+
+const movementRequestSchema = {
+  oneOf: [moveRequestSchema, turnRequestSchema, basicMovementRequestSchema],
+} as const;
+
+const switchWeaponRequestSchema = {
+  type: "object",
+  additionalProperties: false,
+  required: ["type", "hand"],
+  properties: {
+    type: { const: "switch_weapon" },
+    hand: { enum: ["right", "left"] },
+  },
+} as const;
+
+const fireRequestSchema = {
+  type: "object",
+  additionalProperties: false,
+  required: ["type", "targetDirection", "targetPosition"],
+  properties: {
+    type: { const: "fire" },
+    targetDirection: angle,
+    targetPosition: positionSchema,
+  },
+} as const;
+
+const meleeRequestSchema = {
+  type: "object",
+  additionalProperties: false,
+  required: ["type"],
+  properties: { type: { const: "melee" } },
+} as const;
+
+const combatRequestSchema = {
+  oneOf: [switchWeaponRequestSchema, fireRequestSchema, meleeRequestSchema],
 } as const;
 
 export const actionRequestsSchema = {
   type: "object",
   additionalProperties: false,
-  required: ["movement", "switching", "attack"],
+  required: ["movement", "combat"],
   properties: {
     movement: { anyOf: [{ type: "null" }, movementRequestSchema] },
-    switching: { anyOf: [{ type: "null" }, switchRequestSchema] },
-    attack: { anyOf: [{ type: "null" }, attackRequestSchema] },
+    combat: { anyOf: [{ type: "null" }, combatRequestSchema] },
   },
 } as const;
 
