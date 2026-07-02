@@ -24,8 +24,10 @@
 
 ## developブランチとIssue
 
-- プロダクトの実装開始に必要な仕様をすべて明記し、POの合意を得てから`develop`ブランチを作成する。
-- `develop`がすでに存在する場合は作り直さない。
+- 対象Phaseの実装開始に必要な仕様をすべて明記し、POの合意を得た時点で、そのPhaseの設計完了とする。
+- Phase設計完了時にGitHubリポジトリの`develop`を確認し、存在しなければ設計者がデフォルトブランチの最新commitから作成する。
+- `develop`がすでに存在する場合は作り直したり、別のcommitへ移動したりしない。
+- `develop`の存在を確認してから、対象PhaseのIssueを登録する。
 - 将来仕様を、一つのPull Requestで完了できる独立したIssueへ分割する。
 - Issueは`docs/planning/issue_template.md`に従い、Goal、Source Spec、Acceptance Criteria、Out of Scope、Dependenciesを含める。
 - Acceptance Criteriaは外部から完了を判定できる表現にする。
