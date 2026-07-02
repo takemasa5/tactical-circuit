@@ -7,6 +7,8 @@ import type {
   ParameterDefinition,
   ProjectileDefinition,
   ProjectileId,
+  RobotBodyDefinition,
+  RobotBodyId,
   WeaponDefinition,
   WeaponId,
 } from "./models";
@@ -76,7 +78,97 @@ const instruction = (
 
 const entry = <TEntry extends MasterDataEntry>(value: TEntry): TEntry => value;
 
+const robotBody = (
+  slots: RobotBodyDefinition["slots"],
+): RobotBodyDefinition => ({
+  id: `robot_body_${uuidA}` as RobotBodyId,
+  displayName: "Test Body",
+  description: "",
+  enabled: true,
+  weight: int32(100),
+  maxHp: int32(100),
+  maxEnergy: int32(100),
+  heatCapacity: int32(100),
+  size: { width: int32(10), height: int32(10) },
+  slots,
+});
+
 describe("Data Repository", () => {
+  it("Robot Bodyの右手・左手Weapon Slotを受け付ける", () => {
+    const result = createDataRepository(
+      [
+        entry({
+          dataType: "robot_body",
+          definition: robotBody([
+            {
+              id: "slot_1",
+              displayName: "Right",
+              category: "weapon",
+              weaponMount: "right_hand",
+            },
+            {
+              id: "slot_2",
+              displayName: "Left",
+              category: "weapon",
+              weaponMount: "left_hand",
+            },
+          ]),
+        }),
+      ],
+      new Set(),
+    );
+
+    expect(result.success).toBe(true);
+  });
+
+  it.each([
+    [
+      "片方がない",
+      [
+        {
+          id: "slot_1",
+          displayName: "Right",
+          category: "weapon" as const,
+          weaponMount: "right_hand" as const,
+        },
+      ],
+      "missing_weapon_mount",
+    ],
+    [
+      "装備位置が重複する",
+      [
+        {
+          id: "slot_1",
+          displayName: "Right 1",
+          category: "weapon" as const,
+          weaponMount: "right_hand" as const,
+        },
+        {
+          id: "slot_2",
+          displayName: "Right 2",
+          category: "weapon" as const,
+          weaponMount: "right_hand" as const,
+        },
+      ],
+      "duplicate_local_id",
+    ],
+  ])("Weapon Slotの%sRobot Bodyを拒否する", (_, slots, expectedCode) => {
+    const result = createDataRepository(
+      [
+        entry({
+          dataType: "robot_body",
+          definition: robotBody(slots),
+        }),
+      ],
+      new Set(),
+    );
+
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.errors.map(({ code }) => code)).toContain(expectedCode);
+    }
+  });
+
   it("参照を解決してID順で読み取り専用データを公開する", () => {
     const secondProjectile = projectile(`projectile_${uuidB}` as ProjectileId);
     const result = createDataRepository(

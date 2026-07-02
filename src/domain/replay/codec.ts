@@ -7,7 +7,12 @@ import {
   canonicalizeRobotDesign,
   validateRobotDesignReferences,
 } from "../robotDesign/codec";
-import type { RobotState, WorldState } from "../runtime/models";
+import type {
+  CombatRequest,
+  MovementRequest,
+  RobotState,
+  WorldState,
+} from "../runtime/models";
 import type { BulletState } from "../runtime/models";
 import type { ReplayEvent, ReplaySaveData } from "./models";
 import { replaySaveDataValidator } from "./schema";
@@ -26,9 +31,30 @@ const validationError = (
   expected: string,
 ): DataValidationError => ({ code, path, message, actualValue, expected });
 
+const canonicalizeMovementRequest = (
+  request: MovementRequest | null,
+): MovementRequest | null =>
+  request?.type === "turn_left" || request?.type === "turn_right"
+    ? { ...request, turnTo: normalizeAngle(request.turnTo) }
+    : request;
+
+const canonicalizeCombatRequest = (
+  request: CombatRequest | null,
+): CombatRequest | null =>
+  request?.type === "fire"
+    ? {
+        ...request,
+        targetDirection: normalizeAngle(request.targetDirection),
+      }
+    : request;
+
 const canonicalizeRobotState = (robot: RobotState): RobotState => ({
   ...robot,
   direction: normalizeAngle(robot.direction),
+  actionRequests: {
+    movement: canonicalizeMovementRequest(robot.actionRequests.movement),
+    combat: canonicalizeCombatRequest(robot.actionRequests.combat),
+  },
 });
 
 const canonicalizeWorldState = (worldState: WorldState): WorldState => ({

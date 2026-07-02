@@ -189,7 +189,15 @@ const robotBodySchema = definitionSchema(
           id: { type: "string", pattern: "^slot_[1-9]\\d*$" },
           displayName: { type: "string" },
           category: { enum: ["weapon", "sensor", "engine", "armor", "option"] },
+          weaponMount: { enum: ["right_hand", "left_hand"] },
         },
+        allOf: [
+          {
+            if: { properties: { category: { const: "weapon" } } },
+            then: { required: ["weaponMount"] },
+            else: { not: { required: ["weaponMount"] } },
+          },
+        ],
       },
     },
   },

@@ -28,7 +28,13 @@ import {
 } from "../masterData/repository";
 import type { Program } from "../program/models";
 import type { RobotDesign } from "../robotDesign/models";
-import type { BulletState, RobotState, WorldState } from "../runtime/models";
+import type {
+  BulletState,
+  CombatRequest,
+  MovementRequest,
+  RobotState,
+  WorldState,
+} from "../runtime/models";
 import { loadReplay, saveReplay } from "./codec";
 import type { ReplaySaveData } from "./models";
 
@@ -57,7 +63,20 @@ const body: RobotBodyDefinition = {
   maxEnergy: int32(100),
   heatCapacity: int32(100),
   size: { width: int32(10), height: int32(10) },
-  slots: [],
+  slots: [
+    {
+      id: "slot_1",
+      displayName: "Right Weapon",
+      category: "weapon",
+      weaponMount: "right_hand",
+    },
+    {
+      id: "slot_2",
+      displayName: "Left Weapon",
+      category: "weapon",
+      weaponMount: "left_hand",
+    },
+  ],
 };
 
 const map: MapDefinition = {
@@ -199,7 +218,7 @@ const robot: RobotState = {
     callStack: [],
     memory: { values: Array.from({ length: 20 }, () => int32(0)) },
   },
-  actionRequests: { movement: null, switching: null, attack: null },
+  actionRequests: { movement: null, combat: null },
 };
 
 const worldState: WorldState = {
@@ -260,6 +279,118 @@ describe("Replay codec", () => {
         loaded.data.replayData.initialWorldState.robots[0]?.direction,
       ).toBe(90);
     }
+  });
+
+  it("行動要求内の角度もJSON保存時に正規化する", () => {
+    const valid = replay();
+    const loaded = loadReplay(
+      saveReplay({
+        ...valid,
+        replayData: {
+          ...valid.replayData,
+          initialWorldState: {
+            ...valid.replayData.initialWorldState,
+            robots: [
+              {
+                ...robot,
+                actionRequests: {
+                  movement: { type: "turn_left", turnTo: int32(-90) },
+                  combat: {
+                    type: "fire",
+                    targetDirection: int32(450),
+                    targetPosition: { x: int32(20), y: int32(30) },
+                  },
+                },
+              },
+            ],
+          },
+        },
+      }),
+      "0.1.1",
+      repository(),
+    );
+
+    expect(loaded.success).toBe(true);
+    if (loaded.success) {
+      const actionRequests =
+        loaded.data.replayData.initialWorldState.robots[0]?.actionRequests;
+      expect(actionRequests?.movement).toEqual({
+        type: "turn_left",
+        turnTo: 270,
+      });
+      expect(actionRequests?.combat).toEqual({
+        type: "fire",
+        targetDirection: 90,
+        targetPosition: { x: 20, y: 30 },
+      });
+    }
+  });
+
+  it.each<readonly [string, MovementRequest | null, CombatRequest | null]>([
+    ["前進", { type: "forward", distance: int32(100) }, null],
+    ["後退", { type: "backward", distance: int32(200) }, null],
+    ["左旋回", { type: "turn_left", turnTo: int32(90) }, null],
+    ["右旋回", { type: "turn_right", turnTo: int32(270) }, null],
+    ["横移動", { type: "strafe_left" }, null],
+    ["停止", { type: "stop" }, null],
+    ["武器切替", null, { type: "switch_weapon", hand: "right" }],
+    [
+      "射撃",
+      null,
+      {
+        type: "fire",
+        targetDirection: int32(45),
+        targetPosition: { x: int32(20), y: int32(30) },
+      },
+    ],
+    ["格闘", null, { type: "melee" }],
+  ])("%s行動要求を保存して読み戻せる", (_name, movement, combat) => {
+    const valid = replay();
+    const actionRequests = { movement, combat };
+    const loaded = loadReplay(
+      saveReplay({
+        ...valid,
+        replayData: {
+          ...valid.replayData,
+          initialWorldState: {
+            ...valid.replayData.initialWorldState,
+            robots: [{ ...robot, actionRequests }],
+          },
+        },
+      }),
+      "0.1.1",
+      repository(),
+    );
+
+    expect(loaded.success).toBe(true);
+    if (loaded.success) {
+      expect(
+        loaded.data.replayData.initialWorldState.robots[0]?.actionRequests,
+      ).toEqual(actionRequests);
+    }
+  });
+
+  it("旧行動要求カテゴリを拒否する", () => {
+    const saved = JSON.parse(saveReplay(replay())) as {
+      payload: {
+        replayData: {
+          initialWorldState: {
+            robots: Array<{ actionRequests: unknown }>;
+          };
+        };
+      };
+    };
+    const firstRobot = saved.payload.replayData.initialWorldState.robots[0];
+    if (firstRobot === undefined) throw new Error("Robot fixture is missing");
+    firstRobot.actionRequests = {
+      movement: null,
+      switching: null,
+      attack: null,
+    };
+
+    const loaded = loadReplay(JSON.stringify(saved), "0.1.1", repository());
+
+    expect(loaded.success).toBe(false);
   });
 
   it("Master Data versionの不一致を拒否する", () => {

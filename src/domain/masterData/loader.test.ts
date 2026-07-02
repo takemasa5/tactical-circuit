@@ -36,6 +36,53 @@ const weaponPayload = {
 };
 
 describe("Master Data loader", () => {
+  it("Weapon Slot以外のweaponMountをSchemaで拒否する", () => {
+    const result = loadMasterDataDefinition({
+      dataType: "robot_body",
+      json: saveJsonEnvelope("robot_body", {
+        id: `robot_body_${uuidA}`,
+        displayName: "Invalid Body",
+        description: "",
+        enabled: true,
+        weight: 100,
+        maxHp: 100,
+        maxEnergy: 100,
+        heatCapacity: 100,
+        size: { width: 10, height: 10 },
+        slots: [
+          {
+            id: "slot_1",
+            displayName: "Sensor",
+            category: "sensor",
+            weaponMount: "right_hand",
+          },
+        ],
+      }),
+    });
+
+    expect(result.success).toBe(false);
+  });
+
+  it("weaponMountがないWeapon SlotをSchemaで拒否する", () => {
+    const result = loadMasterDataDefinition({
+      dataType: "robot_body",
+      json: saveJsonEnvelope("robot_body", {
+        id: `robot_body_${uuidA}`,
+        displayName: "Invalid Body",
+        description: "",
+        enabled: true,
+        weight: 100,
+        maxHp: 100,
+        maxEnergy: 100,
+        heatCapacity: 100,
+        size: { width: 10, height: 10 },
+        slots: [{ id: "slot_1", displayName: "Weapon", category: "weapon" }],
+      }),
+    });
+
+    expect(result.success).toBe(false);
+  });
+
   it("JSON Schemaに適合するDefinitionを読み込む", () => {
     const result = loadMasterDataDefinition({
       dataType: "projectile",

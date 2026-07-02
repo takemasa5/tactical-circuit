@@ -498,6 +498,30 @@ const validateDefinition = (
           `${basePath}/slots`,
           errors,
         );
+        const weaponMounts = definition.slots
+          .filter(({ category }) => category === "weapon")
+          .map(({ weaponMount }) => weaponMount);
+        validateUniqueStrings(
+          weaponMounts.filter(
+            (weaponMount): weaponMount is "right_hand" | "left_hand" =>
+              weaponMount !== undefined,
+          ),
+          `${basePath}/slots/weaponMount`,
+          errors,
+        );
+        for (const requiredMount of ["right_hand", "left_hand"] as const) {
+          if (!weaponMounts.includes(requiredMount)) {
+            errors.push(
+              error(
+                "missing_weapon_mount",
+                `${basePath}/slots`,
+                `${requiredMount}のWeapon Slotがありません`,
+                weaponMounts,
+                "右手・左手のWeapon Slotを各1つ",
+              ),
+            );
+          }
+        }
       }
       break;
     case "weapon":
