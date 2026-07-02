@@ -34,6 +34,10 @@ type SwitchWeaponRequest = {
 
 AI EngineはRobot Body固有のSlot IDを解決しない。SimulatorはRobot Body Definitionの`weaponMount`を使用し、`right`を`right_hand`、`left`を`left_hand`のWeapon Slotへ解決する。
 
+## 同一要求判定
+
+現在の行動と新しい要求の`type`がどちらも`switch_weapon`で、`hand`が等しい場合に同一要求とする。`type`または`hand`が異なる場合は異なる要求とする。
+
 同一Tickですでに戦闘系行動要求が生成されている場合は、Switch Weapon命令の要求で上書きする。移動系行動要求は変更しない。
 
 ## CPU消費量

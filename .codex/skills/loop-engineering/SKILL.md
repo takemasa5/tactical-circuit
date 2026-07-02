@@ -29,7 +29,8 @@ Repeat the following steps for the selected Issue until a terminal condition is 
 ### 1. Inspect State
 
 - Read the Issue, completion conditions, dependencies, and linked pull request.
-- When a pull request exists, inspect its latest head commit, checks, review status, and thread-aware review comments.
+- When a pull request exists, inspect its labels, latest head commit, checks, review status, and thread-aware review comments.
+- If the pull request has an unresolved `question` label, enter the specification clarification terminal condition before making changes or evaluating merge readiness.
 - Follow repository instructions such as `AGENTS.md`; they take precedence over this skill.
 
 ### 2. Implement When No Pull Request Exists
@@ -66,6 +67,7 @@ Merge only when all of the following are true for the latest head commit:
 - Review is complete and reports no remaining actionable findings.
 - Every review finding is resolved or has a recorded no-change, tracking Issue, or handoff rationale.
 - All required checks pass.
+- The pull request does not have an unresolved `question` label.
 - The pull request still satisfies the selected Issue completion conditions.
 
 Then:

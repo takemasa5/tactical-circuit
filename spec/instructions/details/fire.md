@@ -44,6 +44,10 @@ targetDirection = normalizeDegree(自機の向き + 検出Robotのbearing)
 
 SimulatorまたはWeapon実装は、直線軌道を使用する武器では`targetDirection`、目標位置を使用する武器では`targetPosition`を参照できる。Fire命令は選択中Weaponの種類を解釈しない。
 
+## 同一要求判定
+
+現在の行動と新しい要求の`type`がどちらも`fire`で、`targetDirection`、`targetPosition.x`、`targetPosition.y`がすべて等しい場合に同一要求とする。いずれか1つでも異なる場合は異なる要求とする。
+
 同一Tickですでに戦闘系行動要求が生成されている場合は、Fire命令の要求で上書きする。移動系行動要求は変更しない。
 
 ## CPU消費量
