@@ -47,7 +47,7 @@ TypeScriptは`strict`、`noUncheckedIndexedAccess`、`exactOptionalPropertyTypes
 - FormatterにはPrettierを使用する
 - ESLintはコード品質、Prettierは書式を担当する
 
-既存仕様書はPhase 0の一括整形対象に含めない。
+`docs/`配下のMarkdown仕様書はPrettierの整形および`format:check`の対象とする。
 
 ---
 
