@@ -9,12 +9,12 @@ import {
 } from "./repository";
 import { getMasterDataValidator } from "./schemas";
 
-/** `spec/15_master_data.md`のMaster Data Manifest payload。 */
+/** `docs/specs/current/15_master_data.md`のMaster Data Manifest payload。 */
 export type MasterDataManifest = {
   readonly masterDataVersion: FormatVersion;
 };
 
-/** `spec/15_master_data.md`から読み込む1 JSON文書。 */
+/** `docs/specs/current/15_master_data.md`から読み込む1 JSON文書。 */
 export type MasterDataDocument = {
   readonly dataType: MasterDataType;
   readonly json: string;

@@ -21,7 +21,7 @@ const updateConnection = (
   metadata: { ...program.metadata, updatedAt },
 });
 
-/** `spec/editor/connections.md`の接続を作成または置換する。 */
+/** `docs/specs/current/editor/connections.md`の接続を作成または置換する。 */
 export const connectNodes = (
   program: Program,
   sourceNodeId: NodeId,
@@ -58,7 +58,7 @@ export const connectNodes = (
   );
 };
 
-/** `spec/editor/connections.md`の接続を削除する。 */
+/** `docs/specs/current/editor/connections.md`の接続を削除する。 */
 export const disconnectNodes = (
   program: Program,
   sourceNodeId: NodeId,
