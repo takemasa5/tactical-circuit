@@ -47,16 +47,33 @@ AI実行エンジンは以下を担当する。
 
 ---
 
-# 実行対象
+# 実行契約
 
-AI実行エンジンは以下を入力として受け取る。
+AI実行エンジンは、生成時に検証済みData Repositoryと固定のInstruction Registryを依存関係として受け取る。Tickごとの実行時には、Program、Execution Input、選択中のGame Rule Definitionを受け取る。
 
-* Program
-* Execution Input
+```ts
+type AIEngineDependencies = {
+  readonly repository: DataRepository;
+  readonly instructionRegistry: InstructionRegistry;
+};
+
+type AIExecutionInput = {
+  readonly program: Program;
+  readonly executionInput: ExecutionInput;
+  readonly gameRule: GameRuleDefinition;
+};
+
+type AIExecutionOutput = {
+  readonly executionResult: ExecutionResult;
+  readonly debugInfo: AIDebugInfo;
+};
+```
+
+ProgramはProgram Validatorを通過済みであることを前提とし、AI実行エンジンはProgramの構造を再検証しない。
 
 Execution InputはSimulatorがWorld Stateから生成する読み取り専用スナップショットである。AI実行エンジンはWorld Stateを直接参照しない。
 
-AI実行終了後、行動要求、更新後のAI Runtime State、更新後の乱数内部状態を含むExecution ResultをSimulatorへ返却する。
+AI実行終了後、行動要求、更新後のAI Runtime State、更新後の乱数内部状態を含むExecution Resultと、ゲーム進行へ影響しないデバッグ情報をAIExecutionOutputとして返却する。Simulatorは`executionResult`だけをゲーム進行へ反映する。
 
 ---
 
@@ -95,6 +112,10 @@ AI実行エンジンは命令の意味を解釈しない。
 命令が正常終了した場合、AI実行エンジンはExecution Context Changesをまとめて反映する。`interruptTick`が`false`なら`nextNodeId`へProgram Counterを更新して同一Tickの実行を続ける。
 
 `interruptTick`が`true`なら、そのTickのAI実行を終了する。`nextNodeId`がNode IDなら次TickはそのNodeから、`null`ならProgramのStart Nodeから開始する。
+
+1Tickで正常終了できるCPUコスト0のNode数の上限は、選択中のGame Rule Definitionの`cpuLimit`と2の大きい方とする。これにより`cpuLimit`が1の場合もStartからEndまでを同一Tickで実行できる。正常終了したCPUコスト0の命令だけを上限判定用の実行Node数へ加算し、次のCPUコスト0のNodeを実行する前に上限を確認する。CPUコスト1以上のNodeはこの上限へ数えず、CPU残量によって実行可否を判定する。
+
+CPUコスト0の実行Node数上限への到達は実行時エラーとしない。上限到達までのExecution Context Changes、行動要求、CPU消費を維持し、次に実行予定だったNodeを次Tickの再開位置とする。上限と同じ件数目のCPUコスト0命令が`interruptTick`によってTickを終了した場合は、命令による終了を優先する。
 
 ---
 
@@ -180,6 +201,33 @@ AI実行中のエラーによってゲーム全体を停止させてはならな
 
 実行時エラーになった命令のExecution Context ChangesとCPU消費は反映しない。そのTickのAI実行を終了し、次TickはProgramのStart Nodeから開始する。それ以前に正常終了した命令の変更と行動要求は維持する。
 
+初期実装で扱う実行時エラーコードは次のとおりとする。
+
+```ts
+type AIRuntimeErrorCode =
+  | "empty_call_stack"
+  | "call_stack_overflow"
+  | "invalid_memory_access"
+  | "invalid_instruction_result"
+  | "internal_instruction_error";
+
+type AIRuntimeError = {
+  readonly code: AIRuntimeErrorCode;
+  readonly message: string;
+  readonly nodeId: NodeId;
+  readonly instructionId: InstructionId;
+};
+```
+
+`code`はエラー種別を機械的に識別する安定した値、`message`はユーザーへ表示する文字列とする。AI実行エンジンは、命令実装またはExecution Context Changesの適用で発生したエラーへ、実行中のNode IDとInstruction IDを付加する。
+
+追加コードの用途は次のとおりとする。
+
+* `invalid_instruction_result`：`interruptTick`が`false`かつ`nextNodeId`が`null`など、命令実行結果が共通契約に違反する
+* `internal_instruction_error`：命令実装が予期しない例外または内部エラーによって正常な結果を返せない
+
+残弾、エネルギー、発熱、現在の動作段階などを理由としてSimulatorが行動要求を実行できないことはAI実行の実行時エラーではない。
+
 構造上の問題はProgram Validatorが事前に検出する。
 
 ---
@@ -206,15 +254,34 @@ AI実行は決定論的でなければならない。
 
 AI実行エンジンはデバッグ情報を生成する。
 
-例
+```ts
+type AIDebugInfo = {
+  readonly executionTrace: readonly string[];
+  readonly terminationReason: string;
+  readonly runtimeError: AIRuntimeError | null;
+  readonly cpuUsed: Int32;
+  readonly executedNodeCount: Int32;
+};
+```
 
-* 現在命令
-* 実行履歴
-* Program Counter
-* CPU使用量
-* レジスタ内容
-* メモリ内容
-* 行動要求
+`executionTrace`は命令の実行順をスタックトレース形式の文字列配列として保持する。各行は次の形式とする。
+
+```text
+at {implementationId} ({nodeId}, {instructionId})
+```
+
+正常終了したNodeと実行時エラーになったNodeを`executionTrace`へ含める。CPU不足または実行Node数上限により実行しなかったNodeは含めない。`executedNodeCount`へ加算するのは正常終了したNodeだけとする。
+
+`terminationReason`はTickのAI実行を終了した理由をユーザーへ表示する文字列、`runtimeError`は実行時エラーが発生しなかった場合に`null`とする。`cpuUsed`はそのTickで正常に消費を確定したCPUコストの合計、`executedNodeCount`はそのTickで正常終了したNode数とする。
+
+`terminationReason`には状況に応じて次の固定文言を格納する。
+
+* 命令の`interruptTick`による終了：`命令によりTickの実行を中断しました`
+* CPU不足による終了：`CPUが不足したためTickの実行を終了しました`
+* CPUコスト0の実行Node数上限による終了：`CPUコスト0の実行Node数上限に到達したためTickの実行を終了しました`
+* 実行時エラーによる終了：`実行時エラーが発生したためTickの実行を終了しました`
+
+AI実行エンジンは同じ実行時エラーが後続Tickでも発生した場合に通知を抑制せず、各Tickの結果へ正確に格納する。表示側はRuntime Robot ID、Program ID、Node ID、エラーコードの組を同一エラーの識別に使用できる。
 
 デバッグ情報はゲーム進行へ影響を与えない。
 

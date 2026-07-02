@@ -1,0 +1,63 @@
+# Move Backward命令
+
+## 概要
+
+Move Backward命令は、Robotを背面方向へ指定距離だけ移動させる移動系行動要求を生成する。
+
+## 対応するInstruction Definition
+
+- `implementationId`: `move_backward`
+- カテゴリ: `action`
+- 公開Master Data ID: `instruction_2c6ea7f1-5e38-4b65-8e3a-2a5d70f2a110`
+
+## パラメータ
+
+### `distance`
+
+- 型: `distance`
+- 必須: true
+- 既定値: 100
+- 範囲: 0以上10000以下
+
+Robotが実際に移動できた距離の累計がこの値以上になった時点を、移動の完了条件とする。
+
+## 出力パス
+
+`next`をrequiredな出力パスとする。実行中Nodeの`connections.next`を`nextNodeId`として返す。
+
+## 行動要求
+
+```ts
+type MoveBackwardRequest = {
+  readonly type: "backward";
+  readonly distance: Int32;
+};
+```
+
+`distance`にはParameter Valueをそのまま設定する。移動速度はRobotに装備されたEngine DefinitionからSimulatorが決定するため、行動要求へ含めない。
+
+現在のMove Backward行動と新しい要求は、`type`が`backward`であれば同一と判定する。`distance`は完了条件であり同一判定に使用しない。実行中に異なる`distance`のMove Backward要求を受けても新しい要求を無視し、現在の行動が保持する`distance`を変更しない。
+
+Move Backwardの実動作はキャンセル可能とする。異なる`type`の移動系要求を実動作中に受けた場合は、現在のMove Backward行動をキャンセルして事後動作へ移し、新しい要求を次動作として保持する。
+
+同一Tickですでに移動系行動要求が生成されている場合は、Move Backward命令の要求で上書きする。戦闘系行動要求は変更しない。
+
+## CPU消費量
+
+CPU消費量はInstruction Definitionの`cpuCost`を使用する。公開Master Dataでの値は1とする。
+
+## 動作
+
+Move Backward命令は移動系行動要求をExecution Context Changesへ設定し、`connections.next`へ遷移する。`interruptTick`は`false`とする。
+
+レジスタ、フラグ、永続AIメモリ、コールスタック、戦闘系行動要求、Random Stateを変更しない。
+
+## Simulatorでの解釈
+
+Simulatorは要求を採用した時点から、Robotが背面方向へ実際に移動できた距離を累計する。衝突、能力制限その他の理由によって移動できなかったTickは進捗を増やさない。累計移動距離が要求の`distance`以上になった時点で実動作を完了する。
+
+位置の単純な始点と終点の差ではなく、Tickごとの実移動距離を累計する。
+
+## 実行時エラー
+
+Robotが移動できないことはAI命令の実行時エラーではない。Move Backward命令は検証済みProgramとMaster Dataを前提とし、通常実行では実行時エラーを発生させない。

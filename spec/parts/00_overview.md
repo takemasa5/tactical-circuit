@@ -274,6 +274,8 @@ AIは能力を利用し、能力を提供する具体的なパーツはSimulator
 
 各スロットの数や制約はRobot仕様で定義する。
 
+Weapon Slotは右手または左手の装備位置を持つ。Robot Bodyは右手と左手のWeapon Slotをそれぞれ1つ持ち、各Slotは空を許容する。AIはRobot Body固有のSlot IDではなく、右手または左手を指定して武器切替を要求する。SimulatorがRobot Body Definitionを使用して装備位置からSlot IDを解決する。
+
 パーツは互換性を持つカテゴリへ装備する。
 
 ---
