@@ -1,0 +1,33 @@
+{
+  "dataType": "instruction",
+  "formatVersion": "0.1.1",
+  "payload": {
+    "id": "instruction_668b0309-f6b3-4d52-8346-d4897d093748",
+    "displayName": "Wait Action",
+    "description": "指定カテゴリの行動完了まで待機します",
+    "enabled": true,
+    "implementationId": "wait_action",
+    "category": "control",
+    "parameters": [
+      {
+        "id": "category",
+        "displayName": "Category",
+        "description": "待機する行動カテゴリ",
+        "valueType": "enum",
+        "required": true,
+        "defaultValue": "movement",
+        "enumValues": ["movement", "combat"]
+      }
+    ],
+    "outputPaths": [
+      {
+        "id": "next",
+        "displayName": "Next",
+        "description": "行動完了後のノード",
+        "required": true,
+        "displayOrder": 0
+      }
+    ],
+    "cpuCost": 0
+  }
+}

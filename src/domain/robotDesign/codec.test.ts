@@ -67,8 +67,18 @@ const body: RobotBodyDefinition = {
   heatCapacity: int32(100),
   size,
   slots: [
-    { id: weaponSlot, displayName: "Weapon", category: "weapon" },
-    { id: "slot_2", displayName: "Option", category: "option" },
+    {
+      id: weaponSlot,
+      displayName: "Right Weapon",
+      category: "weapon",
+      weaponMount: "right_hand",
+    },
+    {
+      id: "slot_2",
+      displayName: "Left Weapon",
+      category: "weapon",
+      weaponMount: "left_hand",
+    },
   ],
 };
 

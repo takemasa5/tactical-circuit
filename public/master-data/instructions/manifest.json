@@ -1,6 +1,7 @@
 {
   "files": [
     "call.json",
+    "check_ammunition.json",
     "detect_bullet.json",
     "detect_enemy.json",
     "end.json",
@@ -9,6 +10,8 @@
     "move_forward.json",
     "return.json",
     "start.json",
-    "turn.json"
+    "switch_weapon.json",
+    "turn.json",
+    "wait_action.json"
   ]
 }
