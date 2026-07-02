@@ -1,13 +1,13 @@
 import type { NodeId } from "../data/ids";
 import type { Program } from "../program/models";
 
-/** `spec/editor/selection.md`の接続選択。 */
+/** `docs/specs/current/editor/selection.md`の接続選択。 */
 export type ConnectionSelection = {
   readonly sourceNodeId: NodeId;
   readonly outputPathId: string;
 };
 
-/** `spec/editor/selection.md`の編集セッション内選択状態。 */
+/** `docs/specs/current/editor/selection.md`の編集セッション内選択状態。 */
 export type EditorSelection = {
   readonly nodeIds: ReadonlySet<NodeId>;
   readonly connection: ConnectionSelection | null;

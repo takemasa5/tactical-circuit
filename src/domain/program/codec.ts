@@ -22,7 +22,7 @@ const canonicalNode = (node: ProgramNode): ProgramNode => ({
   connections: sortRecord(node.connections),
 });
 
-/** `spec/editor/program_model.md`の順序不問データを安定した保存順へ整える。 */
+/** `docs/specs/current/editor/program_model.md`の順序不問データを安定した保存順へ整える。 */
 export const canonicalizeProgram = (program: Program): Program => ({
   ...program,
   nodes: [...program.nodes]
@@ -34,11 +34,11 @@ export const canonicalizeProgram = (program: Program): Program => ({
   },
 });
 
-/** `spec/editor/program_model.md`に従いProgramをJSONへ保存する。 */
+/** `docs/specs/current/editor/program_model.md`に従いProgramをJSONへ保存する。 */
 export const saveProgram = (program: Program): string =>
   saveJsonEnvelope("program", canonicalizeProgram(program));
 
-/** `spec/editor/program_model.md`に従いProgram JSONの構造だけを検証する。 */
+/** `docs/specs/current/editor/program_model.md`に従いProgram JSONの構造だけを検証する。 */
 export const loadProgram = (value: string): LoadResult<Program> => {
   const result = loadJsonEnvelope(value, "program", programValidator);
   if (!result.success) return result;

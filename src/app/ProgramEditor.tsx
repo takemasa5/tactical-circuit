@@ -77,7 +77,7 @@ const MIN_ZOOM_PERCENT = 50;
 const MAX_ZOOM_PERCENT = 200;
 const ZOOM_STEP_PERCENT = 10;
 
-/** `spec/editor/phase2.md`と`spec/editor/validator.md`のEditor起動入力。 */
+/** `docs/specs/current/editor/phase2.md`と`docs/specs/current/editor/validator.md`のEditor起動入力。 */
 type ProgramEditorProps = {
   readonly instructions: readonly InstructionDefinition[];
   readonly startInstructionId: InstructionId;
@@ -86,14 +86,14 @@ type ProgramEditorProps = {
   readonly now?: () => string;
 };
 
-/** `spec/editor/nodes.md`のドラッグ中だけ保持するNode位置。 */
+/** `docs/specs/current/editor/nodes.md`のドラッグ中だけ保持するNode位置。 */
 type DragState = {
   readonly startX: number;
   readonly startY: number;
   readonly origins: Readonly<Record<NodeId, Position>>;
 };
 
-/** `spec/editor/selection.md`の矩形選択中だけ保持する範囲。 */
+/** `docs/specs/current/editor/selection.md`の矩形選択中だけ保持する範囲。 */
 type SelectionBox = {
   readonly startX: number;
   readonly startY: number;
@@ -102,7 +102,7 @@ type SelectionBox = {
   readonly additive: boolean;
 };
 
-/** `spec/editor/connections.md`の接続ドラッグ中だけ保持する表示状態。 */
+/** `docs/specs/current/editor/connections.md`の接続ドラッグ中だけ保持する表示状態。 */
 type PendingConnection = {
   readonly sourceNodeId: NodeId;
   readonly outputPathId: string;

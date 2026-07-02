@@ -17,7 +17,7 @@ import type {
 } from "../program/models";
 import { editorFailure, editorSuccess, type EditorResult } from "./result";
 
-/** `spec/editor/property_editor.md`で編集可能なProgramメタデータ。 */
+/** `docs/specs/current/editor/property_editor.md`で編集可能なProgramメタデータ。 */
 export type ProgramMetadataInput = Pick<
   ProgramMetadata,
   "name" | "author" | "description"
@@ -46,7 +46,7 @@ const defaultParameterValues = (
       .map(({ id, defaultValue }) => [id, cloneDefaultValue(defaultValue)]),
   );
 
-/** `spec/editor/nodes.md`の新規Programを作成する。 */
+/** `docs/specs/current/editor/nodes.md`の新規Programを作成する。 */
 export const createProgram = (input: {
   readonly id: ProgramId;
   readonly startInstructionId: InstructionId;
@@ -83,7 +83,7 @@ export const createProgram = (input: {
   });
 };
 
-/** `spec/editor/nodes.md`のNodeを追加する。 */
+/** `docs/specs/current/editor/nodes.md`のNodeを追加する。 */
 export const addNode = (
   program: Program,
   instruction: InstructionDefinition,
@@ -129,7 +129,7 @@ export const addNode = (
   return editorSuccess({ program: nextProgram, nodeId });
 };
 
-/** `spec/editor/nodes.md`のNode群を原子的に削除する。 */
+/** `docs/specs/current/editor/nodes.md`のNode群を原子的に削除する。 */
 export const deleteNodes = (
   program: Program,
   nodeIds: ReadonlySet<NodeId>,
@@ -179,7 +179,7 @@ export const deleteNodes = (
   );
 };
 
-/** `spec/editor/nodes.md`のNode群の確定位置を反映する。 */
+/** `docs/specs/current/editor/nodes.md`のNode群の確定位置を反映する。 */
 export const moveNodes = (
   program: Program,
   positions: Readonly<Record<NodeId, Position>>,

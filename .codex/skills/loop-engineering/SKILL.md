@@ -1,107 +1,139 @@
 ---
 name: loop-engineering
-description: "Drive one GitHub Issue through implementation, pull request review, and merge by repeatedly working, checking review and CI state, addressing feedback, and continuing until the pull request is merged into develop and the Issue is closed. Use for loop engineering of a single work task."
+description: "Advance exactly one GitHub Issue by one lifecycle phase per invocation. Resume from an existing pull request first, never poll or sleep for CI/review, and stop after implementation, CI repair, review response, or merge."
 ---
 
 # Loop Engineering
 
 ## Goal
 
-Complete exactly one Issue by repeating this lifecycle:
+一つのGitHub Issueを、起動ごとにライフサイクルの一段階だけ進める。
 
-1. Satisfy the Issue completion conditions and open a pull request.
-2. Address pull request review findings and failed checks.
-3. Merge a reviewed pull request with no remaining findings into `develop`, then close the pull request and Issue.
+このSkillは同一起動内でPull Request作成、レビュー待機、指摘対応、マージまでを連続実行しない。外部状態の変化は次回起動時に確認する。
 
-After selecting an Issue, do not switch to another Issue. Do not stop merely because a pull request was created, changes were pushed, or review was requested.
+## Repository Role
+
+- `.codex/roles/implementer.md`に従う。
+- リポジトリの`AGENTS.md`とロール別指示はこのSkillより優先する。
 
 ## Preconditions
 
-- Require the `develop` branch to exist. If it does not exist, report the blocker and do not substitute another base branch.
-- Use the Issue specified by the user. If none is specified, select one open Issue whose dependencies are complete.
-- Record the selected Issue and keep it fixed until a terminal condition is reached.
-- Locate the Issue's existing pull request before deciding to implement.
+- `develop`ブランチが存在しなければ、代替ブランチを使用せず停止する。
+- ユーザーがIssueを指定した場合は、そのIssueを使用する。
+- Issueが未指定の場合は、依存関係が完了しているopenなIssueを一つ選択する。
+- 一度選択したIssueを、その起動中に変更しない。
+- IssueのGoal、Source Spec、Acceptance Criteria、Out of Scope、Dependenciesを確認する。
 
-## Main Loop
+## Start by Resuming State
 
-Repeat the following steps for the selected Issue until a terminal condition is reached.
+毎回、実装を始める前に次の順序で状態を確認する。
 
-### 1. Inspect State
+1. 選択したIssueに対応する既存Pull Requestを探す。
+2. Pull Requestが存在する場合は、そのbase branch、head branch、最新head commit、checks、review、thread-awareなレビューコメント、ラベルを確認する。
+3. Pull Requestが存在しない場合は、既存のローカルまたはリモート作業ブランチと未完了変更を確認する。
+4. `question`ラベルまたは未解決の仕様質問がある場合は、変更せずに質問内容を報告して停止する。
 
-- Read the Issue, completion conditions, dependencies, and linked pull request.
-- When a pull request exists, inspect its labels, latest head commit, checks, review status, and thread-aware review comments.
-- If the pull request has an unresolved `question` label, enter the specification clarification terminal condition before making changes or evaluating merge readiness.
-- Follow repository instructions such as `AGENTS.md`; they take precedence over this skill.
+既存Pull Requestがある場合、新規Pull Requestを作成せず、その状態から再開する。
 
-### 2. Implement When No Pull Request Exists
+## Select Exactly One Phase
 
-1. Read the relevant specifications and existing code.
-2. Implement the minimum change that satisfies every Issue completion condition.
-3. Add or update tests and documentation required by the change.
-4. Run the relevant tests, checks, formatting, lint, typecheck, and build.
-5. Create a focused pull request targeting `develop`.
-6. Include `Closes #<issue-number>` and `@codex review` in the pull request body.
-7. Continue this Main Loop with the new pull request. Do not stop after reporting its URL.
+状態確認後、次の優先順位で今回実行するフェーズを一つだけ選ぶ。
 
-### 3. Handle Checks
+1. Pull Requestがない: Implementation Phase
+2. 最新head commitのrequired checkが失敗: CI Repair Phase
+3. 未分類または対応可能なレビュー指摘がある: Review Response Phase
+4. checkまたはreviewがpending: Pending State
+5. merge条件をすべて満たす: Merge Phase
+6. 上記に分類できない: Blocked State
 
-- If checks are pending, wait and inspect them again.
-- If a check fails, diagnose the failure, make the minimum required fix, rerun relevant local checks, push the update, comment `@codex review`, and return to Inspect State.
-- Do not merge unless all required checks for the latest head commit pass.
+一つのフェーズを完了したら、次のフェーズへ進まず停止する。
 
-### 4. Handle Review
+## Implementation Phase
 
-- If review for the latest head commit is pending or has not run, wait and inspect it again. Do not treat zero comments as review completion.
-- Classify every unclassified review finding against the Issue, specifications, existing Issues, and handoff records:
-  - Fix a valid finding that is in scope.
-  - Reply with the tracking Issue or handoff ID when the finding is already registered.
-  - Reply with a concrete reason when no change is required.
-  - If specification clarification is required, explain the question, add the `question` label, and enter the blocked terminal condition.
-- When one or more findings require changes, address all selected findings with minimal focused changes, run relevant checks, push the update, comment `@codex review`, and return to Inspect State.
-- Do not merge while an actionable or unclassified review finding remains.
+1. 関連する現在仕様、Issueが指定した将来仕様、既存コード、テストを読む。
+2. Acceptance Criteriaを満たす最小限の変更を実装する。
+3. 実装した動作を`docs/specs/current/`へ反映し、対応する規範的記述を`docs/specs/planned/`から除く。
+4. 必要なテストを追加し、関連するテスト、型チェック、Lint、フォーマット、ビルドを実行する。
+5. `develop`を対象とするPull Requestを作成する。
+6. Pull Request本文に`Closes #<issue-number>`と`@codex review`を記載する。
+7. Pull Requestの作成成功を確認して停止する。
 
-### 5. Merge and Close
+Pull Request作成後にcheckやreviewを待たず、同一起動で状態を再確認しない。
 
-Merge only when all of the following are true for the latest head commit:
+## CI Repair Phase
 
-- Review is complete and reports no remaining actionable findings.
-- Every review finding is resolved or has a recorded no-change, tracking Issue, or handoff rationale.
-- All required checks pass.
-- The pull request does not have an unresolved `question` label.
-- The pull request still satisfies the selected Issue completion conditions.
+1. 最新head commitで失敗したcheckのログを確認し、原因を特定する。
+2. Issueの範囲内で必要な最小限の修正を行う。
+3. 関連するローカル検査を実行する。
+4. 既存Pull Requestのブランチへpushする。
+5. コードまたは仕様を変更した場合は、Pull Requestへ`@codex review`をコメントする。
+6. pushまたは再実行要求の成功を確認して停止する。
 
-Then:
+更新後のcheckやreviewを待たず、同一起動で状態を再確認しない。
 
-1. Merge the pull request into `develop`.
-2. Confirm that the pull request is merged and closed.
-3. Confirm that the selected Issue is closed by the merge. If it is still open, close it only after verifying every completion condition.
-4. Perform repository-required post-merge cleanup.
-5. Report completion and stop.
+## Review Response Phase
 
-## Terminal Conditions
+1. 最新head commitに対する全レビュー指摘を、Issue、現在仕様、既存Issue、申し送り事項と照合する。
+2. 各指摘を、修正、追跡済み、変更不要、仕様確認のいずれかに分類する。
+3. 対象内の妥当な指摘を最小限の変更と再発防止テストで修正する。
+4. 変更しない指摘には、追跡先または具体的な根拠を返信する。
+5. 仕様確認が必要な場合は質問を説明し、`question`ラベルを付けて停止する。
+6. 関連するローカル検査を実行し、変更を既存Pull Requestのブランチへpushする。
+7. Pull Requestへ`@codex review`をコメントして停止する。
 
-Stop only when one of these conditions is true:
+再レビューや更新後のcheckを待たず、同一起動で状態を再確認しない。
 
-- Completed: the pull request is merged into `develop` and both the pull request and Issue are closed.
-- Blocked: a dependency, missing `develop` branch, permission, external failure, or required user decision prevents further progress.
-- Specification clarification: the pull request has the `question` label and the unresolved question is reported.
+## Pending State
 
-Pending checks or review are not terminal conditions. Wait and continue the Main Loop.
+- checkまたはreviewがpendingの場合、sleep、polling、再試行ループを行わない。
+- 現在pendingの対象と最新head commitを報告して停止する。
+- コメントがまだないことをreview完了とはみなさない。
+
+## Merge Phase
+
+次をすべて満たす場合だけ実行する。
+
+- 最新head commitのrequired checkがすべて成功している。
+- 最新head commitへのreviewが完了し、対応可能または未分類の指摘がない。
+- 全指摘が解決済み、根拠付きの変更不要、追跡済みのいずれかである。
+- `question`ラベルがない。
+- Pull RequestがIssueのAcceptance Criteriaを満たしている。
+
+実行手順:
+
+1. Pull Requestを`develop`へマージする。
+2. Pull Requestがmergedかつclosedであることを確認する。
+3. Issueがcloseされたことを確認する。自動でcloseされていない場合は、Acceptance Criteriaを再確認してからcloseする。
+4. リポジトリ指示に従ってマージ後のローカルブランチを整理する。
+5. 完了を報告して停止する。
+
+## Blocked State
+
+次の場合は、進行を推測で補わず、理由と必要な判断を報告して停止する。
+
+- 依存Issueが未完了
+- `develop`が存在しない
+- 権限または外部障害により選択したフェーズを完了できない
+- Issue、現在仕様、Source Specが不足または競合する
+- POの仕様決定が必要
 
 ## Safety
 
-- Keep the pull request focused on the selected Issue.
-- Do not modify unrelated files.
-- Do not revert user changes unless explicitly requested.
-- Do not bypass branch protection, required checks, review, or repository instructions.
+- 選択したIssue以外へ切り替えない。
+- IssueのOut of Scopeや無関係な将来仕様を実装しない。
+- 無関係なファイルを変更しない。
+- ユーザーの変更を明示的な依頼なく取り消さない。
+- branch protection、required check、reviewを迂回しない。
+- 待機のための`sleep`、定期polling、長時間実行を行わない。
 
 ## Completion Report
 
-Report:
+毎回、次を報告する。
 
-- Selected Issue
-- Terminal condition: completed, blocked, or specification clarification
-- Pull request URL if created or updated
-- Tests/checks run
-- Review status for the merged or current head commit
-- Remaining blocker if any
+- 選択したIssue
+- 今回確認したPull Requestと最新head commit
+- 今回実行したフェーズ、またはPending／Blockedの状態
+- 作成または更新したPull RequestのURL
+- 実行したテストと検査
+- 現在のcheckとreviewの状態
+- 次回起動時に確認する状態

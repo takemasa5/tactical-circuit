@@ -9,7 +9,7 @@ export type EditorErrorCode =
   | "node_sequence_exhausted"
   | "start_node_deletion";
 
-/** `spec/editor/phase2.md`の編集操作結果。 */
+/** `docs/specs/current/editor/phase2.md`の編集操作結果。 */
 export type EditorResult<T> =
   | { readonly success: true; readonly changed: boolean; readonly data: T }
   | {

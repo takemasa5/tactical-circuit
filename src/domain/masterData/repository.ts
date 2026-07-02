@@ -10,7 +10,7 @@ import type {
   WeaponDefinition,
 } from "./models";
 
-/** `spec/15_master_data.md`のフォルダ種別とDefinitionの組。 */
+/** `docs/specs/current/15_master_data.md`のフォルダ種別とDefinitionの組。 */
 export type MasterDataEntry = {
   [TType in MasterDataType]: {
     readonly dataType: TType;
@@ -18,7 +18,7 @@ export type MasterDataEntry = {
   };
 }[MasterDataType];
 
-/** `spec/15_master_data.md`の種別別読取専用格納領域。 */
+/** `docs/specs/current/15_master_data.md`の種別別読取専用格納領域。 */
 type RepositoryMaps = {
   [TType in MasterDataType]: ReadonlyMap<string, MasterDataByType[TType]>;
 };
@@ -708,7 +708,7 @@ const deepFreeze = <T>(value: T): T => {
   return Object.freeze(value);
 };
 
-/** `spec/15_master_data.md`の検証済み・読取専用Data Repository。 */
+/** `docs/specs/current/15_master_data.md`の検証済み・読取専用Data Repository。 */
 export class DataRepository {
   readonly #maps: RepositoryMaps;
 
