@@ -356,13 +356,14 @@ Programは命令内容ではなく、命令の配置と接続を表現する。
 
 # 他仕様との関係
 
-Programの論理モデルは以下の仕様書から参照される。
+Programの論理モデルは以下の現在仕様から参照される。
 
 - `docs/specs/current/instructions/00_overview.md`
 - `docs/specs/current/instructions/concept.md`
 - `docs/specs/current/editor/00_overview.md`
 - `docs/specs/current/validator/00_overview.md`
 - `docs/specs/current/ai/00_overview.md`
-- `docs/specs/planned/simulator/00_overview.md`
 
-Programの構造を変更する場合は、これらの仕様書との整合性を維持しなければならない。
+Programの構造を変更する場合は、これらの現在仕様との整合性を維持しなければならない。
+
+`docs/specs/planned/simulator/00_overview.md`からも参照されるが、選択したIssueのSource Specに指定されていない限り、将来仕様との整合は通常のレビューをブロックする条件にしない。

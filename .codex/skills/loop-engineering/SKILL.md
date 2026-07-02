@@ -18,7 +18,6 @@ description: "Advance exactly one GitHub Issue by one lifecycle phase per invoca
 
 ## Preconditions
 
-- `develop`ブランチが存在しなければ、代替ブランチを使用せず停止する。
 - ユーザーがIssueを指定した場合は、そのIssueを使用する。
 - Issueが未指定の場合は、依存関係が完了しているopenなIssueを一つ選択する。
 - 一度選択したIssueを、その起動中に変更しない。
@@ -31,7 +30,8 @@ description: "Advance exactly one GitHub Issue by one lifecycle phase per invoca
 1. 選択したIssueに対応する既存Pull Requestを探す。
 2. Pull Requestが存在する場合は、そのbase branch、head branch、最新head commit、checks、review、thread-awareなレビューコメント、ラベルを確認する。
 3. Pull Requestが存在しない場合は、既存のローカルまたはリモート作業ブランチと未完了変更を確認する。
-4. `question`ラベルまたは未解決の仕様質問がある場合は、変更せずに質問内容を報告して停止する。
+4. Pull Requestのbaseまたは新規Pull Requestのbaseとなる`develop`がGitHubリポジトリに存在することを確認する。ローカルに`develop`がないことだけを欠落と判断せず、リモートブランチを取得してtracking branchを作成する。
+5. `question`ラベルまたは未解決の仕様質問がある場合は、変更せずに質問内容を報告して停止する。
 
 既存Pull Requestがある場合、新規Pull Requestを作成せず、その状態から再開する。
 
@@ -112,7 +112,7 @@ Pull Request作成後にcheckやreviewを待たず、同一起動で状態を再
 次の場合は、進行を推測で補わず、理由と必要な判断を報告して停止する。
 
 - 依存Issueが未完了
-- `develop`が存在しない
+- `develop`がGitHubリポジトリに存在せず、設計者による作成が完了していない
 - 権限または外部障害により選択したフェーズを完了できない
 - Issue、現在仕様、Source Specが不足または競合する
 - POの仕様決定が必要
