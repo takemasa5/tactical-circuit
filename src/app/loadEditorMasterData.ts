@@ -1,7 +1,5 @@
-import {
-  loadDataRepository,
-  loadMasterDataDefinition,
-} from "../domain/masterData/loader";
+import { PRODUCTION_IMPLEMENTATION_IDS } from "../domain/ai/instructions";
+import { loadDataRepository } from "../domain/masterData/loader";
 import type { DataRepository } from "../domain/masterData/repository";
 import type {
   InstructionDefinition,
@@ -65,28 +63,6 @@ export const parseInstructionDocumentManifest = (
   return { files };
 };
 
-const collectEditorImplementationIds = (
-  documents: readonly EditorMasterDataDocument[],
-): ReadonlySet<string> => {
-  const implementationIds = new Set<string>();
-  const failedPaths: string[] = [];
-  documents.forEach((document) => {
-    const loaded = loadMasterDataDefinition({
-      dataType: "instruction",
-      json: document.json,
-      sourcePath: document.path,
-    });
-    if (loaded.success) implementationIds.add(loaded.data.implementationId);
-    else failedPaths.push(document.path);
-  });
-  if (failedPaths.length > 0) {
-    throw new Error(
-      `Instruction Definition validation failed: ${failedPaths.join(", ")}`,
-    );
-  }
-  return implementationIds;
-};
-
 /** 取得済みJSONをData Repositoryで検証してEditor入力へ変換する。 */
 export const parseEditorMasterData = (
   manifestJson: string,
@@ -99,7 +75,7 @@ export const parseEditorMasterData = (
       json,
       sourcePath: path,
     })),
-    collectEditorImplementationIds(documents),
+    PRODUCTION_IMPLEMENTATION_IDS,
   );
   if (!loaded.success) {
     throw new Error(

@@ -149,6 +149,7 @@ export type WorldState = {
 /** `spec/instructions/concept.md`の検出Robot情報。 */
 export type DetectedRobot = {
   readonly id: RuntimeRobotId;
+  readonly worldPosition: Position;
   readonly relativePosition: Position;
   readonly distance: Int32;
   readonly bearing: Int32;
@@ -171,6 +172,12 @@ export type SensorSnapshot = {
   readonly bullets: readonly DetectedBullet[];
 };
 
+/** `spec/13_data_ownership.md`のカテゴリ別行動状態。 */
+export type ActionStatusSnapshot = {
+  readonly movement: "idle" | "running";
+  readonly combat: "idle" | "running";
+};
+
 /** `spec/13_data_ownership.md`のAI Engine向け読取専用入力。 */
 export type ExecutionInput = {
   readonly tick: Int32;
@@ -178,6 +185,32 @@ export type ExecutionInput = {
   readonly aiRuntimeState: AIRuntimeState;
   readonly sensors: SensorSnapshot;
   readonly randomState: RandomState;
+  readonly actionStatus: ActionStatusSnapshot;
+};
+
+/** `spec/ai/00_overview.md`のAI実行時エラーコード。 */
+export type AIRuntimeErrorCode =
+  | "empty_call_stack"
+  | "call_stack_overflow"
+  | "invalid_memory_access"
+  | "invalid_instruction_result"
+  | "internal_instruction_error";
+
+/** `spec/ai/00_overview.md`のNode単位のAI実行時エラー。 */
+export type AIRuntimeError = {
+  readonly code: AIRuntimeErrorCode;
+  readonly message: string;
+  readonly nodeId: NodeId;
+  readonly instructionId: import("../masterData/models").InstructionId;
+};
+
+/** `spec/ai/00_overview.md`のゲーム進行へ影響しないデバッグ情報。 */
+export type AIDebugInfo = {
+  readonly executionTrace: readonly string[];
+  readonly terminationReason: string;
+  readonly runtimeError: AIRuntimeError | null;
+  readonly cpuUsed: Int32;
+  readonly executedNodeCount: Int32;
 };
 
 /** `spec/instructions/instruction_model.md`のAIメモリ更新要求。 */
@@ -220,6 +253,19 @@ export type ExecutionResult = {
   readonly actionRequests: ActionRequests;
   readonly aiRuntimeState: AIRuntimeState;
   readonly randomState: RandomState;
+};
+
+/** `spec/ai/00_overview.md`のTickごとのAI Engine入力。 */
+export type AIExecutionInput = {
+  readonly program: Program;
+  readonly executionInput: ExecutionInput;
+  readonly gameRule: import("../masterData/models").GameRuleDefinition;
+};
+
+/** `spec/ai/00_overview.md`のTickごとのAI Engine出力。 */
+export type AIExecutionOutput = {
+  readonly executionResult: ExecutionResult;
+  readonly debugInfo: AIDebugInfo;
 };
 
 /** `spec/13_data_ownership.md`のGame Session参加者。 */

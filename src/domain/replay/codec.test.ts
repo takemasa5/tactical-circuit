@@ -63,7 +63,20 @@ const body: RobotBodyDefinition = {
   maxEnergy: int32(100),
   heatCapacity: int32(100),
   size: { width: int32(10), height: int32(10) },
-  slots: [],
+  slots: [
+    {
+      id: "slot_1",
+      displayName: "Right Weapon",
+      category: "weapon",
+      weaponMount: "right_hand",
+    },
+    {
+      id: "slot_2",
+      displayName: "Left Weapon",
+      category: "weapon",
+      weaponMount: "left_hand",
+    },
+  ],
 };
 
 const map: MapDefinition = {
@@ -265,6 +278,51 @@ describe("Replay codec", () => {
       expect(
         loaded.data.replayData.initialWorldState.robots[0]?.direction,
       ).toBe(90);
+    }
+  });
+
+  it("行動要求内の角度もJSON保存時に正規化する", () => {
+    const valid = replay();
+    const loaded = loadReplay(
+      saveReplay({
+        ...valid,
+        replayData: {
+          ...valid.replayData,
+          initialWorldState: {
+            ...valid.replayData.initialWorldState,
+            robots: [
+              {
+                ...robot,
+                actionRequests: {
+                  movement: { type: "turn_left", turnTo: int32(-90) },
+                  combat: {
+                    type: "fire",
+                    targetDirection: int32(450),
+                    targetPosition: { x: int32(20), y: int32(30) },
+                  },
+                },
+              },
+            ],
+          },
+        },
+      }),
+      "0.1.1",
+      repository(),
+    );
+
+    expect(loaded.success).toBe(true);
+    if (loaded.success) {
+      const actionRequests =
+        loaded.data.replayData.initialWorldState.robots[0]?.actionRequests;
+      expect(actionRequests?.movement).toEqual({
+        type: "turn_left",
+        turnTo: 270,
+      });
+      expect(actionRequests?.combat).toEqual({
+        type: "fire",
+        targetDirection: 90,
+        targetPosition: { x: 20, y: 30 },
+      });
     }
   });
 

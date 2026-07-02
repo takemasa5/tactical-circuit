@@ -130,6 +130,7 @@ export type SlotDefinition = {
   readonly id: string;
   readonly displayName: string;
   readonly category: PartCategory;
+  readonly weaponMount?: "right_hand" | "left_hand";
 };
 
 /** `spec/15_master_data.md`のRobot Body Definition。 */

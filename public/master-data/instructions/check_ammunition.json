@@ -1,0 +1,40 @@
+{
+  "dataType": "instruction",
+  "formatVersion": "0.1.1",
+  "payload": {
+    "id": "instruction_bc1bed70-1c22-43fe-b7d3-75e319e09b5a",
+    "displayName": "Check Ammunition",
+    "description": "選択中の武器の残弾数を判定します",
+    "enabled": true,
+    "implementationId": "check_ammunition",
+    "category": "branch",
+    "parameters": [
+      {
+        "id": "threshold",
+        "displayName": "Threshold",
+        "description": "判定する残弾数",
+        "valueType": "ammunition",
+        "required": true,
+        "defaultValue": 1,
+        "minValue": 0
+      }
+    ],
+    "outputPaths": [
+      {
+        "id": "at_least",
+        "displayName": "At Least",
+        "description": "残弾数が指定数量以上の場合",
+        "required": true,
+        "displayOrder": 0
+      },
+      {
+        "id": "less_than",
+        "displayName": "Less Than",
+        "description": "残弾数が指定数量未満の場合",
+        "required": true,
+        "displayOrder": 1
+      }
+    ],
+    "cpuCost": 1
+  }
+}

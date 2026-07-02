@@ -170,6 +170,91 @@ export const robotStateSchema = {
   },
 } as const;
 
+export const sensorSnapshotSchema = {
+  type: "object",
+  additionalProperties: false,
+  required: ["robots", "bullets"],
+  properties: {
+    robots: {
+      type: "array",
+      items: {
+        type: "object",
+        additionalProperties: false,
+        required: [
+          "id",
+          "worldPosition",
+          "relativePosition",
+          "distance",
+          "bearing",
+          "status",
+        ],
+        properties: {
+          id: robotId,
+          worldPosition: positionSchema,
+          relativePosition: positionSchema,
+          distance: nonNegativeInt32,
+          bearing: int32,
+          status: { enum: ["active", "destroyed"] },
+        },
+      },
+    },
+    bullets: {
+      type: "array",
+      items: {
+        type: "object",
+        additionalProperties: false,
+        required: [
+          "id",
+          "ownerRobotId",
+          "relativePosition",
+          "vector",
+          "distance",
+          "bearing",
+        ],
+        properties: {
+          id: bulletId,
+          ownerRobotId: robotId,
+          relativePosition: positionSchema,
+          vector: vectorSchema,
+          distance: nonNegativeInt32,
+          bearing: int32,
+        },
+      },
+    },
+  },
+} as const;
+
+export const actionStatusSnapshotSchema = {
+  type: "object",
+  additionalProperties: false,
+  required: ["movement", "combat"],
+  properties: {
+    movement: { enum: ["idle", "running"] },
+    combat: { enum: ["idle", "running"] },
+  },
+} as const;
+
+export const executionInputSchema = {
+  type: "object",
+  additionalProperties: false,
+  required: [
+    "tick",
+    "robot",
+    "aiRuntimeState",
+    "sensors",
+    "randomState",
+    "actionStatus",
+  ],
+  properties: {
+    tick: nonNegativeInt32,
+    robot: robotStateSchema,
+    aiRuntimeState: aiRuntimeStateSchema,
+    sensors: sensorSnapshotSchema,
+    randomState: randomStateSchema,
+    actionStatus: actionStatusSnapshotSchema,
+  },
+} as const;
+
 export const bulletStateSchema = {
   type: "object",
   additionalProperties: false,

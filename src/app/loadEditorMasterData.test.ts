@@ -44,6 +44,7 @@ describe("Editor Master Data", () => {
     expect(masterData.instructions).toHaveLength(
       instructionManifest.files.length,
     );
+    expect(masterData.instructions).toHaveLength(13);
     expect(byImplementationId.get("fire")?.category).toBe("action");
     expect(byImplementationId.get("detect_bullet")).toMatchObject({
       id: "instruction_73d91875-a82c-4c91-b41f-c7598191bbff",
@@ -79,6 +80,14 @@ describe("Editor Master Data", () => {
         maxValue: 10000,
       }),
     ]);
+    expect(byImplementationId.get("wait_action")?.cpuCost).toBe(0);
+    expect(byImplementationId.get("check_ammunition")?.outputPaths).toEqual([
+      expect.objectContaining({ id: "at_least" }),
+      expect.objectContaining({ id: "less_than" }),
+    ]);
+    expect(
+      byImplementationId.get("switch_weapon")?.parameters[0],
+    ).toMatchObject({ id: "hand", enumValues: ["right", "left"] });
   });
 
   it("manifestに不正なファイル名または重複がある場合は拒否する", () => {
@@ -126,6 +135,23 @@ describe("Editor Master Data", () => {
         },
       ]),
     ).toThrow("Start Instruction Definition is missing or invalid");
+  });
+
+  it("固定RegistryにないimplementationIdをEditor経由でも拒否する", () => {
+    const startDocument = JSON.parse(
+      readPublicFile("/master-data/instructions/start.json"),
+    ) as { payload: { implementationId: string } };
+    startDocument.payload.implementationId = "unknown_instruction";
+    vi.spyOn(console, "error").mockImplementation(() => undefined);
+
+    expect(() =>
+      parseEditorMasterData(readPublicFile("/master-data/manifest.json"), [
+        {
+          path: "/master-data/instructions/start.json",
+          json: JSON.stringify(startDocument),
+        },
+      ]),
+    ).toThrow("unknown_implementation_id");
   });
 
   it("ブラウザ読込ではInstruction manifestに記載されたファイルだけを取得する", async () => {

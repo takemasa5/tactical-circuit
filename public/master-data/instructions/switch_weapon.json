@@ -1,0 +1,33 @@
+{
+  "dataType": "instruction",
+  "formatVersion": "0.1.1",
+  "payload": {
+    "id": "instruction_007b2990-caaf-481a-996b-3e75547eb15a",
+    "displayName": "Switch Weapon",
+    "description": "選択中の武器を右手または左手へ切り替えます",
+    "enabled": true,
+    "implementationId": "switch_weapon",
+    "category": "action",
+    "parameters": [
+      {
+        "id": "hand",
+        "displayName": "Hand",
+        "description": "切替先の手",
+        "valueType": "enum",
+        "required": true,
+        "defaultValue": "right",
+        "enumValues": ["right", "left"]
+      }
+    ],
+    "outputPaths": [
+      {
+        "id": "next",
+        "displayName": "Next",
+        "description": "次のノード",
+        "required": true,
+        "displayOrder": 0
+      }
+    ],
+    "cpuCost": 1
+  }
+}
