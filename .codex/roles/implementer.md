@@ -8,10 +8,14 @@
 
 ## 着手前
 
-- IssueのGoal、Source Spec、Acceptance Criteria、Out of Scope、Dependenciesを確認する。
-- 関連する`docs/specs/current/`、Issueが指定した`docs/specs/planned/`の範囲、既存コード、既存テストを読む。
-- `docs/planning/phase_handoffs.md`を確認し、対象Phaseの`pending`事項を作業計画へ含める。
-- 既存Pull Requestがないか確認してから、新規実装か継続作業かを判断する。
+- IssueのGoal、Source Spec、Phase Handoff、Acceptance Criteria、Out of Scope、Dependenciesを確認する。
+- まずIssue本文、Source Specで指定されたファイル・セクション、Acceptance Criteriaだけを読む。
+- 既存コードと既存テストは、Issue本文またはSource Specから必要と判断できる範囲に限定して読む。
+- 関連範囲が不明な場合は、広範囲に読む前に`rg`で候補を絞り、主要な候補だけを読む。
+- IssueにPhase Handoff欄がない場合は、実装を開始せずPOまたはdesignerへ確認する。
+- Phase Handoffが`Applicable: Yes`の場合のみ、Source Specで指定された`phase_handoffs.md`の該当箇所を読む。
+- Phase Handoffが`Applicable: No`の場合は、`phase_handoffs.md`を読まない。
+- 既存Pull RequestがIssueに紐づいている場合は、そのPull Requestのブランチを使用する。ない場合は新規ブランチを作成する。
 - 仕様が不足または競合している場合は推測で実装せず、質問内容を明示して`question`ラベルで停止する。
 
 ## 変更範囲
@@ -22,6 +26,14 @@
 - 実装した動作を`docs/specs/current/`へ反映し、該当する規範的記述を`docs/specs/planned/`へ重複して残さない。
 - 動作変更と無関係なリファクタリングを同時に行わない。
 - 大きな変更はIssueで定めた段階に分ける。
+
+## Pull Request前レビュー
+
+- Pull Request作成前に、IssueのAcceptance Criteria、Out of Scope、差分、確認結果を自己レビューする。
+- 通常はsubagentレビューを実行しない。
+- 中核ロジック、複数モジュール、仕様移動を含む変更など高リスクな場合のみ、`pr-pre-reviewer` subagentを1体だけ使用してよい。
+- subagentはread-onlyで使用し、修正させない。
+- subagentレビューはP0/P1相当の正しさ、決定論、仕様不一致、重大なテスト不足に絞る。
 
 ## GitとPull Request
 
@@ -51,8 +63,10 @@
 - 新機能には可能な限りテストを追加する。
 - バグ修正には再発防止テストを追加する。
 - 既存テストを安易に削除しない。
-- 作業フェーズに関連するテスト、型チェック、Lint、フォーマット、ビルドを実行する。
-- 不要なコードやファイルがなく、`docs/specs/current/`と実装が一致することを確認する。
+- まず変更範囲に対応する最小のテストを実行する。
+- 型チェック、Lint、フォーマット、ビルドはプロジェクト hooks または CI の結果を確認する。
+- hooks または CI が失敗した場合は、対象Issueの範囲内で修正する。
+- 不要なコードやファイルがなく、IssueのAcceptance Criteriaと`docs/specs/current/`の該当範囲が一致することを確認する。
 
 ## レビュー指摘
 
