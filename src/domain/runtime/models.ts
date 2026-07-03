@@ -15,10 +15,10 @@ import type {
 import type { Program } from "../program/models";
 import type { RobotDesign, SlotId } from "../robotDesign/models";
 
-/** `spec/simulator/00_overview.md`のWorld State内Bullet ID。 */
+/** `docs/specs/current/13_data_ownership.md`のWorld State内Bullet ID。 */
 export type BulletId = string & { readonly __brand: "BulletId" };
 
-/** `spec/instructions/details/move_forward.md`と`move_backward.md`の移動要求。 */
+/** `docs/specs/current/instructions/details/move_forward.md`と`move_backward.md`の移動要求。 */
 export type MoveRequest =
   | {
       readonly type: "forward";
@@ -29,7 +29,7 @@ export type MoveRequest =
       readonly distance: Int32;
     };
 
-/** `spec/instructions/details/turn.md`の旋回要求。 */
+/** `docs/specs/current/instructions/details/turn.md`の旋回要求。 */
 export type TurnRequest =
   | {
       readonly type: "turn_left";
@@ -40,7 +40,7 @@ export type TurnRequest =
       readonly turnTo: Int32;
     };
 
-/** `spec/instructions/concept.md`の移動系行動要求。 */
+/** `docs/specs/current/instructions/concept.md`の移動系行動要求。 */
 export type MovementRequest =
   | MoveRequest
   | TurnRequest
@@ -48,35 +48,35 @@ export type MovementRequest =
   | { readonly type: "strafe_right" }
   | { readonly type: "stop" };
 
-/** `spec/instructions/details/switch_weapon.md`のWeapon切替要求。 */
+/** `docs/specs/current/instructions/details/switch_weapon.md`のWeapon切替要求。 */
 export type SwitchWeaponRequest = {
   readonly type: "switch_weapon";
   readonly hand: "right" | "left";
 };
 
-/** `spec/instructions/details/fire.md`の発射要求。 */
+/** `docs/specs/current/instructions/details/fire.md`の発射要求。 */
 export type FireRequest = {
   readonly type: "fire";
   readonly targetDirection: Int32;
   readonly targetPosition: Position;
 };
 
-/** `spec/instructions/concept.md`の戦闘系行動要求。 */
+/** `docs/specs/current/instructions/concept.md`の戦闘系行動要求。 */
 export type CombatRequest =
   SwitchWeaponRequest | FireRequest | { readonly type: "melee" };
 
-/** `spec/instructions/concept.md`のカテゴリ別行動要求。 */
+/** `docs/specs/current/instructions/concept.md`のカテゴリ別行動要求。 */
 export type ActionRequests = {
   readonly movement: MovementRequest | null;
   readonly combat: CombatRequest | null;
 };
 
-/** `spec/14_determinism_rules.md`のxorshift32内部状態。 */
+/** `docs/specs/current/14_determinism_rules.md`のxorshift32内部状態。 */
 export type RandomState = {
   readonly value: Int32;
 };
 
-/** `spec/13_data_ownership.md`のTickをまたぐAI実行状態。 */
+/** `docs/specs/current/13_data_ownership.md`のTickをまたぐAI実行状態。 */
 export type AIRuntimeState = {
   readonly nextNodeId: NodeId | null;
   readonly registers: Readonly<Record<string, Int32>>;
@@ -85,7 +85,7 @@ export type AIRuntimeState = {
   readonly memory: { readonly values: readonly Int32[] };
 };
 
-/** `spec/simulator/00_overview.md`の実行時Robot状態。 */
+/** `docs/specs/current/13_data_ownership.md`の実行時Robot状態。 */
 export type RobotState = {
   readonly id: RuntimeRobotId;
   readonly robotDesignId: RobotDesignId;
@@ -103,7 +103,7 @@ export type RobotState = {
   readonly actionRequests: ActionRequests;
 };
 
-/** `spec/simulator/00_overview.md`の飛翔中Bullet状態。 */
+/** `docs/specs/current/13_data_ownership.md`の飛翔中Bullet状態。 */
 export type BulletState = {
   readonly id: BulletId;
   readonly ownerRobotId: RuntimeRobotId;
@@ -114,27 +114,27 @@ export type BulletState = {
   readonly remainingLifetimeTicks: Int32;
 };
 
-/** `spec/13_data_ownership.md`のWorld State内障害物状態。 */
+/** `docs/specs/current/13_data_ownership.md`のWorld State内障害物状態。 */
 export type ObstacleState = {
   readonly id: string;
   readonly position: Position;
   readonly size: Size;
 };
 
-/** `spec/simulator/00_overview.md`の戦闘終了理由。 */
+/** `docs/specs/current/13_data_ownership.md`の戦闘終了理由。 */
 export type BattleEndReason =
   "opponent_destroyed" | "mutual_destruction" | "tick_limit";
 
-/** `spec/13_data_ownership.md`の勝敗結果。 */
+/** `docs/specs/current/13_data_ownership.md`の勝敗結果。 */
 export type BattleResult = {
   readonly winnerRobotIds: readonly RuntimeRobotId[];
   readonly reason: BattleEndReason;
 };
 
-/** `spec/13_data_ownership.md`のゲーム進行状態。 */
+/** `docs/specs/current/13_data_ownership.md`のゲーム進行状態。 */
 export type GameStatus = "ready" | "running" | "finished";
 
-/** `spec/13_data_ownership.md`のゲーム世界における唯一の状態。 */
+/** `docs/specs/current/13_data_ownership.md`のゲーム世界における唯一の状態。 */
 export type WorldState = {
   readonly tick: Int32;
   readonly robots: readonly RobotState[];
@@ -146,7 +146,7 @@ export type WorldState = {
   readonly nextBulletSequence: Int32;
 };
 
-/** `spec/instructions/concept.md`の検出Robot情報。 */
+/** `docs/specs/current/instructions/concept.md`の検出Robot情報。 */
 export type DetectedRobot = {
   readonly id: RuntimeRobotId;
   readonly worldPosition: Position;
@@ -156,7 +156,7 @@ export type DetectedRobot = {
   readonly status: RobotState["status"];
 };
 
-/** `spec/instructions/concept.md`の検出Bullet情報。 */
+/** `docs/specs/current/instructions/concept.md`の検出Bullet情報。 */
 export type DetectedBullet = {
   readonly id: BulletId;
   readonly ownerRobotId: RuntimeRobotId;
@@ -166,19 +166,19 @@ export type DetectedBullet = {
   readonly bearing: Int32;
 };
 
-/** `spec/instructions/concept.md`のTick開始時センサースナップショット。 */
+/** `docs/specs/current/instructions/concept.md`のTick開始時センサースナップショット。 */
 export type SensorSnapshot = {
   readonly robots: readonly DetectedRobot[];
   readonly bullets: readonly DetectedBullet[];
 };
 
-/** `spec/13_data_ownership.md`のカテゴリ別行動状態。 */
+/** `docs/specs/current/13_data_ownership.md`のカテゴリ別行動状態。 */
 export type ActionStatusSnapshot = {
   readonly movement: "idle" | "running";
   readonly combat: "idle" | "running";
 };
 
-/** `spec/13_data_ownership.md`のAI Engine向け読取専用入力。 */
+/** `docs/specs/current/13_data_ownership.md`のAI Engine向け読取専用入力。 */
 export type ExecutionInput = {
   readonly tick: Int32;
   readonly robot: RobotState;
@@ -188,7 +188,7 @@ export type ExecutionInput = {
   readonly actionStatus: ActionStatusSnapshot;
 };
 
-/** `spec/ai/00_overview.md`のAI実行時エラーコード。 */
+/** `docs/specs/current/ai/00_overview.md`のAI実行時エラーコード。 */
 export type AIRuntimeErrorCode =
   | "empty_call_stack"
   | "call_stack_overflow"
@@ -196,7 +196,7 @@ export type AIRuntimeErrorCode =
   | "invalid_instruction_result"
   | "internal_instruction_error";
 
-/** `spec/ai/00_overview.md`のNode単位のAI実行時エラー。 */
+/** `docs/specs/current/ai/00_overview.md`のNode単位のAI実行時エラー。 */
 export type AIRuntimeError = {
   readonly code: AIRuntimeErrorCode;
   readonly message: string;
@@ -204,7 +204,7 @@ export type AIRuntimeError = {
   readonly instructionId: import("../masterData/models").InstructionId;
 };
 
-/** `spec/ai/00_overview.md`のゲーム進行へ影響しないデバッグ情報。 */
+/** `docs/specs/current/ai/00_overview.md`のゲーム進行へ影響しないデバッグ情報。 */
 export type AIDebugInfo = {
   readonly executionTrace: readonly string[];
   readonly terminationReason: string;
@@ -213,17 +213,17 @@ export type AIDebugInfo = {
   readonly executedNodeCount: Int32;
 };
 
-/** `spec/instructions/instruction_model.md`のAIメモリ更新要求。 */
+/** `docs/specs/current/instructions/instruction_model.md`のAIメモリ更新要求。 */
 export type MemoryWrite = {
   readonly index: Int32;
   readonly value: Int32;
 };
 
-/** `spec/instructions/instruction_model.md`のコールスタック更新要求。 */
+/** `docs/specs/current/instructions/instruction_model.md`のコールスタック更新要求。 */
 export type StackOperation =
   { readonly type: "push"; readonly nodeId: NodeId } | { readonly type: "pop" };
 
-/** `spec/instructions/instruction_model.md`の命令単位のContext変更要求。 */
+/** `docs/specs/current/instructions/instruction_model.md`の命令単位のContext変更要求。 */
 export type ExecutionContextChanges = {
   readonly registerWrites: Readonly<Record<string, Int32>>;
   readonly flagWrites: Readonly<Record<string, boolean>>;
@@ -234,7 +234,7 @@ export type ExecutionContextChanges = {
   readonly randomState: RandomState | null;
 };
 
-/** `spec/instructions/concept.md`の1Tick限りのAI実行環境。 */
+/** `docs/specs/current/instructions/concept.md`の1Tick限りのAI実行環境。 */
 export type ExecutionContext = {
   readonly program: Program;
   readonly input: ExecutionInput;
@@ -248,34 +248,34 @@ export type ExecutionContext = {
   readonly randomState: RandomState;
 };
 
-/** `spec/13_data_ownership.md`のAI Engine実行結果。 */
+/** `docs/specs/current/13_data_ownership.md`のAI Engine実行結果。 */
 export type ExecutionResult = {
   readonly actionRequests: ActionRequests;
   readonly aiRuntimeState: AIRuntimeState;
   readonly randomState: RandomState;
 };
 
-/** `spec/ai/00_overview.md`のTickごとのAI Engine入力。 */
+/** `docs/specs/current/ai/00_overview.md`のTickごとのAI Engine入力。 */
 export type AIExecutionInput = {
   readonly program: Program;
   readonly executionInput: ExecutionInput;
   readonly gameRule: import("../masterData/models").GameRuleDefinition;
 };
 
-/** `spec/ai/00_overview.md`のTickごとのAI Engine出力。 */
+/** `docs/specs/current/ai/00_overview.md`のTickごとのAI Engine出力。 */
 export type AIExecutionOutput = {
   readonly executionResult: ExecutionResult;
   readonly debugInfo: AIDebugInfo;
 };
 
-/** `spec/13_data_ownership.md`のGame Session参加者。 */
+/** `docs/specs/current/13_data_ownership.md`のGame Session参加者。 */
 export type GameSessionParticipant = {
   readonly robotId: RuntimeRobotId;
   readonly robotDesign: RobotDesign;
   readonly program: Program;
 };
 
-/** `spec/13_data_ownership.md`の1回の通常シミュレーション。 */
+/** `docs/specs/current/13_data_ownership.md`の1回の通常シミュレーション。 */
 export type GameSession = {
   readonly participants: readonly GameSessionParticipant[];
   readonly initialRandomSeed: Int32;

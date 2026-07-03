@@ -535,7 +535,7 @@ const sortDiagnostics = (
     return compareAscii(left.fieldPath ?? "", right.fieldPath ?? "");
   });
 
-/** `spec/validator/00_overview.md`に従ってProgramを静的検証する。 */
+/** `docs/specs/current/validator/00_overview.md`に従ってProgramを静的検証する。 */
 export const validateProgram = (
   program: Program,
   repository: DataRepository,

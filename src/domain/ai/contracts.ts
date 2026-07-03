@@ -7,21 +7,21 @@ import type {
   ExecutionContextChanges,
 } from "../runtime/models";
 
-/** `spec/instructions/instruction_model.md`の命令実行入力。 */
+/** `docs/specs/current/instructions/instruction_model.md`の命令実行入力。 */
 export type InstructionExecutionInput = {
   readonly definition: InstructionDefinition;
   readonly node: ProgramNode;
   readonly context: ExecutionContext;
 };
 
-/** `spec/instructions/instruction_model.md`の正常な命令実行結果。 */
+/** `docs/specs/current/instructions/instruction_model.md`の正常な命令実行結果。 */
 export type InstructionExecutionResult = {
   readonly nextNodeId: NodeId | null;
   readonly contextChanges: ExecutionContextChanges;
   readonly interruptTick: boolean;
 };
 
-/** `spec/instructions/instruction_model.md`の命令実行成否。 */
+/** `docs/specs/current/instructions/instruction_model.md`の命令実行成否。 */
 export type InstructionExecutionOutcome =
   | { readonly success: true; readonly result: InstructionExecutionResult }
   | {

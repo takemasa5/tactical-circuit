@@ -5,14 +5,14 @@ import type { Program } from "../program/models";
 
 const PROGRAM_KEY_PREFIX = "tactical-circuit:program:";
 
-/** `spec/editor/persistence.md`の永続化エラー分類。 */
+/** `docs/specs/current/editor/persistence.md`の永続化エラー分類。 */
 export type PersistenceErrorCode =
   | "storage_unavailable"
   | "storage_write_failed"
   | "program_not_found"
   | "invalid_program";
 
-/** `spec/editor/persistence.md`の保存・読込操作結果。 */
+/** `docs/specs/current/editor/persistence.md`の保存・読込操作結果。 */
 export type PersistenceResult<T> =
   | { readonly success: true; readonly data: T }
   | {
@@ -22,7 +22,7 @@ export type PersistenceResult<T> =
       readonly validationErrors?: readonly DataValidationError[];
     };
 
-/** `spec/editor/persistence.md`のExportファイル情報。 */
+/** `docs/specs/current/editor/persistence.md`のExportファイル情報。 */
 export type ProgramExport = {
   readonly filename: string;
   readonly json: string;
@@ -31,7 +31,7 @@ export type ProgramExport = {
 const storageKey = (programId: ProgramId): string =>
   `${PROGRAM_KEY_PREFIX}${programId}`;
 
-/** `spec/editor/persistence.md`に従いlocalStorageへProgramを保存する。 */
+/** `docs/specs/current/editor/persistence.md`に従いlocalStorageへProgramを保存する。 */
 export const saveProgramToStorage = (
   storage: Storage,
   program: Program,
@@ -71,7 +71,7 @@ export const listStoredProgramIds = (
   }
 };
 
-/** `spec/editor/persistence.md`に従いlocalStorageからProgramを読み込む。 */
+/** `docs/specs/current/editor/persistence.md`に従いlocalStorageからProgramを読み込む。 */
 export const loadProgramFromStorage = (
   storage: Storage,
   programId: ProgramId,

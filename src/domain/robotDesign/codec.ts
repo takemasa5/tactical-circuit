@@ -141,7 +141,7 @@ const validateAmmunition = (
   return errors;
 };
 
-/** `spec/13_data_ownership.md`の装備・装弾数参照を検証する。 */
+/** `docs/specs/current/13_data_ownership.md`の装備・装弾数参照を検証する。 */
 export const validateRobotDesignReferences = (
   design: RobotDesign,
   repository: DataRepository,
@@ -150,18 +150,18 @@ export const validateRobotDesignReferences = (
   ...validateAmmunition(design, repository),
 ];
 
-/** `spec/13_data_ownership.md`の順序不問データを安定した保存順へ整える。 */
+/** `docs/specs/current/13_data_ownership.md`の順序不問データを安定した保存順へ整える。 */
 export const canonicalizeRobotDesign = (design: RobotDesign): RobotDesign => ({
   ...design,
   equipment: sortRecord(design.equipment),
   ammunition: sortRecord(design.ammunition),
 });
 
-/** `spec/13_data_ownership.md`に従いRobotDesignをJSONへ保存する。 */
+/** `docs/specs/current/13_data_ownership.md`に従いRobotDesignをJSONへ保存する。 */
 export const saveRobotDesign = (design: RobotDesign): string =>
   saveJsonEnvelope("robot_design", canonicalizeRobotDesign(design));
 
-/** `spec/13_data_ownership.md`に従いRobotDesign JSONと装備を検証する。 */
+/** `docs/specs/current/13_data_ownership.md`に従いRobotDesign JSONと装備を検証する。 */
 export const loadRobotDesign = (
   value: string,
   repository: DataRepository,

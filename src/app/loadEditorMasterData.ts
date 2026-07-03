@@ -24,7 +24,7 @@ export type EditorMasterDataDocument = {
   readonly json: string;
 };
 
-/** `spec/editor/phase2.md`と`spec/editor/validator.md`のEditor起動用Master Data。 */
+/** `docs/specs/current/editor/phase2.md`と`docs/specs/current/editor/validator.md`のEditor起動用Master Data。 */
 export type EditorMasterData = {
   readonly instructions: readonly InstructionDefinition[];
   readonly startInstructionId: InstructionId;

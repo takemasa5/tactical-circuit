@@ -1,6 +1,6 @@
 import type { Int32, Position, Size } from "../data/common";
 
-/** `spec/15_master_data.md`の初期Master Data種別。 */
+/** `docs/specs/current/15_master_data.md`の初期Master Data種別。 */
 export type MasterDataType =
   | "instruction"
   | "robot_body"
@@ -13,31 +13,31 @@ export type MasterDataType =
   | "map"
   | "game_rule";
 
-/** `spec/15_master_data.md`の種別付きグローバルIDを区別する内部型。 */
+/** `docs/specs/current/15_master_data.md`の種別付きグローバルIDを区別する内部型。 */
 type BrandedId<TName extends string> = string & { readonly __brand: TName };
 
-/** `spec/15_master_data.md`のInstruction Definition ID。 */
+/** `docs/specs/current/15_master_data.md`のInstruction Definition ID。 */
 export type InstructionId = BrandedId<"InstructionId">;
-/** `spec/15_master_data.md`のRobot Body Definition ID。 */
+/** `docs/specs/current/15_master_data.md`のRobot Body Definition ID。 */
 export type RobotBodyId = BrandedId<"RobotBodyId">;
-/** `spec/15_master_data.md`のWeapon Definition ID。 */
+/** `docs/specs/current/15_master_data.md`のWeapon Definition ID。 */
 export type WeaponId = BrandedId<"WeaponId">;
-/** `spec/15_master_data.md`のSensor Definition ID。 */
+/** `docs/specs/current/15_master_data.md`のSensor Definition ID。 */
 export type SensorId = BrandedId<"SensorId">;
-/** `spec/15_master_data.md`のEngine Definition ID。 */
+/** `docs/specs/current/15_master_data.md`のEngine Definition ID。 */
 export type EngineId = BrandedId<"EngineId">;
-/** `spec/15_master_data.md`のArmor Definition ID。 */
+/** `docs/specs/current/15_master_data.md`のArmor Definition ID。 */
 export type ArmorId = BrandedId<"ArmorId">;
-/** `spec/15_master_data.md`のOption Definition ID。 */
+/** `docs/specs/current/15_master_data.md`のOption Definition ID。 */
 export type OptionId = BrandedId<"OptionId">;
-/** `spec/15_master_data.md`のProjectile Definition ID。 */
+/** `docs/specs/current/15_master_data.md`のProjectile Definition ID。 */
 export type ProjectileId = BrandedId<"ProjectileId">;
-/** `spec/15_master_data.md`のMap Definition ID。 */
+/** `docs/specs/current/15_master_data.md`のMap Definition ID。 */
 export type MapId = BrandedId<"MapId">;
-/** `spec/15_master_data.md`のGame Rule Definition ID。 */
+/** `docs/specs/current/15_master_data.md`のGame Rule Definition ID。 */
 export type GameRuleId = BrandedId<"GameRuleId">;
 
-/** `spec/15_master_data.md`で参照可能なMaster Data IDの総称。 */
+/** `docs/specs/current/15_master_data.md`で参照可能なMaster Data IDの総称。 */
 export type MasterDataId =
   | InstructionId
   | RobotBodyId
@@ -50,7 +50,7 @@ export type MasterDataId =
   | MapId
   | GameRuleId;
 
-/** `spec/15_master_data.md`の全Definition共通フィールド。 */
+/** `docs/specs/current/15_master_data.md`の全Definition共通フィールド。 */
 export type MasterDataBase<TId extends MasterDataId> = {
   readonly id: TId;
   readonly displayName: string;
@@ -59,7 +59,7 @@ export type MasterDataBase<TId extends MasterDataId> = {
   readonly implementationId?: string;
 };
 
-/** `spec/instructions/instruction_model.md`の命令カテゴリ。 */
+/** `docs/specs/current/instructions/instruction_model.md`の命令カテゴリ。 */
 export type InstructionCategory =
   | "control"
   | "branch"
@@ -69,7 +69,7 @@ export type InstructionCategory =
   | "action"
   | "special";
 
-/** `spec/instructions/instruction_model.md`のParameter Value種別。 */
+/** `docs/specs/current/instructions/instruction_model.md`のParameter Value種別。 */
 export type ParameterValueType =
   | "distance"
   | "degree"
@@ -88,7 +88,7 @@ export type ParameterValueType =
   | "node_reference"
   | "master_data_reference";
 
-/** `spec/instructions/instruction_model.md`のParameter Definition。 */
+/** `docs/specs/current/instructions/instruction_model.md`のParameter Definition。 */
 export type ParameterDefinition = {
   readonly id: string;
   readonly displayName: string;
@@ -103,7 +103,7 @@ export type ParameterDefinition = {
   readonly editorInfo?: Readonly<Record<string, unknown>>;
 };
 
-/** `spec/instructions/instruction_model.md`のOutput Path Definition。 */
+/** `docs/specs/current/instructions/instruction_model.md`のOutput Path Definition。 */
 export type OutputPathDefinition = {
   readonly id: string;
   readonly displayName: string;
@@ -112,7 +112,7 @@ export type OutputPathDefinition = {
   readonly displayOrder: Int32;
 };
 
-/** `spec/instructions/instruction_model.md`のInstruction Definition。 */
+/** `docs/specs/current/instructions/instruction_model.md`のInstruction Definition。 */
 export type InstructionDefinition = MasterDataBase<InstructionId> & {
   readonly implementationId: string;
   readonly category: InstructionCategory;
@@ -122,10 +122,10 @@ export type InstructionDefinition = MasterDataBase<InstructionId> & {
   readonly editorInfo?: Readonly<Record<string, unknown>>;
 };
 
-/** `spec/parts/00_overview.md`の装備スロットカテゴリ。 */
+/** `docs/specs/current/15_master_data.md`の装備スロットカテゴリ。 */
 export type PartCategory = "weapon" | "sensor" | "engine" | "armor" | "option";
 
-/** `spec/15_master_data.md`のRobot Body装備スロット。 */
+/** `docs/specs/current/15_master_data.md`のRobot Body装備スロット。 */
 export type SlotDefinition = {
   readonly id: string;
   readonly displayName: string;
@@ -133,7 +133,7 @@ export type SlotDefinition = {
   readonly weaponMount?: "right_hand" | "left_hand";
 };
 
-/** `spec/15_master_data.md`のRobot Body Definition。 */
+/** `docs/specs/current/15_master_data.md`のRobot Body Definition。 */
 export type RobotBodyDefinition = MasterDataBase<RobotBodyId> & {
   readonly weight: Int32;
   readonly maxHp: Int32;
@@ -143,7 +143,7 @@ export type RobotBodyDefinition = MasterDataBase<RobotBodyId> & {
   readonly slots: readonly SlotDefinition[];
 };
 
-/** `spec/15_master_data.md`のWeapon Definition。 */
+/** `docs/specs/current/15_master_data.md`のWeapon Definition。 */
 export type WeaponDefinition = MasterDataBase<WeaponId> & {
   readonly projectileId: ProjectileId;
   readonly damage: Int32;
@@ -158,7 +158,7 @@ export type WeaponDefinition = MasterDataBase<WeaponId> & {
   readonly ammunitionWeight: Int32;
 };
 
-/** `spec/15_master_data.md`のSensor Definition。 */
+/** `docs/specs/current/15_master_data.md`のSensor Definition。 */
 export type SensorDefinition = MasterDataBase<SensorId> & {
   readonly detectionDistance: Int32;
   readonly fieldOfViewDegree: Int32;
@@ -166,7 +166,7 @@ export type SensorDefinition = MasterDataBase<SensorId> & {
   readonly weight: Int32;
 };
 
-/** `spec/15_master_data.md`のEngine Definition。 */
+/** `docs/specs/current/15_master_data.md`のEngine Definition。 */
 export type EngineDefinition = MasterDataBase<EngineId> & {
   readonly maxForwardSpeed: Int32;
   readonly maxBackwardSpeed: Int32;
@@ -177,7 +177,7 @@ export type EngineDefinition = MasterDataBase<EngineId> & {
   readonly weight: Int32;
 };
 
-/** `spec/15_master_data.md`のArmor Definition。 */
+/** `docs/specs/current/15_master_data.md`のArmor Definition。 */
 export type ArmorDefinition = MasterDataBase<ArmorId> & {
   readonly durability: Int32;
   readonly defense: Int32;
@@ -185,12 +185,12 @@ export type ArmorDefinition = MasterDataBase<ArmorId> & {
   readonly heatDissipation: Int32;
 };
 
-/** `spec/15_master_data.md`のOption Definition。 */
+/** `docs/specs/current/15_master_data.md`のOption Definition。 */
 export type OptionDefinition = MasterDataBase<OptionId> & {
   readonly implementationId: string;
 };
 
-/** `spec/15_master_data.md`のProjectile Definition。 */
+/** `docs/specs/current/15_master_data.md`のProjectile Definition。 */
 export type ProjectileDefinition = MasterDataBase<ProjectileId> & {
   readonly speed: Int32;
   readonly size: Size;
@@ -198,27 +198,27 @@ export type ProjectileDefinition = MasterDataBase<ProjectileId> & {
   readonly explosionDamage: Int32;
 };
 
-/** `spec/15_master_data.md`のMap内Obstacle Definition。 */
+/** `docs/specs/current/15_master_data.md`のMap内Obstacle Definition。 */
 export type ObstacleDefinition = {
   readonly id: string;
   readonly position: Position;
   readonly size: Size;
 };
 
-/** `spec/15_master_data.md`のMap内Spawn Point Definition。 */
+/** `docs/specs/current/15_master_data.md`のMap内Spawn Point Definition。 */
 export type SpawnPointDefinition = {
   readonly position: Position;
   readonly direction: Int32;
 };
 
-/** `spec/15_master_data.md`のMap Definition。 */
+/** `docs/specs/current/15_master_data.md`のMap Definition。 */
 export type MapDefinition = MasterDataBase<MapId> & {
   readonly size: Size;
   readonly obstacles: readonly ObstacleDefinition[];
   readonly spawnPoints: readonly SpawnPointDefinition[];
 };
 
-/** `spec/15_master_data.md`のGame Rule Definition。 */
+/** `docs/specs/current/15_master_data.md`のGame Rule Definition。 */
 export type GameRuleDefinition = MasterDataBase<GameRuleId> & {
   readonly cpuLimit: Int32;
   readonly tickLimit: Int32;
@@ -229,7 +229,7 @@ export type GameRuleDefinition = MasterDataBase<GameRuleId> & {
   readonly callStackSize: Int32;
 };
 
-/** `spec/15_master_data.md`に定義された全Definitionの共用体。 */
+/** `docs/specs/current/15_master_data.md`に定義された全Definitionの共用体。 */
 export type MasterDataDefinition =
   | InstructionDefinition
   | RobotBodyDefinition
@@ -242,7 +242,7 @@ export type MasterDataDefinition =
   | MapDefinition
   | GameRuleDefinition;
 
-/** `spec/15_master_data.md`の種別と対応Definition型の対応表。 */
+/** `docs/specs/current/15_master_data.md`の種別と対応Definition型の対応表。 */
 export type MasterDataByType = {
   instruction: InstructionDefinition;
   robot_body: RobotBodyDefinition;
