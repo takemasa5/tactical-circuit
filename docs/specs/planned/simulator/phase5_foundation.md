@@ -355,41 +355,6 @@ Robotへ帰属できない次のような異常は、1 Tick更新全体の失敗
 
 ---
 
-## 共通擬似乱数生成器
-
-共通擬似乱数生成器は`docs/specs/current/14_determinism_rules.md`に定義された`xorshift32`を実装する。
-
-APIは入力Random Stateを変更せず、生成値と更新後Random Stateを返す純粋関数とする。
-
-```ts
-type RandomGeneration<TValue> = {
-  readonly value: TValue;
-  readonly randomState: RandomState;
-};
-
-type RandomRangeResult =
-  | {
-      readonly success: true;
-      readonly data: RandomGeneration<Int32>;
-    }
-  | {
-      readonly success: false;
-      readonly code: "invalid_random_range";
-      readonly message: string;
-      readonly randomState: RandomState;
-    };
-```
-
-- `initializeRandomState(seed)`: 0の置換規則を適用したRandom Stateを返す
-- `nextUint32(state)`: `RandomGeneration<number>`として符号なし32bit整数の生成値と更新後Random Stateを返す
-- `nextInt(state, minInclusive, maxExclusive)`: `RandomRangeResult`を返す
-
-`nextInt`で`minInclusive >= maxExclusive`の場合は`success: false`、`code: "invalid_random_range"`、プレイヤーへ表示可能な`message`、入力と同じRandom Stateを返す。例外を送出せず、入力Random Stateを進めない。
-
-Phase 5の本番Instruction Registryには乱数を消費する命令がないため、通常のTickではRandom Stateが変化しないことを許容する。乱数API自体の既知シード列、0シード置換、範囲境界、異常系を単体テストする。
-
----
-
 ## オブジェクト順序
 
 決定論のため、Phase 5では次の順序を維持する。
