@@ -260,6 +260,10 @@ Option Definitionは共通フィールドのみを持ち、`implementationId`を
 
 Obstacle Definitionは`id`、`position`、`size`を持つ。Spawn Point Definitionは`position`と`direction`を持つ。参加者配列の順序でSpawn Pointを割り当てる。
 
+Data Repositoryは全Robot Body Definitionから`size.width`と`size.height`の最大値を独立に求め、最大Body矩形としてMap Definitionを検証する。Spawn Pointを持つMapが存在する場合はRobot Body Definitionを1件以上必要とし、最大Bodyサイズを計算できなければData Repositoryを公開しない。Spawn Pointを持つMapが存在しない場合は、この検証を理由としてRobot Body Definitionを必須としない。
+
+最大Body矩形を各Spawn Pointの中心に置いたとき、矩形全体がMap内に収まり、Obstacleおよび他のSpawn Pointの最大Body矩形と面積重複してはならない。Obstacle自身の矩形全体もMap内に収める。Map境界、Obstacle、他のSpawn Pointとの辺または頂点だけの接触は許可する。違反は対象Map Definition、Spawn Point、またはObstacleのパスを持つ検証Errorとし、Data Repositoryを公開しない。
+
 ### Game Rule Definition
 
 - `cpuLimit`

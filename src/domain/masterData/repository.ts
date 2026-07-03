@@ -1,4 +1,4 @@
-import type { Int32, Size } from "../data/common";
+import type { Int32, Position, Size } from "../data/common";
 import type { DataValidationError, LoadResult } from "../data/loadResult";
 import { isMasterDataId } from "./id";
 import type {
@@ -64,6 +64,207 @@ const validateSize = (
 ): void => {
   validatePositive(size.width, `${path}/width`, errors);
   validatePositive(size.height, `${path}/height`, errors);
+};
+
+type DoubledAabb = {
+  readonly left: number;
+  readonly right: number;
+  readonly bottom: number;
+  readonly top: number;
+};
+
+const createDoubledAabb = (
+  position: Position,
+  size: Size,
+): DoubledAabb | undefined => {
+  const doubledX = position.x * 2;
+  const doubledY = position.y * 2;
+  if (!Number.isSafeInteger(doubledX) || !Number.isSafeInteger(doubledY)) {
+    return undefined;
+  }
+
+  const bounds = {
+    left: doubledX - size.width,
+    right: doubledX + size.width,
+    bottom: doubledY - size.height,
+    top: doubledY + size.height,
+  };
+  return Object.values(bounds).every(Number.isSafeInteger) ? bounds : undefined;
+};
+
+const isInsideMap = (
+  bounds: DoubledAabb,
+  doubledMapWidth: number,
+  doubledMapHeight: number,
+): boolean =>
+  bounds.left >= 0 &&
+  bounds.right <= doubledMapWidth &&
+  bounds.bottom >= 0 &&
+  bounds.top <= doubledMapHeight;
+
+const overlaps = (left: DoubledAabb, right: DoubledAabb): boolean =>
+  left.left < right.right &&
+  left.right > right.left &&
+  left.bottom < right.top &&
+  left.top > right.bottom;
+
+const validateMapSafety = (
+  entries: readonly MasterDataEntry[],
+  errors: DataValidationError[],
+): void => {
+  const robotBodies = entries
+    .filter((entry) => entry.dataType === "robot_body")
+    .map(({ definition }) => definition);
+  const maps = entries
+    .map((entry, index) => ({ entry, index }))
+    .filter(
+      (
+        item,
+      ): item is {
+        readonly entry: Extract<MasterDataEntry, { dataType: "map" }>;
+        readonly index: number;
+      } => item.entry.dataType === "map",
+    );
+
+  if (robotBodies.length === 0) {
+    maps
+      .filter(({ entry }) => entry.definition.spawnPoints.length > 0)
+      .forEach(({ index }) => {
+        errors.push(
+          error(
+            "missing_robot_body_definition",
+            `/definitions/${index}/spawnPoints`,
+            "Spawn Pointの安全性を検証するRobot Body Definitionがありません",
+            [],
+            "1件以上のRobot Body Definition",
+          ),
+        );
+      });
+  }
+
+  const maximumBodySize = robotBodies.reduce<Size | undefined>(
+    (maximum, body) => ({
+      width: Math.max(maximum?.width ?? 0, body.size.width) as Int32,
+      height: Math.max(maximum?.height ?? 0, body.size.height) as Int32,
+    }),
+    undefined,
+  );
+
+  maps.forEach(({ entry, index }) => {
+    const { definition } = entry;
+    const mapPath = `/definitions/${index}`;
+    const doubledMapWidth = definition.size.width * 2;
+    const doubledMapHeight = definition.size.height * 2;
+    if (
+      !Number.isSafeInteger(doubledMapWidth) ||
+      !Number.isSafeInteger(doubledMapHeight)
+    ) {
+      errors.push(
+        error(
+          "unsafe_aabb_coordinate",
+          `${mapPath}/size`,
+          "Map境界の2倍座標が安全整数ではありません",
+          definition.size,
+          "2倍座標が安全整数になるSize",
+        ),
+      );
+      return;
+    }
+
+    const obstacleBounds = definition.obstacles.map(
+      (obstacle, obstacleIndex) => {
+        const path = `${mapPath}/obstacles/${obstacleIndex}`;
+        const bounds = createDoubledAabb(obstacle.position, obstacle.size);
+        if (bounds === undefined) {
+          errors.push(
+            error(
+              "unsafe_aabb_coordinate",
+              path,
+              "Obstacle境界の2倍座標が安全整数ではありません",
+              obstacle,
+              "2倍座標が安全整数になるPositionとSize",
+            ),
+          );
+        } else if (!isInsideMap(bounds, doubledMapWidth, doubledMapHeight)) {
+          errors.push(
+            error(
+              "obstacle_outside_map",
+              path,
+              "ObstacleがMap外に出ています",
+              obstacle,
+              "矩形全体がMap内に収まるObstacle",
+            ),
+          );
+        }
+        return bounds;
+      },
+    );
+
+    if (maximumBodySize === undefined) return;
+
+    const spawnBounds = definition.spawnPoints.map((spawnPoint, spawnIndex) => {
+      const path = `${mapPath}/spawnPoints/${spawnIndex}`;
+      const bounds = createDoubledAabb(spawnPoint.position, maximumBodySize);
+      if (bounds === undefined) {
+        errors.push(
+          error(
+            "unsafe_aabb_coordinate",
+            path,
+            "Spawn Point境界の2倍座標が安全整数ではありません",
+            spawnPoint,
+            "2倍座標が安全整数になるPositionと最大Body Size",
+          ),
+        );
+        return undefined;
+      }
+      if (!isInsideMap(bounds, doubledMapWidth, doubledMapHeight)) {
+        errors.push(
+          error(
+            "spawn_point_outside_map",
+            path,
+            "最大Body矩形がMap外に出ています",
+            spawnPoint,
+            "最大Body矩形全体がMap内に収まるSpawn Point",
+          ),
+        );
+      }
+      if (
+        obstacleBounds.some(
+          (obstacle) => obstacle !== undefined && overlaps(bounds, obstacle),
+        )
+      ) {
+        errors.push(
+          error(
+            "spawn_point_overlaps_obstacle",
+            path,
+            "最大Body矩形がObstacleと面積重複しています",
+            spawnPoint,
+            "どのObstacleとも面積重複しないSpawn Point",
+          ),
+        );
+      }
+      return bounds;
+    });
+
+    spawnBounds.forEach((bounds, spawnIndex) => {
+      if (bounds === undefined) return;
+      for (let otherIndex = 0; otherIndex < spawnIndex; otherIndex += 1) {
+        const other = spawnBounds[otherIndex];
+        if (other !== undefined && overlaps(bounds, other)) {
+          errors.push(
+            error(
+              "spawn_points_overlap",
+              `${mapPath}/spawnPoints/${spawnIndex}`,
+              "最大Body矩形が別のSpawn Pointと面積重複しています",
+              definition.spawnPoints[spawnIndex],
+              "他のSpawn Pointと面積重複しないSpawn Point",
+            ),
+          );
+          break;
+        }
+      }
+    });
+  });
 };
 
 const validateUniqueStrings = (
@@ -754,6 +955,7 @@ export const createDataRepository = (
   entries.forEach((entry, index) =>
     validateDefinition(entry, index, implementationIds, ids, errors),
   );
+  validateMapSafety(entries, errors);
 
   const projectileIds = new Set(
     entries

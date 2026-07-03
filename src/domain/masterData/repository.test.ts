@@ -4,6 +4,8 @@ import type { Int32 } from "../data/common";
 import type {
   InstructionDefinition,
   InstructionId,
+  MapDefinition,
+  MapId,
   ParameterDefinition,
   ProjectileDefinition,
   ProjectileId,
@@ -79,7 +81,24 @@ const instruction = (
 const entry = <TEntry extends MasterDataEntry>(value: TEntry): TEntry => value;
 
 const robotBody = (
-  slots: RobotBodyDefinition["slots"],
+  slots: RobotBodyDefinition["slots"] = [
+    {
+      id: "slot_1",
+      displayName: "Right",
+      category: "weapon",
+      weaponMount: "right_hand",
+    },
+    {
+      id: "slot_2",
+      displayName: "Left",
+      category: "weapon",
+      weaponMount: "left_hand",
+    },
+  ],
+  size: RobotBodyDefinition["size"] = {
+    width: int32(10),
+    height: int32(10),
+  },
 ): RobotBodyDefinition => ({
   id: `robot_body_${uuidA}` as RobotBodyId,
   displayName: "Test Body",
@@ -89,8 +108,21 @@ const robotBody = (
   maxHp: int32(100),
   maxEnergy: int32(100),
   heatCapacity: int32(100),
-  size: { width: int32(10), height: int32(10) },
+  size,
   slots,
+});
+
+const mapDefinition = (
+  overrides: Partial<MapDefinition> = {},
+): MapDefinition => ({
+  id: `map_${uuidA}` as MapId,
+  displayName: "Test Map",
+  description: "",
+  enabled: true,
+  size: { width: int32(100), height: int32(100) },
+  obstacles: [],
+  spawnPoints: [],
+  ...overrides,
 });
 
 describe("Data Repository", () => {
@@ -119,6 +151,260 @@ describe("Data Repository", () => {
     );
 
     expect(result.success).toBe(true);
+  });
+
+  it("Robot Bodyの最大幅と最大高さを独立に使ってSpawn Pointを検証する", () => {
+    const result = createDataRepository(
+      [
+        entry({
+          dataType: "robot_body",
+          definition: robotBody(undefined, {
+            width: int32(20),
+            height: int32(4),
+          }),
+        }),
+        entry({
+          dataType: "robot_body",
+          definition: {
+            ...robotBody(undefined, {
+              width: int32(4),
+              height: int32(30),
+            }),
+            id: `robot_body_${uuidB}` as RobotBodyId,
+          },
+        }),
+        entry({
+          dataType: "map",
+          definition: mapDefinition({
+            spawnPoints: [
+              { position: { x: int32(10), y: int32(15) }, direction: int32(0) },
+            ],
+          }),
+        }),
+      ],
+      new Set(),
+    );
+
+    expect(result.success).toBe(true);
+  });
+
+  it("Spawn Pointを持つMapにRobot Bodyがない場合は拒否する", () => {
+    const result = createDataRepository(
+      [
+        entry({
+          dataType: "map",
+          definition: mapDefinition({
+            spawnPoints: [
+              { position: { x: int32(50), y: int32(50) }, direction: int32(0) },
+            ],
+          }),
+        }),
+      ],
+      new Set(),
+    );
+
+    expect(result).toMatchObject({
+      success: false,
+      errors: [
+        {
+          code: "missing_robot_body_definition",
+          path: "/definitions/0/spawnPoints",
+        },
+      ],
+    });
+  });
+
+  it("Spawn PointがないMapはRobot Bodyがなくても受け付ける", () => {
+    const result = createDataRepository(
+      [entry({ dataType: "map", definition: mapDefinition() })],
+      new Set(),
+    );
+
+    expect(result.success).toBe(true);
+  });
+
+  it.each([
+    [
+      "Map外のSpawn Point",
+      mapDefinition({
+        spawnPoints: [
+          { position: { x: int32(4), y: int32(50) }, direction: int32(0) },
+        ],
+      }),
+      "spawn_point_outside_map",
+      "/definitions/1/spawnPoints/0",
+    ],
+    [
+      "Obstacleと重複するSpawn Point",
+      mapDefinition({
+        obstacles: [
+          {
+            id: "obstacle_1",
+            position: { x: int32(50), y: int32(50) },
+            size: { width: int32(10), height: int32(10) },
+          },
+        ],
+        spawnPoints: [
+          { position: { x: int32(50), y: int32(50) }, direction: int32(0) },
+        ],
+      }),
+      "spawn_point_overlaps_obstacle",
+      "/definitions/1/spawnPoints/0",
+    ],
+    [
+      "重複するSpawn Point",
+      mapDefinition({
+        spawnPoints: [
+          { position: { x: int32(50), y: int32(50) }, direction: int32(0) },
+          { position: { x: int32(59), y: int32(50) }, direction: int32(0) },
+        ],
+      }),
+      "spawn_points_overlap",
+      "/definitions/1/spawnPoints/1",
+    ],
+    [
+      "Map外のObstacle",
+      mapDefinition({
+        obstacles: [
+          {
+            id: "obstacle_1",
+            position: { x: int32(4), y: int32(50) },
+            size: { width: int32(10), height: int32(10) },
+          },
+        ],
+      }),
+      "obstacle_outside_map",
+      "/definitions/1/obstacles/0",
+    ],
+  ])("%sをパス付きErrorで拒否する", (_, definition, code, path) => {
+    const result = createDataRepository(
+      [
+        entry({ dataType: "robot_body", definition: robotBody() }),
+        entry({ dataType: "map", definition }),
+      ],
+      new Set(),
+    );
+
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.errors).toEqual(
+        expect.arrayContaining([expect.objectContaining({ code, path })]),
+      );
+    }
+  });
+
+  it("Map境界、Obstacle、別Spawn Pointへの辺・頂点接触を受け付ける", () => {
+    const result = createDataRepository(
+      [
+        entry({ dataType: "robot_body", definition: robotBody() }),
+        entry({
+          dataType: "map",
+          definition: mapDefinition({
+            obstacles: [
+              {
+                id: "obstacle_1",
+                position: { x: int32(20), y: int32(20) },
+                size: { width: int32(10), height: int32(10) },
+              },
+            ],
+            spawnPoints: [
+              { position: { x: int32(5), y: int32(95) }, direction: int32(0) },
+              { position: { x: int32(10), y: int32(10) }, direction: int32(0) },
+              { position: { x: int32(20), y: int32(10) }, direction: int32(0) },
+            ],
+          }),
+        }),
+      ],
+      new Set(),
+    );
+
+    expect(result.success).toBe(true);
+  });
+
+  it("奇数サイズを2倍座標で比較し、面積重複だけを拒否する", () => {
+    const touching = createDataRepository(
+      [
+        entry({
+          dataType: "robot_body",
+          definition: robotBody(undefined, {
+            width: int32(3),
+            height: int32(3),
+          }),
+        }),
+        entry({
+          dataType: "map",
+          definition: mapDefinition({
+            spawnPoints: [
+              { position: { x: int32(10), y: int32(10) }, direction: int32(0) },
+              { position: { x: int32(13), y: int32(10) }, direction: int32(0) },
+            ],
+          }),
+        }),
+      ],
+      new Set(),
+    );
+    const overlapping = createDataRepository(
+      [
+        entry({
+          dataType: "robot_body",
+          definition: robotBody(undefined, {
+            width: int32(3),
+            height: int32(3),
+          }),
+        }),
+        entry({
+          dataType: "map",
+          definition: mapDefinition({
+            spawnPoints: [
+              { position: { x: int32(10), y: int32(10) }, direction: int32(0) },
+              { position: { x: int32(12), y: int32(10) }, direction: int32(0) },
+            ],
+          }),
+        }),
+      ],
+      new Set(),
+    );
+
+    expect(touching.success).toBe(true);
+    expect(overlapping.success).toBe(false);
+    if (!overlapping.success) {
+      expect(overlapping.errors.map(({ code }) => code)).toContain(
+        "spawn_points_overlap",
+      );
+    }
+  });
+
+  it("2倍座標が安全整数を超える入力を丸めず拒否する", () => {
+    const unsafeCoordinate = (Number.MAX_SAFE_INTEGER / 2 + 1) as Int32;
+    const result = createDataRepository(
+      [
+        entry({ dataType: "robot_body", definition: robotBody() }),
+        entry({
+          dataType: "map",
+          definition: mapDefinition({
+            spawnPoints: [
+              {
+                position: { x: unsafeCoordinate, y: int32(50) },
+                direction: int32(0),
+              },
+            ],
+          }),
+        }),
+      ],
+      new Set(),
+    );
+
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.errors).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            code: "unsafe_aabb_coordinate",
+            path: "/definitions/1/spawnPoints/0",
+          }),
+        ]),
+      );
+    }
   });
 
   it.each([

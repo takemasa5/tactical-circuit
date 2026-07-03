@@ -39,42 +39,6 @@ Phase 5では以下を実装する。
 
 ---
 
-## 座標と軸平行矩形
-
-Robot、Bullet、Obstacleの`position`は、それぞれの軸平行矩形の中心点を表す。Mapは左下を`(0, 0)`、右上を`(size.width, size.height)`とする。
-
-奇数の幅または高さを持つ矩形も小数を保存せず正確に比較するため、AABBの境界、包含、重複の比較に限り、座標を2倍した一時的な安全整数を使用できる。この一時値はWorld State、保存データ、行動進捗、またはゲームロジックの結果として保持しない。
-
-2倍座標の演算結果は`Number.isSafeInteger`を満たさなければならない。満たさない場合は検証または対象更新を失敗とし、丸め、飽和、巡回を行わない。
-
-矩形同士は、共通部分が正の幅かつ正の高さを持つ場合に重複とする。辺または頂点だけの接触は重複としない。
-
-この限定的な整数演算の例外は`docs/decisions/0001_center_position_aabb.md`に記録する。
-
----
-
-## MapとSpawn PointのMaster Data検証
-
-Data Repositoryは全Robot Body Definitionの`size.width`の最大値と`size.height`の最大値を独立に求め、最大Body矩形としてMap Definitionを検証する。
-
-Spawn Pointを1件以上持つMap Definitionが存在する場合、Robot Body Definitionも1件以上存在しなければならない。最大Bodyサイズを計算できない場合はData Repository検証Errorとし、安全性検証を省略して公開してはならない。Spawn Pointを持つMap Definitionが存在しない場合は、Robot Body Definitionが0件でもこの検証ではErrorにしない。
-
-各Spawn Pointを最大Body矩形の中心点とした場合に、次をすべて満たさなければならない。
-
-- 矩形全体がMap内に収まる
-- Map内のどのObstacleとも面積重複しない
-- 他のどのSpawn Pointの最大Body矩形とも面積重複しない
-
-Map境界、Obstacle、または他のSpawn Pointとの辺および頂点の接触は許可する。
-
-Obstacle自身の矩形全体もMap内に収まらなければならない。
-
-これらはData Repository公開前に検証する。違反がある場合は、対象Map Definition、Spawn PointまたはObstacleのパスを含む検証Errorとし、Data Repositoryを公開しない。
-
-Game Session開始時は検証済みData Repositoryを信頼し、参加Robotの実サイズを使った配置の再検証を行わない。
-
----
-
 ## Game Session生成入力
 
 Game Session生成では次を明示的な入力として受け取る。
@@ -92,6 +56,8 @@ Game Session生成では次を明示的な入力として受け取る。
 ## Game Session開始前検証
 
 Game Sessionは、すべての開始前検証が成功した場合だけ生成する。Errorを含む場合は部分的なGame SessionまたはWorld Stateを公開しない。
+
+Game Session開始時は検証済みData Repositoryを信頼し、参加Robotの実サイズを使った配置の再検証を行わない。
 
 少なくとも次を検証する。
 
