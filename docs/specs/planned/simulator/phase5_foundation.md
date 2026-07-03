@@ -183,6 +183,29 @@ Robot Body Definitionの`maxHp`または`maxEnergy`が0である場合も、Phas
 
 ---
 
+## Execution Input用Robot Snapshot
+
+`RobotState.actionState`はSimulatorだけが読み取りおよび更新する内部状態とし、AI Engineへ公開しない。Execution Inputの`robot`はRobot Stateそのものではなく、`actionState`を除外した専用の読み取り専用Snapshotとする。
+
+```ts
+type ExecutionRobotSnapshot = Omit<RobotState, "actionState">;
+
+type ExecutionInput = {
+  readonly tick: Int32;
+  readonly robot: ExecutionRobotSnapshot;
+  readonly aiRuntimeState: AIRuntimeState;
+  readonly sensors: SensorSnapshot;
+  readonly randomState: RandomState;
+  readonly actionStatus: ActionStatusSnapshot;
+};
+```
+
+SimulatorはTick開始時のRobot Stateから新しい`ExecutionRobotSnapshot`を生成し、元のRobot Stateとの可変参照を共有しない。現在行動、次動作、段階、進捗の情報は`robot`へ含めず、AI Engineへ公開する行動状態は`actionStatus`の`idle`または`running`だけとする。
+
+Execution Input用JSON SchemaもRobot State Schemaを直接再利用せず、`actionState`をプロパティとして受け付けない専用Schemaを使用する。
+
+---
+
 ## 行動状態
 
 Robot StateはAI EngineがそのTickに生成した`actionRequests`とは別に、次のカテゴリ別行動状態を持つ。
@@ -393,11 +416,30 @@ Robotへ帰属できない次のような異常は、1 Tick更新全体の失敗
 
 APIは入力Random Stateを変更せず、生成値と更新後Random Stateを返す純粋関数とする。
 
-- `initializeRandomState(seed)`: 0の置換規則を適用したRandom Stateを返す
-- `nextUint32(state)`: 符号なし32bit整数の生成値と更新後Random Stateを返す
-- `nextInt(state, minInclusive, maxExclusive)`: 指定範囲の生成値と更新後Random Stateを返す
+```ts
+type RandomGeneration<TValue> = {
+  readonly value: TValue;
+  readonly randomState: RandomState;
+};
 
-`nextInt`で`minInclusive >= maxExclusive`の場合はErrorを返し、入力Random Stateを進めない。
+type RandomRangeResult =
+  | {
+      readonly success: true;
+      readonly data: RandomGeneration<Int32>;
+    }
+  | {
+      readonly success: false;
+      readonly code: "invalid_random_range";
+      readonly message: string;
+      readonly randomState: RandomState;
+    };
+```
+
+- `initializeRandomState(seed)`: 0の置換規則を適用したRandom Stateを返す
+- `nextUint32(state)`: `RandomGeneration<number>`として符号なし32bit整数の生成値と更新後Random Stateを返す
+- `nextInt(state, minInclusive, maxExclusive)`: `RandomRangeResult`を返す
+
+`nextInt`で`minInclusive >= maxExclusive`の場合は`success: false`、`code: "invalid_random_range"`、プレイヤーへ表示可能な`message`、入力と同じRandom Stateを返す。例外を送出せず、入力Random Stateを進めない。
 
 Phase 5の本番Instruction Registryには乱数を消費する命令がないため、通常のTickではRandom Stateが変化しないことを許容する。乱数API自体の既知シード列、0シード置換、範囲境界、異常系を単体テストする。
 
@@ -447,6 +489,7 @@ Phase 5の本番Instruction Registryには乱数を消費する命令がない�
 - 前Tickの`actionRequests`を空にしてから当該TickのExecution Resultで置き換える
 - AIを参加者順に実行し、Random Stateを次のRobotへ引き継ぐ
 - Sensor Snapshotが空である
+- Execution InputのRobot Snapshotが`actionState`を含まず、専用Schemaが`actionState`を拒否する
 - Robot別AIデバッグ情報を参加者順に返し、World Stateへ格納しない
 
 ### 行動状態とWait Action
@@ -465,6 +508,7 @@ Phase 5の本番Instruction Registryには乱数を消費する命令がない�
 - 次TickにエラーRobotをStart Nodeから再実行する
 - 回復不能エラーでは入力Game Sessionを変更せず、Tickを増加させない
 - 0シードの置換、既知の`xorshift32`列、`nextInt`の範囲、異常範囲で状態を進めないことを検証する
+- `nextInt`の異常範囲が`invalid_random_range`と入力と同じRandom Stateを返す
 
 ---
 

@@ -21,6 +21,7 @@
 - `docs/specs/current/`は現在の実装が満たすべき仕様であり、通常のレビュー基準とする。
 - `docs/specs/planned/`は将来仕様であり、未実装であること自体をレビュー指摘にしない。
 - GitHub Issueは一つのPull Requestで実装する範囲と完了条件を定義する。
+- 例外として、実装Issueを登録する前の仕様変更だけを含むPull RequestはIssueなしで作成できる。この場合はPull Request本文にGoal、Source Inputs、Acceptance Criteria、Out of Scope、POの合意を記載し、それらをレビュー基準とする。
 - 選択したIssueが`docs/specs/planned/`の一部をSource Specとして指定した場合、その範囲だけを当該Issueの入力仕様として扱う。
 - Issue、`docs/specs/current/`、またはロール別指示が競合する場合は実装せず、POへ確認する。
 - コードと`docs/specs/current/`を一致させる。動作変更では仕様を先に更新する。

@@ -14,6 +14,16 @@
 4. `docs/specs/current/`
 5. IssueのSource Specに指定された`docs/specs/planned/`の範囲
 
+実装Issueを登録する前の仕様変更だけを含むPull Requestは、リンクされたIssueを必須としない。この場合は次の順に確認する。
+
+1. Pull Request本文のGoal
+2. Pull Request本文のSource Inputs
+3. Pull Request本文のAcceptance CriteriaとOut of Scope
+4. Pull Request本文に記録されたPOの合意
+5. Pull Requestで変更された仕様、Decision Record、申し送り、および設計ルール
+
+仕様変更Pull RequestのAcceptance Criteriaは、少なくとも合意した正常系、異常系、境界条件、責務、データ所有者、決定論に必要な処理順が仕様へ反映されていることと、実装Issueの登録が仕様の`develop`へのマージ後であることを外部から確認できる表現にする。
+
 - `docs/specs/planned/`のうち、選択したIssueと無関係な未実装要件を理由にPull Requestをブロックしない。
 - 選択したIssueを満たしていても将来仕様が残る場合、それを当該Pull Requestの指摘にせず、必要なら別Issueとして提案する。
 - Pull Requestが更新する`docs/specs/current/`は、実際に同じPull Requestで実装される動作だけを記載しているか確認する。

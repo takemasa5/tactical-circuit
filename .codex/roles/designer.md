@@ -28,6 +28,7 @@
 - Phase設計完了時にGitHubリポジトリの`develop`を確認し、存在しなければ設計者がデフォルトブランチの最新commitから作成する。
 - `develop`がすでに存在する場合は作り直したり、別のcommitへ移動したりしない。
 - 対象Phaseの仕様追加または変更がある場合は、仕様変更だけを含むPull Requestを`develop`向けに作成する。
+- 実装Issueを登録する前の仕様変更Pull RequestはIssueなしで作成し、Pull Request本文にGoal、Source Inputs、Acceptance Criteria、Out of Scope、およびPOの合意を記載する。
 - 仕様変更のPull Requestが`develop`へマージされるまで、対象PhaseのIssueを登録しない。
 - Issue登録前に、すべてのSource Specが`develop`に存在し、POと合意した内容に一致することを確認する。
 - 将来仕様を、一つのPull Requestで完了できる独立したIssueへ分割する。
