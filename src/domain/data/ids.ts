@@ -1,12 +1,12 @@
-/** `spec/12_common_data_conventions.md`のProgramグローバルID。 */
+/** `docs/specs/current/12_common_data_conventions.md`のProgramグローバルID。 */
 export type ProgramId = string & { readonly __brand: "ProgramId" };
-/** `spec/12_common_data_conventions.md`のRobotDesignグローバルID。 */
+/** `docs/specs/current/12_common_data_conventions.md`のRobotDesignグローバルID。 */
 export type RobotDesignId = string & { readonly __brand: "RobotDesignId" };
-/** `spec/12_common_data_conventions.md`のReplayグローバルID。 */
+/** `docs/specs/current/12_common_data_conventions.md`のReplayグローバルID。 */
 export type ReplayId = string & { readonly __brand: "ReplayId" };
-/** `spec/12_common_data_conventions.md`のGame Session内Robot ID。 */
+/** `docs/specs/current/12_common_data_conventions.md`のGame Session内Robot ID。 */
 export type RuntimeRobotId = string & { readonly __brand: "RuntimeRobotId" };
-/** `spec/editor/program_model.md`のProgram内Node ID。 */
+/** `docs/specs/current/editor/program_model.md`のProgram内Node ID。 */
 export type NodeId = string & { readonly __brand: "NodeId" };
 
 const UUID_PATTERN =

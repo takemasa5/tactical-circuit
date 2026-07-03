@@ -13,7 +13,7 @@ import type {
   WorldState,
 } from "../runtime/models";
 
-/** `spec/14_determinism_rules.md`のWorld State変更イベント。 */
+/** `docs/specs/current/14_determinism_rules.md`のWorld State変更イベント。 */
 export type ReplayEvent =
   | { readonly type: "robot_updated"; readonly robot: RobotState }
   | { readonly type: "bullet_created"; readonly bullet: BulletState }
@@ -29,20 +29,20 @@ export type ReplayEvent =
       readonly randomState: RandomState;
     };
 
-/** `spec/14_determinism_rules.md`の1Tick分Replay変更記録。 */
+/** `docs/specs/current/14_determinism_rules.md`の1Tick分Replay変更記録。 */
 export type ReplayFrame = {
   readonly tick: Int32;
   readonly events: readonly ReplayEvent[];
 };
 
-/** `spec/13_data_ownership.md`のReplay System所有データ。 */
+/** `docs/specs/current/13_data_ownership.md`のReplay System所有データ。 */
 export type ReplayData = {
   readonly id: ReplayId;
   readonly initialWorldState: WorldState;
   readonly frames: readonly ReplayFrame[];
 };
 
-/** `spec/13_data_ownership.md`のJSON保存対象Replayデータ。 */
+/** `docs/specs/current/13_data_ownership.md`のJSON保存対象Replayデータ。 */
 export type ReplaySaveData = {
   readonly replayData: ReplayData;
   readonly robotDesigns: readonly RobotDesign[];

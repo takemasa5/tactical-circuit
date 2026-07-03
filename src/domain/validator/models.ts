@@ -3,10 +3,10 @@ import type { DataRepository } from "../masterData/repository";
 import type { InstructionDefinition } from "../masterData/models";
 import type { Program, ProgramNode } from "../program/models";
 
-/** `spec/validator/00_overview.md`の診断重要度。 */
+/** `docs/specs/current/validator/00_overview.md`の診断重要度。 */
 export type ValidationSeverity = "error" | "warning";
 
-/** `spec/validator/00_overview.md`の検証診断。 */
+/** `docs/specs/current/validator/00_overview.md`の検証診断。 */
 export type ValidationDiagnostic = {
   readonly severity: ValidationSeverity;
   readonly code: string;
@@ -17,7 +17,7 @@ export type ValidationDiagnostic = {
   readonly relatedNodeIds: readonly NodeId[];
 };
 
-/** `spec/validator/00_overview.md`のProgram検証結果。 */
+/** `docs/specs/current/validator/00_overview.md`のProgram検証結果。 */
 export type ValidationResult = {
   readonly isValid: boolean;
   readonly diagnostics: readonly ValidationDiagnostic[];

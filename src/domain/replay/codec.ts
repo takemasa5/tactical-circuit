@@ -410,11 +410,11 @@ const validateReferences = (
   return errors;
 };
 
-/** `spec/13_data_ownership.md`に従いReplay保存データをJSONへ保存する。 */
+/** `docs/specs/current/13_data_ownership.md`に従いReplay保存データをJSONへ保存する。 */
 export const saveReplay = (data: ReplaySaveData): string =>
   saveJsonEnvelope("replay", canonicalizeReplaySaveData(data));
 
-/** `spec/13_data_ownership.md`に従いReplay JSONと参照を検証する。 */
+/** `docs/specs/current/13_data_ownership.md`に従いReplay JSONと参照を検証する。 */
 export const loadReplay = (
   value: string,
   currentMasterDataVersion: FormatVersion,

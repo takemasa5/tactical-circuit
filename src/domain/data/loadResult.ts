@@ -1,4 +1,4 @@
-/** `spec/12_common_data_conventions.md`のJSON読込エラーを表す。 */
+/** `docs/specs/current/12_common_data_conventions.md`のJSON読込エラーを表す。 */
 export type DataValidationError = {
   code: string;
   path: string;
@@ -7,7 +7,7 @@ export type DataValidationError = {
   expected: string;
 };
 
-/** `spec/12_common_data_conventions.md`の安全な読込成功・拒否を表す。 */
+/** `docs/specs/current/12_common_data_conventions.md`の安全な読込成功・拒否を表す。 */
 export type LoadResult<T> =
   | { success: true; data: T }
   | { success: false; errors: DataValidationError[] };

@@ -4,30 +4,30 @@ export const INT32_MIN = -2_147_483_648;
 export const INT32_MAX = 2_147_483_647;
 export const CURRENT_FORMAT_VERSION = "0.1.1" as const;
 
-/** `spec/12_common_data_conventions.md`の符号付き32bit整数。 */
+/** `docs/specs/current/12_common_data_conventions.md`の符号付き32bit整数。 */
 export type Int32 = number & { readonly __brand: "Int32" };
-/** `spec/12_common_data_conventions.md`の3要素バージョン文字列。 */
+/** `docs/specs/current/12_common_data_conventions.md`の3要素バージョン文字列。 */
 export type FormatVersion = `${number}.${number}.${number}`;
 
-/** `spec/11_coordinate_system.md`の論理座標。 */
+/** `docs/specs/current/11_coordinate_system.md`の論理座標。 */
 export type Position = {
   x: Int32;
   y: Int32;
 };
 
-/** `spec/11_coordinate_system.md`の方向と移動量。 */
+/** `docs/specs/current/11_coordinate_system.md`の方向と移動量。 */
 export type Vector = {
   x: Int32;
   y: Int32;
 };
 
-/** `spec/11_coordinate_system.md`の軸平行矩形サイズ。 */
+/** `docs/specs/current/11_coordinate_system.md`の軸平行矩形サイズ。 */
 export type Size = {
   width: Int32;
   height: Int32;
 };
 
-/** `spec/12_common_data_conventions.md`の保存JSON共通ヘッダ。 */
+/** `docs/specs/current/12_common_data_conventions.md`の保存JSON共通ヘッダ。 */
 export type JsonEnvelope<TDataType extends string, TPayload> = {
   dataType: TDataType;
   formatVersion: FormatVersion;

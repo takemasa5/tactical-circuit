@@ -6,7 +6,7 @@ import {
   saveJsonEnvelope,
 } from "./jsonEnvelope";
 
-/** `spec/12_common_data_conventions.md`のpayload検証に使うテスト型。 */
+/** `docs/specs/current/12_common_data_conventions.md`のpayload検証に使うテスト型。 */
 type TestPayload = { value: number };
 
 const validateTestPayload = compileJsonSchema<TestPayload>({

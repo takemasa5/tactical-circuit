@@ -8,7 +8,7 @@ import type {
 } from "../program/models";
 import { editorFailure, editorSuccess, type EditorResult } from "./result";
 
-/** `spec/editor/clipboard.md`のアプリケーション専用Clipboard。 */
+/** `docs/specs/current/editor/clipboard.md`のアプリケーション専用Clipboard。 */
 export type EditorClipboard = {
   readonly sourceProgramId: ProgramId;
   readonly nodes: readonly ProgramNode[];
@@ -21,7 +21,7 @@ const isNodeReference = (value: ParameterValue): value is NodeReference =>
   value !== null &&
   value.type === "node_reference";
 
-/** `spec/editor/clipboard.md`の選択Node群を値としてコピーする。 */
+/** `docs/specs/current/editor/clipboard.md`の選択Node群を値としてコピーする。 */
 export const copyNodes = (
   program: Program,
   selectedNodeIds: ReadonlySet<NodeId>,
@@ -91,7 +91,7 @@ const remapParameterValue = (
   };
 };
 
-/** `spec/editor/clipboard.md`のNode群を原子的に貼り付ける。 */
+/** `docs/specs/current/editor/clipboard.md`のNode群を原子的に貼り付ける。 */
 export const pasteNodes = (
   program: Program,
   clipboard: EditorClipboard | null,
