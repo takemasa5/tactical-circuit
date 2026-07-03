@@ -7,6 +7,7 @@
 ## Source Spec
 
 - Planned spec: `docs/specs/planned/<file>.md#<section>`
+- Phase handoff（Applicable: Yesの場合）: `docs/planning/phase_handoffs.md#<section>`
 
 ## Phase Handoff
 
