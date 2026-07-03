@@ -6,5 +6,9 @@ name = "カルネ"
 script = '''
 set -e
 cd "${CODEX_WORKTREE_PATH:-.}"
+
+gh auth status -h github.com
+gh auth setup-git -h github.com
+
 npm ci
 '''
