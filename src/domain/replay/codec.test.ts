@@ -187,6 +187,7 @@ const design: RobotDesign = {
   id: designId,
   bodyDefinitionId: bodyId,
   programId,
+  initialWeaponHand: null,
   equipment: {},
   ammunition: {},
   metadata: {

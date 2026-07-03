@@ -16,6 +16,7 @@ export const robotDesignSchema = {
     "id",
     "bodyDefinitionId",
     "programId",
+    "initialWeaponHand",
     "equipment",
     "ammunition",
     "metadata",
@@ -24,6 +25,9 @@ export const robotDesignSchema = {
     id: { type: "string", pattern: `^robo_${uuid}$` },
     bodyDefinitionId: { type: "string", pattern: `^robot_body_${uuid}$` },
     programId: { type: "string", pattern: `^program_${uuid}$` },
+    initialWeaponHand: {
+      anyOf: [{ enum: ["right", "left"] }, { type: "null" }],
+    },
     equipment: {
       type: "object",
       propertyNames: slotId,

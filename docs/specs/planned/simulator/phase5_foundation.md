@@ -53,27 +53,6 @@ Robot、Bullet、Obstacleの`position`は、それぞれの軸平行矩形の中
 
 ---
 
-## Robot設計データの初期Weapon
-
-Robot設計データへ次の必須フィールドを追加する。
-
-```ts
-type RobotDesign = {
-  // 既存フィールド
-  readonly initialWeaponHand: "right" | "left" | null;
-};
-```
-
-`null`はWeapon未選択で開始することを表す。`right`または`left`の場合、Robot Body Definitionの`weaponMount`を使用して、それぞれ`right_hand`または`left_hand`のWeapon Slot IDへ解決する。
-
-指定した手のWeapon Slotが空の場合はRobot設計データの検証Errorとする。別の手へ暗黙に切り替えず、`null`にも置換しない。
-
-Game Session生成時は、解決したSlot IDをRobot Stateの`selectedWeaponSlotId`へ設定する。`initialWeaponHand`が`null`の場合は`selectedWeaponSlotId`も`null`とする。
-
-Robot設計データの型、JSON Schema、保存、読込、参照検証、および関連テストを同時に更新する。初期公開前のため`formatVersion`は`0.1.1`のままとし、旧開発データの暗黙マイグレーションや既定値補完は行わない。
-
----
-
 ## MapとSpawn PointのMaster Data検証
 
 Data Repositoryは全Robot Body Definitionの`size.width`の最大値と`size.height`の最大値を独立に求め、最大Body矩形としてMap Definitionを検証する。
@@ -469,8 +448,6 @@ Phase 5の本番Instruction Registryには乱数を消費する命令がない�
 - 不正な参加者を除外せず、Game Session全体を開始拒否する
 - 参加Programが使用する命令のCPUコストが上限を超える場合に拒否する
 - 未使用Instruction DefinitionのCPUコストが上限を超えても拒否しない
-- Robot設計データで`initialWeaponHand`を保存して読み戻せる
-- `initialWeaponHand`が欠損した開発中JSONを暗黙補完せず拒否する
 
 ### Master Dataと座標
 
@@ -478,7 +455,6 @@ Phase 5の本番Instruction Registryには乱数を消費する命令がない�
 - 最大Bodyサイズの矩形がMap境界、Obstacle、または別Spawn Pointへ辺だけ接するMapを受け付ける
 - Spawn Pointを持つMapがあり、Robot Body Definitionが0件の場合はData Repositoryを公開しない
 - 奇数サイズと符号付き32bit境界値を含むAABB比較が安全整数で決定論的に動作する
-- `initialWeaponHand`が空の手を指定するRobot設計データを拒否する
 
 ### 開始とTick
 
