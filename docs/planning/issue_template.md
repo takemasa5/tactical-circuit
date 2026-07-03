@@ -8,6 +8,13 @@
 
 - Planned spec: `docs/specs/planned/<file>.md#<section>`
 
+## Phase Handoff
+
+- Applicable: Yes / No
+- Source:
+  - 申し送り事項に関連するIssueの場合は `docs/planning/phase_handoffs.md#<section>` のように申し送り事項への参照を書く
+- Reason: Issueがどのように申し送り事項に関連するかを書く。`Applicable: No`のときは"申し送り事項に関連しない"と記載する
+  
 ## Acceptance Criteria
 
 - [ ] 外部から確認できる完了条件を記載する

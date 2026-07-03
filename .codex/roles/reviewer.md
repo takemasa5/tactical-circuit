@@ -36,6 +36,13 @@
 - 登録内容では範囲、対象Phase、完了条件が不足する場合だけ、不足点を具体的に指摘する。
 - 仕様先行Pull Requestでは、実装との差異がIssueまたは申し送りIDで追跡され、Pull Request本文に列挙されている場合、その一時的な差異を許容する。
 
+## Phase申し送りの確認
+
+- Pull Requestの対象IssueにPhase Handoff欄があることを確認する。
+- Phase Handoffが`Applicable: Yes`の場合、Source Specに`docs/planning/phase_handoffs.md`の該当箇所が含まれていることを確認する。
+- Phase Handoffが不足している、または明らかに関連があるのに`Applicable: No`となっている場合は、仕様入力不足として指摘する。
+- Phase申し送りに基づくテスト条件、制約、未解決事項がAcceptance CriteriaまたはOut of Scopeに反映されているか確認する。
+
 ## 指摘の分類
 
 各指摘を次のいずれかに分類する。

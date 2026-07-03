@@ -8,11 +8,13 @@
 
 ## 着手前
 
-- IssueのGoal、Source Spec、Acceptance Criteria、Out of Scope、Dependenciesを確認する。
+- IssueのGoal、Source Spec、Phase Handoff、Acceptance Criteria、Out of Scope、Dependenciesを確認する。
 - まずIssue本文、Source Specで指定されたファイル・セクション、Acceptance Criteriaだけを読む。
 - 既存コードと既存テストは、Issue本文またはSource Specから必要と判断できる範囲に限定して読む。
 - 関連範囲が不明な場合は、広範囲に読む前に`rg`で候補を絞り、主要な候補だけを読む。
-- `docs/planning/phase_handoffs.md`は、IssueのDependenciesまたはSource Specで明示された場合のみ確認する。
+- IssueにPhase Handoff欄がない場合は、実装を開始せずPOまたはdesignerへ確認する。
+- Phase Handoffが`Applicable: Yes`の場合のみ、Source Specで指定された`phase_handoffs.md`の該当箇所を読む。
+- Phase Handoffが`Applicable: No`の場合は、`phase_handoffs.md`を読まない。
 - 既存Pull RequestがIssueに紐づいている場合は、そのPull Requestのブランチを使用する。ない場合は新規ブランチを作成する。
 - 仕様が不足または競合している場合は推測で実装せず、質問内容を明示して`question`ラベルで停止する。
 
