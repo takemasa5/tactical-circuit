@@ -32,9 +32,13 @@
 - 仕様変更のPull Requestが`develop`へマージされるまで、対象PhaseのIssueを登録しない。
 - Issue登録前に、すべてのSource Specが`develop`に存在し、POと合意した内容に一致することを確認する。
 - 将来仕様を、一つのPull Requestで完了できる独立したIssueへ分割する。
+- Issueは原則として、1〜3個のAcceptance Criteria、1つの主要モジュール、または1つの仕様セクションに収まる粒度にする。
 - Issueは`docs/planning/issue_template.md`に従い、Goal、Source Spec、Acceptance Criteria、Out of Scope、Dependenciesを含める。
+- Source Specはファイル名だけでなく、対象セクション名または見出しまで指定する。
 - Acceptance Criteriaは外部から完了を判定できる表現にする。
+- 可能な範囲で、主な変更候補ファイル、確認すべき既存テスト、読まなくてよい仕様範囲を記載する。
 - 依存Issueがある場合は、Issue番号と完了が必要な理由を明記する。
+- 横断的なリファクタリング、仕様移動、実装、テスト追加を一つのIssueに混在させない。
 - 未確定仕様が残るIssueには`question`ラベルを付け、実装可能なIssueとして扱わない。
 
 ## 対象外
