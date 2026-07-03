@@ -27,7 +27,9 @@
 - 対象Phaseの実装開始に必要な仕様をすべて明記し、POの合意を得た時点で、そのPhaseの設計完了とする。
 - Phase設計完了時にGitHubリポジトリの`develop`を確認し、存在しなければ設計者がデフォルトブランチの最新commitから作成する。
 - `develop`がすでに存在する場合は作り直したり、別のcommitへ移動したりしない。
-- `develop`の存在を確認してから、対象PhaseのIssueを登録する。
+- 対象Phaseの仕様追加または変更がある場合は、仕様変更だけを含むPull Requestを`develop`向けに作成する。
+- 仕様変更のPull Requestが`develop`へマージされるまで、対象PhaseのIssueを登録しない。
+- Issue登録前に、すべてのSource Specが`develop`に存在し、POと合意した内容に一致することを確認する。
 - 将来仕様を、一つのPull Requestで完了できる独立したIssueへ分割する。
 - Issueは`docs/planning/issue_template.md`に従い、Goal、Source Spec、Acceptance Criteria、Out of Scope、Dependenciesを含める。
 - Acceptance Criteriaは外部から完了を判定できる表現にする。
