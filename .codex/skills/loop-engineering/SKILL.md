@@ -21,7 +21,10 @@ description: "Advance exactly one GitHub Issue by one lifecycle phase per invoca
 - ユーザーがIssueを指定した場合は、そのIssueを使用する。
 - Issueが未指定の場合は、依存関係が完了しているopenなIssueを一つ選択する。
 - 一度選択したIssueを、その起動中に変更しない。
-- IssueのGoal、Source Spec、Acceptance Criteria、Out of Scope、Dependenciesを確認する。
+- IssueのGoal、Source Spec、Phase Handoff、Acceptance Criteria、Out of Scope、Dependenciesを確認する。
+- IssueにPhase Handoff欄がない場合は、実装を開始せずPOまたはdesignerへ確認する。
+- Phase Handoffが`Applicable: Yes`の場合のみ、Source Specで指定された`phase_handoffs.md`の該当箇所を読む。
+- Phase Handoffが`Applicable: No`の場合は、`phase_handoffs.md`を読まない。
 
 ## Start by Resuming State
 

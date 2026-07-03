@@ -38,7 +38,8 @@
 
 ## Phase申し送りの確認
 
-- Pull Requestの対象IssueにPhase Handoff欄があることを確認する。
+- 実装Issueに紐づくPull Requestでは、対象IssueにPhase Handoff欄があることを確認する。
+- Issueなし仕様変更Pull Requestには、Phase Handoff欄の確認を適用しない。
 - Phase Handoffが`Applicable: Yes`の場合、Source Specに`docs/planning/phase_handoffs.md`の該当箇所が含まれていることを確認する。
 - Phase Handoffが不足している、または明らかに関連があるのに`Applicable: No`となっている場合は、仕様入力不足として指摘する。
 - Phase申し送りに基づくテスト条件、制約、未解決事項がAcceptance CriteriaまたはOut of Scopeに反映されているか確認する。

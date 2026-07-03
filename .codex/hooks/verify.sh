@@ -4,14 +4,18 @@ set -euo pipefail
 root="$(git rev-parse --show-toplevel)"
 cd "$root"
 
-base_ref="develop"
+base_ref=""
 if git show-ref --verify --quiet refs/remotes/origin/develop; then
   base_ref="origin/develop"
+elif git show-ref --verify --quiet refs/heads/develop; then
+  base_ref="develop"
 fi
 
-merge_base="$(git merge-base HEAD "$base_ref")"
 changed="$({
-  git diff --name-only "$merge_base" HEAD
+  if [[ -n "$base_ref" ]]; then
+    merge_base="$(git merge-base HEAD "$base_ref")"
+    git diff --name-only "$merge_base" HEAD
+  fi
   git diff --name-only HEAD
   git ls-files --others --exclude-standard
 } | sort -u)"
