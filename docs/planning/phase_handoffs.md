@@ -44,6 +44,7 @@ Phase 4でInstruction Dispatcherと命令実装Registryを追加する際、Regi
 - 発生Phase: Phase 4 AI実行エンジン
 - 対象Phase: Phase 5 シミュレーター基盤
 - 関連: PR #27 review thread `PRRT_kwDOTGu1Vs6NnpzP`
+- Phase 5設計: `docs/specs/planned/simulator/phase5_foundation.md`
 
 ### 背景
 
