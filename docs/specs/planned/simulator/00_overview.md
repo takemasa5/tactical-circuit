@@ -70,17 +70,11 @@ World Stateはゲーム中の唯一の真実（Single Source of Truth）とす�
 
 World StateはGame Sessionで共有する`xorshift32`乱数生成器の内部状態を保持する。
 
-World State内のRobotはTickをまたぐRobot状態を保持する。Robot状態には以下を含む。
+実装済みRobot状態のフィールドは`docs/specs/current/13_data_ownership.md`に従う。
 
-- 各部位のダメージ量
-- 熱の蓄積量
-- 現在実行中の行動
-- 残弾数
-- AI Runtime State
+Simulator実装時は、実装済みのカテゴリ別行動要求とは別に、カテゴリごとの現在動作と次動作をRobot状態へ追加する。現在動作は採用した行動要求、予備動作、実動作、事後動作のいずれにあるか、および進捗を保持する。エネルギー0による行動不能は状態として保存せず、エネルギー値から判定する。
 
-Robot状態は実行時Robot ID、Robot設計データID、位置、向き、速度、現在HP、エネルギー、熱、`active`または`destroyed`の状態、スロットごとのダメージ量、選択中Weaponスロット、残弾数、AI Runtime State、カテゴリ別行動要求を保持する。エネルギー0による行動不能は状態として保存せず、エネルギー値から判定する。
-
-Bullet状態は`bullet_{World State内連番}`形式のID、発射元Robot ID、Weapon Definition ID、Projectile Definition ID、位置、進行Vector、残り寿命Tick数を保持する。World Stateは次回のBullet ID発番値を保持し、削除済みIDを再利用しない。弾の大きさはProjectile Definitionから取得する。
+実装済みBullet状態のフィールド、ID発番、弾の大きさの参照規則は`docs/specs/current/13_data_ownership.md`に従う。
 
 AI Runtime Stateは、次Tickで実行するノードID、レジスタ、フラグ、コールスタック、永続AIメモリを含む。
 

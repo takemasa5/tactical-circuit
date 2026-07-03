@@ -75,6 +75,10 @@ World StateはGame SessionまたはReplay Sessionにおけるゲーム世界の�
 
 World State内の位置とベクトルはワールド座標系で保持する。
 
+Robot状態は、実行時Robot ID、Robot設計データID、位置、向き、速度、現在HP、エネルギー、熱、`active`または`destroyed`の状態、スロットごとのダメージ量、選択中Weaponスロット、スロットごとの残弾数、AI Runtime State、およびカテゴリ別行動要求を保持する。カテゴリ別行動要求はAI EngineがそのTickに生成した`movement`と`combat`の要求であり、Simulatorが将来保持する現在動作や次動作ではない。
+
+Bullet状態は、World State内Bullet ID、発射元Robot ID、Weapon Definition ID、Projectile Definition ID、位置、進行Vector、残り寿命Tick数を保持する。Bullet IDは`bullet_{World State内連番}`形式とし、World Stateが次回の発番値を保持して削除済みIDを再利用しない。弾の大きさはBullet状態へ重複して保持せず、Projectile Definitionから取得する。障害物状態は、障害物ID、位置、軸平行矩形サイズを保持する。
+
 World Stateは以下を保持する。
 
 - Tick

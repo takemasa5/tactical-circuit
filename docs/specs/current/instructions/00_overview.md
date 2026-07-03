@@ -251,15 +251,15 @@ AIは計算結果や状態保持のためにレジスタおよびメモリを利
 
 個々の実装済み命令の詳細は`details/`配下で定義する。
 
-- `check_ammunition.md`
-- `detect_bullet.md`
-- `detect_enemy.md`
-- `fire.md`
-- `move_backward.md`
-- `move_forward.md`
-- `switch_weapon.md`
-- `turn.md`
-- `wait_action.md`
+- `details/check_ammunition.md`
+- `details/detect_bullet.md`
+- `details/detect_enemy.md`
+- `details/fire.md`
+- `details/move_backward.md`
+- `details/move_forward.md`
+- `details/switch_weapon.md`
+- `details/turn.md`
+- `details/wait_action.md`
 
 各命令は共通のフォーマットで記述する。
 
