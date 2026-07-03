@@ -32,6 +32,7 @@ Robot設計データは以下を含む。
 - 更新日時（必須）
 - Robot Body Definition ID
 - Program ID 1つ
+- 初期選択Weaponの手
 - スロットIDと装備するPart Definition IDの対応
 - Weaponを装備したスロットごとの初期装弾数
 
@@ -40,6 +41,10 @@ Robot設計データは以下を含む。
 装備はスロットIDをキー、Part Definition IDを値とする`equipment`オブジェクトとして保持する。`equipment`にキーが存在しないスロットは空スロットとする。
 
 初期装弾数はWeaponを装備したスロットIDをキー、符号付き32bit整数を値とする`ammunition`オブジェクトとして保持する。Weaponを装備したすべてのスロットで指定を必須とし、0を許容する。参照するWeapon Definitionの装弾上限数以下とする。装備スロット、Partカテゴリ、装弾上限の整合性はData Repositoryを使用して読込時に検証する。
+
+初期選択Weaponの手は`initialWeaponHand`として`right`、`left`、または`null`のいずれかを必ず保持する。`null`はWeapon未選択を表す。`right`または`left`はRobot Body Definitionの`weaponMount`がそれぞれ`right_hand`または`left_hand`であるWeapon Slot IDへ解決する。指定した手のWeapon Slotが空の場合は検証Errorとし、別の手または`null`へ暗黙変換しない。
+
+Robot設計データの保存と読込では`initialWeaponHand`を保持する。フィールドが欠損したJSONを暗黙補完せず、読込Errorとする。初期公開前の`formatVersion`は`0.1.1`のままとする。
 
 Editorは作業中のRobot設計データを作成、読取、更新、削除する。Save Managerは保存と読込を担当する。
 

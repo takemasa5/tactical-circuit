@@ -26,6 +26,24 @@ const validationError = (
   expected: string,
 ): DataValidationError => ({ code, path, message, actualValue, expected });
 
+const weaponMountByHand = {
+  right: "right_hand",
+  left: "left_hand",
+} as const;
+
+/** 選択した手をRobot Body固有のWeapon Slot IDへ解決する。 */
+export const resolveInitialWeaponSlotId = (
+  design: RobotDesign,
+  repository: DataRepository,
+): SlotId | null | undefined => {
+  if (design.initialWeaponHand === null) return null;
+
+  const body = repository.get("robot_body", design.bodyDefinitionId);
+  const weaponMount = weaponMountByHand[design.initialWeaponHand];
+  return body?.slots.find((slot) => slot.weaponMount === weaponMount)?.id as
+    SlotId | undefined;
+};
+
 const validateEquipment = (
   design: RobotDesign,
   repository: DataRepository,
@@ -141,6 +159,27 @@ const validateAmmunition = (
   return errors;
 };
 
+const validateInitialWeapon = (
+  design: RobotDesign,
+  repository: DataRepository,
+): DataValidationError[] => {
+  if (design.initialWeaponHand === null) return [];
+
+  const slotId = resolveInitialWeaponSlotId(design, repository);
+  if (slotId === null || slotId === undefined) return [];
+  if (design.equipment[slotId] !== undefined) return [];
+
+  return [
+    validationError(
+      "empty_initial_weapon_slot",
+      "/initialWeaponHand",
+      "初期選択した手のWeapon Slotが空です",
+      design.initialWeaponHand,
+      "Weaponを装備した手、またはnull",
+    ),
+  ];
+};
+
 /** `docs/specs/current/13_data_ownership.md`の装備・装弾数参照を検証する。 */
 export const validateRobotDesignReferences = (
   design: RobotDesign,
@@ -148,6 +187,7 @@ export const validateRobotDesignReferences = (
 ): DataValidationError[] => [
   ...validateEquipment(design, repository),
   ...validateAmmunition(design, repository),
+  ...validateInitialWeapon(design, repository),
 ];
 
 /** `docs/specs/current/13_data_ownership.md`の順序不問データを安定した保存順へ整える。 */

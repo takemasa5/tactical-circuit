@@ -15,7 +15,11 @@ import {
   type DataRepository,
   type MasterDataEntry,
 } from "../masterData/repository";
-import { loadRobotDesign, saveRobotDesign } from "./codec";
+import {
+  loadRobotDesign,
+  resolveInitialWeaponSlotId,
+  saveRobotDesign,
+} from "./codec";
 import type { RobotDesign, SlotId } from "./models";
 
 const int32 = (value: number): Int32 => value as Int32;
@@ -97,6 +101,7 @@ const design = (ammunition = 3): RobotDesign => ({
   id: `robo_${uuidA}` as RobotDesignId,
   bodyDefinitionId: bodyId,
   programId: `program_${uuidB}` as ProgramId,
+  initialWeaponHand: "right",
   equipment: { [weaponSlot]: weaponId },
   ammunition: { [weaponSlot]: int32(ammunition) },
   metadata: {
@@ -109,14 +114,33 @@ const design = (ammunition = 3): RobotDesign => ({
 });
 
 describe("RobotDesign codec", () => {
-  it("装備と装弾数を検証して読み戻す", () => {
-    const loaded = loadRobotDesign(saveRobotDesign(design()), repository());
+  it("初期Weapon、装備、装弾数を保存して読み戻す", () => {
+    const saved = saveRobotDesign(design());
+    const savedEnvelope = JSON.parse(saved) as { formatVersion: unknown };
+    const loaded = loadRobotDesign(saved, repository());
 
     expect(loaded.success).toBe(true);
+    expect(savedEnvelope.formatVersion).toBe("0.1.1");
     if (loaded.success) {
+      expect(loaded.data.initialWeaponHand).toBe("right");
       expect(loaded.data.ammunition[weaponSlot]).toBe(3);
     }
   });
+
+  it.each([
+    ["right", weaponSlot],
+    ["left", "slot_2"],
+  ] as const)(
+    "初期Weaponの%sをRobot Body固有のSlot IDへ解決する",
+    (initialWeaponHand, expectedSlotId) => {
+      expect(
+        resolveInitialWeaponSlotId(
+          { ...design(), initialWeaponHand },
+          repository(),
+        ),
+      ).toBe(expectedSlotId);
+    },
+  );
 
   it("空スロットを許容する", () => {
     const loaded = loadRobotDesign(saveRobotDesign(design()), repository());
@@ -125,6 +149,32 @@ describe("RobotDesign codec", () => {
     if (loaded.success) {
       expect(loaded.data.equipment["slot_2" as SlotId]).toBeUndefined();
     }
+  });
+
+  it("初期Weaponに空の手を指定したRobotDesignを拒否する", () => {
+    const emptyLeftHand = { ...design(), initialWeaponHand: "left" as const };
+    const loaded = loadRobotDesign(
+      saveRobotDesign(emptyLeftHand),
+      repository(),
+    );
+
+    expect(loaded.success).toBe(false);
+    if (!loaded.success) {
+      expect(loaded.errors.map(({ code }) => code)).toContain(
+        "empty_initial_weapon_slot",
+      );
+    }
+  });
+
+  it("initialWeaponHandが欠損したRobotDesignを拒否する", () => {
+    const saved = JSON.parse(saveRobotDesign(design())) as {
+      payload: Record<string, unknown>;
+    };
+    delete saved.payload.initialWeaponHand;
+
+    const loaded = loadRobotDesign(JSON.stringify(saved), repository());
+
+    expect(loaded.success).toBe(false);
   });
 
   it("装弾上限を超えるRobotDesignを拒否する", () => {

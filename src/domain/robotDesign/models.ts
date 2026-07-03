@@ -19,6 +19,7 @@ export type RobotDesign = {
   readonly id: RobotDesignId;
   readonly bodyDefinitionId: RobotBodyId;
   readonly programId: ProgramId;
+  readonly initialWeaponHand: "right" | "left" | null;
   readonly equipment: Readonly<Record<SlotId, MasterDataId>>;
   readonly ammunition: Readonly<Record<SlotId, Int32>>;
   readonly metadata: RobotDesignMetadata;
