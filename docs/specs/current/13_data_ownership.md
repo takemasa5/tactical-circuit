@@ -80,7 +80,45 @@ World StateはGame SessionまたはReplay Sessionにおけるゲーム世界の�
 
 World State内の位置とベクトルはワールド座標系で保持する。
 
-Robot状態は、実行時Robot ID、Robot設計データID、位置、向き、速度、現在HP、エネルギー、熱、`active`または`destroyed`の状態、スロットごとのダメージ量、選択中Weaponスロット、スロットごとの残弾数、AI Runtime State、およびカテゴリ別行動要求を保持する。カテゴリ別行動要求はAI EngineがそのTickに生成した`movement`と`combat`の要求であり、Simulatorが将来保持する現在動作や次動作ではない。
+Robot状態は、実行時Robot ID、Robot設計データID、位置、向き、速度、現在HP、エネルギー、熱、`active`または`destroyed`の状態、スロットごとのダメージ量、選択中Weaponスロット、スロットごとの残弾数、AI Runtime State、カテゴリ別行動要求、およびカテゴリ別行動状態を保持する。カテゴリ別行動要求はAI EngineがそのTickに生成した`movement`と`combat`の要求であり、現在動作や次動作を保持するカテゴリ別行動状態とは区別する。
+
+カテゴリ別行動状態はSimulatorだけが読み取りおよび更新する。`movement`と`combat`はそれぞれ現在行動`current`と次動作`next`を持つ。現在行動は要求、`preparing`、`executing`、`recovering`の段階、段階内の経過Tick、および行動別進捗を持つ。
+
+```ts
+type ActionCategoryState<TRequest, TProgress> = {
+  readonly current: CurrentAction<TRequest, TProgress> | null;
+  readonly next: TRequest | null;
+};
+
+type CurrentAction<TRequest, TProgress> =
+  | {
+      readonly request: TRequest;
+      readonly phase: "preparing";
+      readonly phaseElapsedTicks: Int32;
+      readonly progress: null;
+    }
+  | {
+      readonly request: TRequest;
+      readonly phase: "executing";
+      readonly phaseElapsedTicks: Int32;
+      readonly progress: TProgress;
+    }
+  | {
+      readonly request: TRequest;
+      readonly phase: "recovering";
+      readonly phaseElapsedTicks: Int32;
+      readonly progress: null;
+    };
+
+type RobotActionState = {
+  readonly movement: ActionCategoryState<MovementRequest, MovementProgress>;
+  readonly combat: ActionCategoryState<CombatRequest, CombatProgress>;
+};
+```
+
+`MovementProgress`と`CombatProgress`は、対応する後続Phaseで行動`type`ごとの判別可能な共用体として追加する。共通の単一数値を進捗として使用しない。現在は具体的な`executing`進捗を定義しない。
+
+World State SchemaとReplay Data Schemaは`actionState`を検証する。Replay保存時は現在行動と次動作に含まれる要求を、`actionRequests`と同じ規則で正規化する。
 
 Bullet状態は、World State内Bullet ID、発射元Robot ID、Weapon Definition ID、Projectile Definition ID、位置、進行Vector、残り寿命Tick数を保持する。Bullet IDは`bullet_{World State内連番}`形式とし、World Stateが次回の発番値を保持して削除済みIDを再利用しない。弾の大きさはBullet状態へ重複して保持せず、Projectile Definitionから取得する。障害物状態は、障害物ID、位置、軸平行矩形サイズを保持する。
 
@@ -139,6 +177,23 @@ Execution InputはSimulatorがTick開始時のWorld Stateから生成する、AI
 - カテゴリ別の行動状態
 
 Execution InputはWorld State全体を公開しない。AI EngineはExecution Inputを読み取るが変更しない。Simulatorは対象TickのAI実行終了後にExecution Inputを破棄する。
+
+Execution Inputの`robot`はRobot Stateそのものではなく、Simulator所有の`actionState`を除外した専用の`ExecutionRobotSnapshot`とする。Snapshot生成時は位置、速度、ダメージ、残弾、AI Runtime State、行動要求を複製し、元のRobot Stateと可変参照を共有しない。
+
+```ts
+type ExecutionRobotSnapshot = Omit<RobotState, "actionState">;
+
+type ExecutionInput = {
+  readonly tick: Int32;
+  readonly robot: ExecutionRobotSnapshot;
+  readonly aiRuntimeState: AIRuntimeState;
+  readonly sensors: SensorSnapshot;
+  readonly randomState: RandomState;
+  readonly actionStatus: ActionStatusSnapshot;
+};
+```
+
+Execution Input用JSON SchemaはRobot State Schemaを直接再利用せず、`actionState`をプロパティとして受け付けない。
 
 Execution Input内の検出Robot情報は、実行時Robot ID、ワールド座標系の位置、Robotを中心とした座標系の相対位置、距離、Robotの正面を0度とする相対方位、Robot状態を含む。ワールド座標系の位置は、検出対象の基礎情報としてSimulatorがセンサースナップショット生成時に格納する。AI EngineはWorld Stateを参照せず、このスナップショットだけを使用する。
 

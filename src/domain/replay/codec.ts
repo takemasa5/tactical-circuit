@@ -55,6 +55,32 @@ const canonicalizeRobotState = (robot: RobotState): RobotState => ({
     movement: canonicalizeMovementRequest(robot.actionRequests.movement),
     combat: canonicalizeCombatRequest(robot.actionRequests.combat),
   },
+  actionState: {
+    movement: {
+      current:
+        robot.actionState.movement.current === null
+          ? null
+          : {
+              ...robot.actionState.movement.current,
+              request: canonicalizeMovementRequest(
+                robot.actionState.movement.current.request,
+              ) as MovementRequest,
+            },
+      next: canonicalizeMovementRequest(robot.actionState.movement.next),
+    },
+    combat: {
+      current:
+        robot.actionState.combat.current === null
+          ? null
+          : {
+              ...robot.actionState.combat.current,
+              request: canonicalizeCombatRequest(
+                robot.actionState.combat.current.request,
+              ) as CombatRequest,
+            },
+      next: canonicalizeCombatRequest(robot.actionState.combat.next),
+    },
+  },
 });
 
 const canonicalizeWorldState = (worldState: WorldState): WorldState => ({
