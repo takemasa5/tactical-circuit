@@ -2,7 +2,7 @@ import { CURRENT_FORMAT_VERSION, type Int32 } from "../data/common";
 import type { DataValidationError, LoadResult } from "../data/loadResult";
 import type { MapId, GameRuleId } from "../masterData/models";
 import type { DataRepository } from "../masterData/repository";
-import type { Program } from "../program/models";
+import type { ParameterValue, Program } from "../program/models";
 import {
   resolveInitialWeaponSlotId,
   validateRobotDesignReferences,
@@ -56,42 +56,59 @@ const prefixErrorPath = (
 
 const validateGameRuleReferences = (
   program: Program,
+  repository: DataRepository,
   registerNames: ReadonlySet<string>,
   flagNames: ReadonlySet<string>,
   participantPath: string,
 ): DataValidationError[] => {
   const errors: DataValidationError[] = [];
+  const validateReference = (value: ParameterValue, path: string): void => {
+    if (typeof value !== "object" || value === null) return;
+    if (
+      (value.type === "register_reference" &&
+        !registerNames.has(value.registerName)) ||
+      (value.type === "memory_reference" &&
+        !registerNames.has(value.indexRegisterName))
+    ) {
+      errors.push(
+        validationError(
+          "unknown_game_rule_register",
+          path,
+          "Game Ruleに存在しないレジスタを参照しています",
+          value,
+          "Game Ruleに定義されたレジスタ名",
+        ),
+      );
+    } else if (
+      value.type === "flag_reference" &&
+      !flagNames.has(value.flagName)
+    ) {
+      errors.push(
+        validationError(
+          "unknown_game_rule_flag",
+          path,
+          "Game Ruleに存在しないフラグを参照しています",
+          value,
+          "Game Ruleに定義されたフラグ名",
+        ),
+      );
+    }
+  };
+
   program.nodes.forEach((node, nodeIndex) => {
     Object.entries(node.parameterValues).forEach(([parameterId, value]) => {
-      if (typeof value !== "object" || value === null) return;
-      const path = `${participantPath}/program/nodes/${nodeIndex}/parameterValues/${parameterId}`;
-      if (
-        (value.type === "register_reference" &&
-          !registerNames.has(value.registerName)) ||
-        (value.type === "memory_reference" &&
-          !registerNames.has(value.indexRegisterName))
-      ) {
-        errors.push(
-          validationError(
-            "unknown_game_rule_register",
-            path,
-            "ProgramがGame Ruleに存在しないレジスタを参照しています",
-            value,
-            "Game Ruleに定義されたレジスタ名",
-          ),
-        );
-      } else if (
-        value.type === "flag_reference" &&
-        !flagNames.has(value.flagName)
-      ) {
-        errors.push(
-          validationError(
-            "unknown_game_rule_flag",
-            path,
-            "ProgramがGame Ruleに存在しないフラグを参照しています",
-            value,
-            "Game Ruleに定義されたフラグ名",
-          ),
+      validateReference(
+        value,
+        `${participantPath}/program/nodes/${nodeIndex}/parameterValues/${parameterId}`,
+      );
+    });
+
+    const instruction = repository.get("instruction", node.instructionId);
+    instruction?.parameters.forEach((parameter, parameterIndex) => {
+      if (parameter.defaultValue !== undefined) {
+        validateReference(
+          parameter.defaultValue as ParameterValue,
+          `${participantPath}/program/nodes/${nodeIndex}/instructionDefinition/parameters/${parameterIndex}/defaultValue`,
         );
       }
     });
@@ -162,6 +179,7 @@ const validateParticipant = (
     errors.push(
       ...validateGameRuleReferences(
         program,
+        repository,
         new Set(gameRule.registerNames),
         new Set(gameRule.flagNames),
         participantPath,

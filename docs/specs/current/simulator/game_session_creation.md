@@ -27,7 +27,7 @@
 - Robot設計データのBody、装備、初期装弾数、初期選択Weaponの参照が有効である
 - Robot設計データの`programId`と渡されたProgramのIDが一致する
 - Program ValidatorがProgramにErrorを返さない
-- Programのレジスタ参照、フラグ参照、メモリ参照用レジスタがGame Rule Definitionに存在する
+- Programの参照値と、使用するInstruction Definitionの既定参照値に含まれるレジスタ、フラグ、メモリ参照用レジスタがGame Rule Definitionに存在する
 - ProgramのNodeが実際に使用するInstruction Definitionの`cpuCost`がGame Rule Definitionの`cpuLimit`以下である
 
 メモリ容量とコールスタック容量は、検証済みGame Rule Definitionの正の`memorySize`と`callStackSize`を実行時の前提とする。Data Repository内の未使用Instruction DefinitionはCPU上限との照合対象にしない。

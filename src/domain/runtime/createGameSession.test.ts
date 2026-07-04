@@ -293,6 +293,41 @@ describe("createGameSession", () => {
     ).toHaveLength(2);
   });
 
+  it("使用Instructionの既定参照をGame Ruleと照合する", () => {
+    const instructionWithUnknownDefault: InstructionDefinition = {
+      ...instruction(startInstructionId, 10),
+      parameters: [
+        {
+          id: "register",
+          displayName: "Register",
+          description: "",
+          valueType: "register_reference",
+          required: false,
+          defaultValue: { type: "register_reference", registerName: "B" },
+        },
+      ],
+    };
+    const entries: readonly MasterDataEntry[] = [
+      { dataType: "instruction", definition: instructionWithUnknownDefault },
+      { dataType: "robot_body", definition: body },
+      { dataType: "projectile", definition: projectile },
+      { dataType: "weapon", definition: weapon },
+      { dataType: "map", definition: map },
+      { dataType: "game_rule", definition: gameRule },
+    ];
+
+    const result = createGameSession(input(repository(10, entries)));
+
+    expect(result.success).toBe(false);
+    if (result.success) return;
+    expect(
+      result.errors.filter(({ code }) => code === "unknown_game_rule_register"),
+    ).toHaveLength(2);
+    expect(result.errors[0]?.path).toContain(
+      "/instructionDefinition/parameters/0/defaultValue",
+    );
+  });
+
   it("開始前検証の複数Errorを集約し、部分的なGame Sessionを返さない", () => {
     const result = createGameSession({
       ...input(),
