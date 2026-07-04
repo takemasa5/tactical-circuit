@@ -14,6 +14,7 @@ Pull Requestは、選択したIssueのAcceptance Criteria、変更内容、お�
 - 座標系と共通データ規約
 - データ所有権、決定論、Master Data
 - `xorshift32`共通擬似乱数生成器
+- Game Session開始前検証と初期化
 - Program Editor
 - Program Validator
 - AI実行エンジンと命令

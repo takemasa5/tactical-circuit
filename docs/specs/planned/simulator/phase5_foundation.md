@@ -41,90 +41,25 @@ Phase 5では以下を実装する。
 
 ## Game Session生成入力
 
-Game Session生成では次を明示的な入力として受け取る。
-
-- 参加者配列
-- Map Definition ID
-- Game Rule Definition ID
-- 符号付き32bit整数の初期乱数シード
-- 検証済みData Repository
-
-参加者はRobot設計データと、そのRobot設計データが参照するProgramを持つ。初期乱数シードは呼出し側が必ず指定する。Simulatorは開発言語または実行環境の乱数生成器を呼び出さない。
+Game Session生成入力は`docs/specs/current/simulator/game_session_creation.md`に実装済み仕様として定義する。
 
 ---
 
 ## Game Session開始前検証
 
-Game Sessionは、すべての開始前検証が成功した場合だけ生成する。Errorを含む場合は部分的なGame SessionまたはWorld Stateを公開しない。
-
-Game Session開始時は検証済みData Repositoryを信頼し、参加Robotの実サイズを使った配置の再検証を行わない。
-
-少なくとも次を検証する。
-
-- Map Definition IDとGame Rule Definition IDをData Repositoryで解決できる
-- 参加者数がGame Rule Definitionの`participantCount`と一致する
-- Map DefinitionのSpawn Point数が参加者数以上である
-- 参加者配列から発番したRuntime Robot IDが一意である
-- 各Robot設計データの参照と装備構成が有効である
-- `initialWeaponHand`が`null`でない場合、指定した手にWeaponが装備されている
-- 各Robot設計データの`programId`と渡されたProgramのIDが一致する
-- 各ProgramがProgram ValidatorをErrorなしで通過する
-- Programが使用するレジスタ名、フラグ名、メモリ、およびコールスタックの前提が選択中Game Rule Definitionと一致する
-- 各参加ProgramのNodeが参照するInstruction Definitionの`cpuCost`が、選択中Game Rule Definitionの`cpuLimit`以下である
-
-CPU上限との照合対象は、参加ProgramのNodeが実際に参照するInstruction Definitionだけとする。Data Repository内の未使用Instruction Definitionは対象にしない。
-
-開始前検証は検出できたErrorを配列で返す。1件の不正な参加者だけを除外して開始してはならない。
-
-同じRobot設計データまたはProgramを複数の参加者が使用することは許可する。それぞれ異なるRuntime Robot IDと独立した実行時状態を持つ。
+Game Session開始前検証は`docs/specs/current/simulator/game_session_creation.md`に実装済み仕様として定義する。
 
 ---
 
 ## 初期Game Session
 
-参加者配列の先頭から`robot_1`、`robot_2`の順にRuntime Robot IDを発番する。Robot配列とGame Session参加者配列は入力参加者順を維持する。
-
-Robot設計データとProgramはGame Session生成時に読み取り専用スナップショットを作成する。呼出し側が保持する元データとの可変参照を共有しない。
-
-Game Session生成直後のWorld Stateは次の値を持つ。
-
-- `tick`: `0`
-- `status`: `ready`
-- `result`: `null`
-- `bullets`: 空配列
-- `nextBulletSequence`: `1`
-- `randomState`: 初期乱数シードから初期化した状態
-- `obstacles`: Map Definitionの順序を維持して複製したObstacle配列
-
-初期乱数シードの32bitビット列が0の場合は、共通決定論規則に従い内部状態を`0x6D2B79F5`へ置き換える。Game Sessionの`initialRandomSeed`には置換前の入力値を保持し、World Stateの`randomState`には置換後の内部状態を保持する。
+初期Game Sessionは`docs/specs/current/simulator/game_session_creation.md`に実装済み仕様として定義する。
 
 ---
 
 ## 初期Robot State
 
-参加者配列と同じ添字のSpawn Pointを割り当てる。Spawn Pointの`position`はRobot中心点、`direction`は初期方向とする。
-
-各Robot Stateは次の値で初期化する。
-
-- `id`: 参加者順に発番したRuntime Robot ID
-- `robotDesignId`: Robot設計データID
-- `position`: 対応するSpawn Pointの位置
-- `direction`: 対応するSpawn Pointの正規化済み方向
-- `velocity`: `{ x: 0, y: 0 }`
-- `currentHp`: Robot Body Definitionの`maxHp`
-- `energy`: Robot Body Definitionの`maxEnergy`
-- `heat`: `0`
-- `status`: `active`
-- `partDamage`: 装備済みSlot IDだけをキーに持ち、各値を`0`
-- `selectedWeaponSlotId`: `initialWeaponHand`から解決したSlot ID、または`null`
-- `ammunition`: Robot設計データの初期装弾数のコピー
-- `aiRuntimeState`: Game Rule DefinitionとProgramのStart Nodeから生成した初期状態
-- `actionRequests`: 両カテゴリとも`null`
-- `actionState`: 両カテゴリとも現在行動と次動作が`null`
-
-`partDamage`に空スロットを追加しない。装備済みSlot IDはASCII文字列昇順でオブジェクトへ格納する。装備順はゲーム結果へ影響しない。
-
-Robot Body Definitionの`maxHp`または`maxEnergy`が0である場合も、Phase 5では値をそのまま初期化する。撃破および行動不能の判定は後続Phaseで行う。
+初期Robot Stateは`docs/specs/current/simulator/game_session_creation.md`に実装済み仕様として定義する。
 
 ---
 
@@ -306,14 +241,14 @@ Robotへ帰属できない次のような異常は、1 Tick更新全体の失敗
 
 ## オブジェクト順序
 
-決定論のため、Phase 5では次の順序を維持する。
+Game Session生成時の参加者、Robot State、Obstacle State、および順序不問オブジェクトの初期順序は`docs/specs/current/simulator/game_session_creation.md`に実装済み仕様として定義する。
 
-- Game Session参加者とRobot State: Game Session生成入力の参加者順
+Tick更新では次の順序を維持する。
+
 - AI実行とRobot別デバッグ情報: 参加者順
-- Obstacle State: Map Definitionの配列順
-- Bullet State: 生成順。Phase 5の初期値は空配列
+- Bullet State: 生成順
 
-順序不問の`partDamage`、`ammunition`、レジスタ、フラグなどのオブジェクトを列挙してゲーム結果を決めない。列挙が必要な場合はキーのASCII文字列昇順を使用する。
+順序不問のレジスタ、フラグなどのオブジェクトを列挙してゲーム結果を決めない。列挙が必要な場合はキーのASCII文字列昇順を使用する。
 
 ---
 
