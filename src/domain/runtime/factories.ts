@@ -1,12 +1,69 @@
 import type { Int32 } from "../data/common";
 import type { NodeId, RuntimeRobotId } from "../data/ids";
 import type { GameRuleDefinition } from "../masterData/models";
-import type { AIRuntimeState, ActionRequests, BulletId } from "./models";
+import type {
+  AIRuntimeState,
+  ActionRequests,
+  BulletId,
+  CombatRequest,
+  ExecutionRobotSnapshot,
+  MovementRequest,
+  RobotActionState,
+  RobotState,
+} from "./models";
 
 /** `docs/specs/current/instructions/concept.md`に従い空のカテゴリ別行動要求を生成する。 */
 export const createEmptyActionRequests = (): ActionRequests => ({
   movement: null,
   combat: null,
+});
+
+/** `docs/specs/current/13_data_ownership.md`に従い空のRobot行動状態を生成する。 */
+export const createEmptyRobotActionState = (): RobotActionState => ({
+  movement: { current: null, next: null },
+  combat: { current: null, next: null },
+});
+
+const cloneMovementRequest = (
+  request: MovementRequest | null,
+): MovementRequest | null => (request === null ? null : { ...request });
+
+const cloneCombatRequest = (
+  request: CombatRequest | null,
+): CombatRequest | null =>
+  request?.type === "fire"
+    ? { ...request, targetPosition: { ...request.targetPosition } }
+    : request === null
+      ? null
+      : { ...request };
+
+/** Simulator所有の行動詳細を除外し、可変参照を共有しないAI Engine向けSnapshotを生成する。 */
+export const createExecutionRobotSnapshot = (
+  robot: RobotState,
+): ExecutionRobotSnapshot => ({
+  id: robot.id,
+  robotDesignId: robot.robotDesignId,
+  position: { ...robot.position },
+  direction: robot.direction,
+  velocity: { ...robot.velocity },
+  currentHp: robot.currentHp,
+  energy: robot.energy,
+  heat: robot.heat,
+  status: robot.status,
+  partDamage: { ...robot.partDamage },
+  selectedWeaponSlotId: robot.selectedWeaponSlotId,
+  ammunition: { ...robot.ammunition },
+  aiRuntimeState: {
+    ...robot.aiRuntimeState,
+    registers: { ...robot.aiRuntimeState.registers },
+    flags: { ...robot.aiRuntimeState.flags },
+    callStack: [...robot.aiRuntimeState.callStack],
+    memory: { values: [...robot.aiRuntimeState.memory.values] },
+  },
+  actionRequests: {
+    movement: cloneMovementRequest(robot.actionRequests.movement),
+    combat: cloneCombatRequest(robot.actionRequests.combat),
+  },
 });
 
 /** `docs/specs/current/ai/00_overview.md`に従い戦闘開始時のAI Runtime Stateを生成する。 */

@@ -103,6 +103,69 @@ export const actionRequestsSchema = {
   },
 } as const;
 
+const movementCurrentActionSchema = {
+  oneOf: [
+    {
+      type: "object",
+      additionalProperties: false,
+      required: ["request", "phase", "phaseElapsedTicks", "progress"],
+      properties: {
+        request: movementRequestSchema,
+        phase: { enum: ["preparing", "recovering"] },
+        phaseElapsedTicks: nonNegativeInt32,
+        progress: { type: "null" },
+      },
+    },
+  ],
+} as const;
+
+const combatCurrentActionSchema = {
+  oneOf: [
+    {
+      type: "object",
+      additionalProperties: false,
+      required: ["request", "phase", "phaseElapsedTicks", "progress"],
+      properties: {
+        request: combatRequestSchema,
+        phase: { enum: ["preparing", "recovering"] },
+        phaseElapsedTicks: nonNegativeInt32,
+        progress: { type: "null" },
+      },
+    },
+  ],
+} as const;
+
+const actionCategoryStateSchema = (
+  requestSchema: typeof movementRequestSchema | typeof combatRequestSchema,
+  currentActionSchema:
+    typeof movementCurrentActionSchema | typeof combatCurrentActionSchema,
+) =>
+  ({
+    type: "object",
+    additionalProperties: false,
+    required: ["current", "next"],
+    properties: {
+      current: { anyOf: [{ type: "null" }, currentActionSchema] },
+      next: { anyOf: [{ type: "null" }, requestSchema] },
+    },
+  }) as const;
+
+export const robotActionStateSchema = {
+  type: "object",
+  additionalProperties: false,
+  required: ["movement", "combat"],
+  properties: {
+    movement: actionCategoryStateSchema(
+      movementRequestSchema,
+      movementCurrentActionSchema,
+    ),
+    combat: actionCategoryStateSchema(
+      combatRequestSchema,
+      combatCurrentActionSchema,
+    ),
+  },
+} as const;
+
 export const aiRuntimeStateSchema = {
   type: "object",
   additionalProperties: false,
@@ -119,6 +182,35 @@ export const aiRuntimeStateSchema = {
       properties: { values: { type: "array", items: int32 } },
     },
   },
+} as const;
+
+const robotSnapshotProperties = {
+  id: robotId,
+  robotDesignId: {
+    type: "string",
+    pattern:
+      "^robo_[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+  },
+  position: positionSchema,
+  direction: angle,
+  velocity: vectorSchema,
+  currentHp: nonNegativeInt32,
+  energy: nonNegativeInt32,
+  heat: nonNegativeInt32,
+  status: { enum: ["active", "destroyed"] },
+  partDamage: {
+    type: "object",
+    propertyNames: slotId,
+    additionalProperties: nonNegativeInt32,
+  },
+  selectedWeaponSlotId: { anyOf: [{ type: "null" }, slotId] },
+  ammunition: {
+    type: "object",
+    propertyNames: slotId,
+    additionalProperties: nonNegativeInt32,
+  },
+  aiRuntimeState: aiRuntimeStateSchema,
+  actionRequests: actionRequestsSchema,
 } as const;
 
 export const robotStateSchema = {
@@ -139,34 +231,11 @@ export const robotStateSchema = {
     "ammunition",
     "aiRuntimeState",
     "actionRequests",
+    "actionState",
   ],
   properties: {
-    id: robotId,
-    robotDesignId: {
-      type: "string",
-      pattern:
-        "^robo_[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
-    },
-    position: positionSchema,
-    direction: angle,
-    velocity: vectorSchema,
-    currentHp: nonNegativeInt32,
-    energy: nonNegativeInt32,
-    heat: nonNegativeInt32,
-    status: { enum: ["active", "destroyed"] },
-    partDamage: {
-      type: "object",
-      propertyNames: slotId,
-      additionalProperties: nonNegativeInt32,
-    },
-    selectedWeaponSlotId: { anyOf: [{ type: "null" }, slotId] },
-    ammunition: {
-      type: "object",
-      propertyNames: slotId,
-      additionalProperties: nonNegativeInt32,
-    },
-    aiRuntimeState: aiRuntimeStateSchema,
-    actionRequests: actionRequestsSchema,
+    ...robotSnapshotProperties,
+    actionState: robotActionStateSchema,
   },
 } as const;
 
@@ -247,7 +316,27 @@ export const executionInputSchema = {
   ],
   properties: {
     tick: nonNegativeInt32,
-    robot: robotStateSchema,
+    robot: {
+      type: "object",
+      additionalProperties: false,
+      required: [
+        "id",
+        "robotDesignId",
+        "position",
+        "direction",
+        "velocity",
+        "currentHp",
+        "energy",
+        "heat",
+        "status",
+        "partDamage",
+        "selectedWeaponSlotId",
+        "ammunition",
+        "aiRuntimeState",
+        "actionRequests",
+      ],
+      properties: robotSnapshotProperties,
+    },
     aiRuntimeState: aiRuntimeStateSchema,
     sensors: sensorSnapshotSchema,
     randomState: randomStateSchema,

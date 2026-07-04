@@ -1,11 +1,12 @@
 import { describe, expect, it } from "vitest";
 
 import { compileJsonSchema } from "../data/jsonEnvelope";
-import type { ExecutionInput } from "./models";
-import { executionInputSchema } from "./schema";
+import type { ExecutionInput, RobotState } from "./models";
+import { executionInputSchema, robotStateSchema } from "./schema";
 
 const validateExecutionInput =
   compileJsonSchema<ExecutionInput>(executionInputSchema);
+const validateRobotState = compileJsonSchema<RobotState>(robotStateSchema);
 
 const input = {
   tick: 0,
@@ -76,5 +77,39 @@ describe("Execution Input schema", () => {
         actionStatus: { movement: "preparing", combat: "idle" },
       }),
     ).toBe(false);
+    expect(
+      validateExecutionInput({
+        ...input,
+        robot: {
+          ...input.robot,
+          actionState: {
+            movement: { current: null, next: null },
+            combat: { current: null, next: null },
+          },
+        },
+      }),
+    ).toBe(false);
+  });
+});
+
+describe("Robot State schema", () => {
+  it("カテゴリ別行動状態を受け付け、欠損を拒否する", () => {
+    const robot = {
+      ...input.robot,
+      actionState: {
+        movement: {
+          current: {
+            request: { type: "forward", distance: 100 },
+            phase: "preparing",
+            phaseElapsedTicks: 0,
+            progress: null,
+          },
+          next: null,
+        },
+        combat: { current: null, next: { type: "melee" } },
+      },
+    };
+    expect(validateRobotState(robot)).toBe(true);
+    expect(validateRobotState(input.robot)).toBe(false);
   });
 });

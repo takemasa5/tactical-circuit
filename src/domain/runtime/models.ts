@@ -71,6 +71,45 @@ export type ActionRequests = {
   readonly combat: CombatRequest | null;
 };
 
+/** `docs/specs/current/13_data_ownership.md`のカテゴリ別現在行動。 */
+export type CurrentAction<TRequest, TProgress> =
+  | {
+      readonly request: TRequest;
+      readonly phase: "preparing";
+      readonly phaseElapsedTicks: Int32;
+      readonly progress: null;
+    }
+  | {
+      readonly request: TRequest;
+      readonly phase: "executing";
+      readonly phaseElapsedTicks: Int32;
+      readonly progress: TProgress;
+    }
+  | {
+      readonly request: TRequest;
+      readonly phase: "recovering";
+      readonly phaseElapsedTicks: Int32;
+      readonly progress: null;
+    };
+
+/** `docs/specs/current/13_data_ownership.md`のカテゴリ別行動状態。 */
+export type ActionCategoryState<TRequest, TProgress> = {
+  readonly current: CurrentAction<TRequest, TProgress> | null;
+  readonly next: TRequest | null;
+};
+
+/** 具体的な移動進捗は対応する後続Phaseで行動別に追加する。 */
+export type MovementProgress = never;
+
+/** 具体的な戦闘進捗は対応する後続Phaseで行動別に追加する。 */
+export type CombatProgress = never;
+
+/** `docs/specs/current/13_data_ownership.md`のSimulator所有行動状態。 */
+export type RobotActionState = {
+  readonly movement: ActionCategoryState<MovementRequest, MovementProgress>;
+  readonly combat: ActionCategoryState<CombatRequest, CombatProgress>;
+};
+
 /** `docs/specs/current/14_determinism_rules.md`のxorshift32内部状態。 */
 export type RandomState = {
   readonly value: Int32;
@@ -101,7 +140,11 @@ export type RobotState = {
   readonly ammunition: Readonly<Record<SlotId, Int32>>;
   readonly aiRuntimeState: AIRuntimeState;
   readonly actionRequests: ActionRequests;
+  readonly actionState: RobotActionState;
 };
+
+/** AI Engineへ公開する、Simulator所有行動状態を除いたRobot Snapshot。 */
+export type ExecutionRobotSnapshot = Omit<RobotState, "actionState">;
 
 /** `docs/specs/current/13_data_ownership.md`の飛翔中Bullet状態。 */
 export type BulletState = {
@@ -181,7 +224,7 @@ export type ActionStatusSnapshot = {
 /** `docs/specs/current/13_data_ownership.md`のAI Engine向け読取専用入力。 */
 export type ExecutionInput = {
   readonly tick: Int32;
-  readonly robot: RobotState;
+  readonly robot: ExecutionRobotSnapshot;
   readonly aiRuntimeState: AIRuntimeState;
   readonly sensors: SensorSnapshot;
   readonly randomState: RandomState;

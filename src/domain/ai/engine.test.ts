@@ -21,7 +21,11 @@ import type {
 } from "../masterData/models";
 import type { Program, ProgramNode } from "../program/models";
 import type { SlotId } from "../robotDesign/models";
-import { createEmptyActionRequests } from "../runtime/factories";
+import {
+  createEmptyActionRequests,
+  createEmptyRobotActionState,
+  createExecutionRobotSnapshot,
+} from "../runtime/factories";
 import type {
   AIExecutionOutput,
   AIRuntimeState,
@@ -112,6 +116,7 @@ const robot = (aiRuntimeState = runtimeState()): RobotState => ({
   ammunition: { ["slot_1" as SlotId]: int32(3) },
   aiRuntimeState,
   actionRequests: createEmptyActionRequests(),
+  actionState: createEmptyRobotActionState(),
 });
 
 const enemy = (overrides: Partial<DetectedRobot> = {}): DetectedRobot => ({
@@ -130,7 +135,7 @@ const executionInput = (
   const aiRuntimeState = overrides.aiRuntimeState ?? runtimeState();
   return {
     tick: int32(0),
-    robot: robot(aiRuntimeState),
+    robot: createExecutionRobotSnapshot(robot(aiRuntimeState)),
     aiRuntimeState,
     sensors: { robots: [], bullets: [] },
     randomState: { value: int32(123) },

@@ -130,64 +130,15 @@ Robot Body Definitionの`maxHp`または`maxEnergy`が0である場合も、Phas
 
 ## Execution Input用Robot Snapshot
 
-`RobotState.actionState`はSimulatorだけが読み取りおよび更新する内部状態とし、AI Engineへ公開しない。Execution Inputの`robot`はRobot Stateそのものではなく、`actionState`を除外した専用の読み取り専用Snapshotとする。
+Robot StateとExecution InputのSnapshot境界、専用Schema、および参照分離は`docs/specs/current/13_data_ownership.md`に実装済み仕様として定義する。
 
-```ts
-type ExecutionRobotSnapshot = Omit<RobotState, "actionState">;
-
-type ExecutionInput = {
-  readonly tick: Int32;
-  readonly robot: ExecutionRobotSnapshot;
-  readonly aiRuntimeState: AIRuntimeState;
-  readonly sensors: SensorSnapshot;
-  readonly randomState: RandomState;
-  readonly actionStatus: ActionStatusSnapshot;
-};
-```
-
-SimulatorはTick開始時のRobot Stateから新しい`ExecutionRobotSnapshot`を生成し、元のRobot Stateとの可変参照を共有しない。現在行動、次動作、段階、進捗の情報は`robot`へ含めず、AI Engineへ公開する行動状態は`actionStatus`の`idle`または`running`だけとする。
-
-Execution Input用JSON SchemaもRobot State Schemaを直接再利用せず、`actionState`をプロパティとして受け付けない専用Schemaを使用する。
+SimulatorはTick開始時のRobot Stateから新しい`ExecutionRobotSnapshot`を生成する。現在行動、次動作、段階、進捗の情報は`robot`へ含めず、AI Engineへ公開する行動状態は`actionStatus`の`idle`または`running`だけとする。
 
 ---
 
 ## 行動状態
 
-Robot StateはAI EngineがそのTickに生成した`actionRequests`とは別に、次のカテゴリ別行動状態を持つ。
-
-```ts
-type ActionCategoryState<TRequest, TProgress> = {
-  readonly current: CurrentAction<TRequest, TProgress> | null;
-  readonly next: TRequest | null;
-};
-
-type CurrentAction<TRequest, TProgress> =
-  | {
-      readonly request: TRequest;
-      readonly phase: "preparing";
-      readonly phaseElapsedTicks: Int32;
-      readonly progress: null;
-    }
-  | {
-      readonly request: TRequest;
-      readonly phase: "executing";
-      readonly phaseElapsedTicks: Int32;
-      readonly progress: TProgress;
-    }
-  | {
-      readonly request: TRequest;
-      readonly phase: "recovering";
-      readonly phaseElapsedTicks: Int32;
-      readonly progress: null;
-    };
-
-type RobotActionState = {
-  readonly movement: ActionCategoryState<MovementRequest, MovementProgress>;
-  readonly combat: ActionCategoryState<CombatRequest, CombatProgress>;
-};
-```
-
-`MovementProgress`と`CombatProgress`は行動`type`ごとの判別可能な共用体とし、具体的な進捗フィールドは対応する後続Phaseで定義する。全行動で意味が変わる単一の数値`progress`は使用しない。
+Robot Stateが保持するカテゴリ別行動状態の型、所有権、Schema、およびReplay保存時の正規化は`docs/specs/current/13_data_ownership.md`に実装済み仕様として定義する。
 
 Phase 5の永続可能なRobot Stateでは`preparing`だけを生成する。`executing`の具体的な進捗型と、`recovering`へ入る条件は後続Phaseが対応行動ごとに追加する。未定義の進捗を汎用オブジェクトや単一数値で代用しない。
 
@@ -198,8 +149,6 @@ Phase 5で新規採用した行動は次の状態とする。
 - `progress`: `null`
 
 Phase 5には具体的なMovement SystemまたはWeapon Systemが存在しないため、採用した実在の行動を`preparing`から進めず、`phaseElapsedTicks`も増加させない。Phase 6またはPhase 8で、行動別の段階時間、進捗、効果、完了条件を追加する。
-
-Robot Stateを参照するWorld State Schema、Replay Data Schema、保存時の正規化、および既存テストデータへ`actionState`を追加する。Phase 5ではリプレイの記録または再生処理を実装しないが、保存可能なWorld Stateの構造整合性は維持する。
 
 現在行動または次動作の少なくとも一方が存在するカテゴリの`ActionStatusSnapshot`は`running`、両方とも存在しないカテゴリは`idle`とする。
 
