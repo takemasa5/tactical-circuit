@@ -6,7 +6,7 @@
 
 ## Simulator結果型
 
-開始操作と1 Tick更新は次の共通結果型を使用する。
+開始操作は次のSimulator結果型を使用する。
 
 ```ts
 type SimulatorErrorCode =
