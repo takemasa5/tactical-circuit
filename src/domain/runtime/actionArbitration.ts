@@ -54,10 +54,8 @@ const movementRequestsAreSame: SameRequest<MovementRequest> = (left, right) => {
   switch (left.type) {
     case "forward":
     case "backward":
-      return right.type === left.type && left.distance === right.distance;
     case "turn_left":
     case "turn_right":
-      return right.type === left.type && left.turnTo === right.turnTo;
     case "strafe_left":
     case "strafe_right":
     case "stop":

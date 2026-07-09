@@ -61,6 +61,54 @@ describe("action request arbitration", () => {
     );
   });
 
+  it("Moveの同一判定では完了条件のdistanceを変更しない", () => {
+    const actionState: RobotActionState = {
+      ...createEmptyRobotActionState(),
+      movement: {
+        current: {
+          request: { type: "forward", distance: int32(100) },
+          phase: "preparing",
+          phaseElapsedTicks: int32(1),
+          progress: null,
+        },
+        next: null,
+      },
+    };
+
+    const result = arbitrateRobotActionRequests(actionState, {
+      movement: { type: "forward", distance: int32(200) },
+      combat: null,
+    });
+
+    expect(result.success && result.data.movement.current).toEqual(
+      actionState.movement.current,
+    );
+  });
+
+  it("Turnの同一判定では完了目標のturnToを変更しない", () => {
+    const actionState: RobotActionState = {
+      ...createEmptyRobotActionState(),
+      movement: {
+        current: {
+          request: { type: "turn_right", turnTo: int32(90) },
+          phase: "preparing",
+          phaseElapsedTicks: int32(1),
+          progress: null,
+        },
+        next: null,
+      },
+    };
+
+    const result = arbitrateRobotActionRequests(actionState, {
+      movement: { type: "turn_right", turnTo: int32(180) },
+      combat: null,
+    });
+
+    expect(result.success && result.data.movement.current).toEqual(
+      actionState.movement.current,
+    );
+  });
+
   it("preparing中の異なる要求で現在行動を置き換える", () => {
     const actionState: RobotActionState = {
       ...createEmptyRobotActionState(),

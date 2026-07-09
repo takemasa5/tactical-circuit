@@ -20,6 +20,8 @@ AI Engineが生成したカテゴリ別行動要求を、Simulatorが保持す�
 
 `preparing`中の現在行動に同一要求が来た場合、現在行動の要求、段階、経過Tick、および進捗を変更しない。
 
+要求の同一判定は各命令詳細の「行動要求」に従う。Move Forward/Backwardは`distance`を同一判定に使用せず、Turnは`turnTo`を同一判定に使用しない。
+
 `preparing`中の現在行動に異なる要求が来た場合、現在行動をキャンセルし、新しい要求を`preparing`の現在行動として採用する。
 
 Phase 5には具体的なMovement SystemまたはWeapon Systemが存在しないため、採用した実在の行動を`preparing`から進めず、`phaseElapsedTicks`も増加させない。
