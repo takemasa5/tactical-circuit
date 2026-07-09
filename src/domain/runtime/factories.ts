@@ -24,11 +24,11 @@ export const createEmptyRobotActionState = (): RobotActionState => ({
   combat: { current: null, next: null },
 });
 
-const cloneMovementRequest = (
+export const cloneMovementRequest = (
   request: MovementRequest | null,
 ): MovementRequest | null => (request === null ? null : { ...request });
 
-const cloneCombatRequest = (
+export const cloneCombatRequest = (
   request: CombatRequest | null,
 ): CombatRequest | null =>
   request?.type === "fire"

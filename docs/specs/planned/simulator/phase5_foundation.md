@@ -75,47 +75,15 @@ SimulatorはTick開始時のRobot Stateから新しい`ExecutionRobotSnapshot`�
 
 Robot Stateが保持するカテゴリ別行動状態の型、所有権、Schema、およびReplay保存時の正規化は`docs/specs/current/13_data_ownership.md`に実装済み仕様として定義する。
 
-Phase 5の永続可能なRobot Stateでは`preparing`だけを生成する。`executing`の具体的な進捗型と、`recovering`へ入る条件は後続Phaseが対応行動ごとに追加する。未定義の進捗を汎用オブジェクトや単一数値で代用しない。
+Phase 5の行動採用と`ActionStatusSnapshot`生成は`docs/specs/current/simulator/action_arbitration.md`に実装済み仕様として定義する。
 
-Phase 5で新規採用した行動は次の状態とする。
-
-- `phase`: `preparing`
-- `phaseElapsedTicks`: `0`
-- `progress`: `null`
-
-Phase 5には具体的なMovement SystemまたはWeapon Systemが存在しないため、採用した実在の行動を`preparing`から進めず、`phaseElapsedTicks`も増加させない。Phase 6またはPhase 8で、行動別の段階時間、進捗、効果、完了条件を追加する。
-
-現在行動または次動作の少なくとも一方が存在するカテゴリの`ActionStatusSnapshot`は`running`、両方とも存在しないカテゴリは`idle`とする。
+`executing`の具体的な進捗型と、`recovering`へ入る条件は後続Phaseが対応行動ごとに追加する。未定義の進捗を汎用オブジェクトや単一数値で代用しない。
 
 ---
 
 ## 行動要求の調停
 
-各TickでAI Engineが返したカテゴリ別行動要求を、すべてのRobotのAI実行後に参加者順で調停する。異なるカテゴリは独立して処理する。
-
-現在行動がない場合、新しい要求を現在行動として同じTickに採用し、そのTickを予備動作の開始Tickとする。
-
-現在行動と新しい要求の同一判定は各行動仕様に従う。
-
-- `preparing`中の同一要求は無視し、現在行動の要求と完了条件を変更しない
-- `preparing`中の異なる要求は現在行動をキャンセルし、新しい要求を`preparing`の現在行動として採用する
-- `executing`および`recovering`中の規則は共通行動仕様と各行動仕様に従う
-- 次動作を保持する場合、既存の次動作を最新要求で上書きする
-- `actionRequests`が`null`であっても、継続中の現在行動または次動作を取り消さない
-
-具体的な段階更新では、長さ0 Tickの段階だけを同一Tick内で即座に飛ばす。1 Tick以上を消費した場合は、次段階の処理を次Tickから行う。現在行動完了後の次動作も同じ規則で開始する。
-
-共通の許可遷移は次のとおりとする。
-
-- `preparing`から`executing`
-- キャンセルされた`preparing`から、新しい要求の`preparing`
-- 正常完了またはキャンセルされた`executing`から`recovering`
-- `recovering`完了後、次動作があればその要求の`preparing`
-- `recovering`完了後、次動作がなければ現在行動を`null`
-
-事後動作を持たない行動でも、長さ0 Tickの`recovering`を経由したものとして同じ遷移規則を適用する。許可されていない遷移要求はSimulator全体の内部整合性Errorとする。
-
-段階時間、効果、および完了条件を所有する後続サブシステムは、現在段階を直接書き換えず、継続、正常完了、またはキャンセルの遷移結果を共通行動状態更新へ返す。Phase 5の既定処理は`preparing`の継続だけを返す。
+行動要求の調停は`docs/specs/current/simulator/action_arbitration.md`に実装済み仕様として定義する。
 
 ---
 
