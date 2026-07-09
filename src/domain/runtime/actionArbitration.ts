@@ -97,6 +97,12 @@ const arbitrateCategory = <TRequest, TProgress>(
   cloneRequest: CloneRequest<TRequest>,
   sameRequest: SameRequest<TRequest>,
 ): SimulatorResult<ActionCategoryState<TRequest, TProgress>> => {
+  if (state.current !== null && state.current.phase !== "preparing") {
+    return inconsistentActionState(
+      "Phase 5ではpreparing以外の現在行動を調停できません",
+    );
+  }
+
   if (request === null) {
     return {
       success: true,
@@ -112,12 +118,6 @@ const arbitrateCategory = <TRequest, TProgress>(
         next: cloneRequest(state.next),
       },
     };
-  }
-
-  if (state.current.phase !== "preparing") {
-    return inconsistentActionState(
-      "Phase 5ではpreparing以外の現在行動を調停できません",
-    );
   }
 
   if (sameRequest(state.current.request, request)) {

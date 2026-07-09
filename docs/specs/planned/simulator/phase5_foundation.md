@@ -85,6 +85,20 @@ Phase 5の行動採用と`ActionStatusSnapshot`生成は`docs/specs/current/simu
 
 行動要求の調停は`docs/specs/current/simulator/action_arbitration.md`に実装済み仕様として定義する。
 
+具体的な段階更新では、長さ0 Tickの段階だけを同一Tick内で即座に飛ばす。1 Tick以上を消費した場合は、次段階の処理を次Tickから行う。現在行動完了後の次動作も同じ規則で開始する。
+
+共通の許可遷移は次のとおりとする。
+
+- `preparing`から`executing`
+- キャンセルされた`preparing`から、新しい要求の`preparing`
+- 正常完了またはキャンセルされた`executing`から`recovering`
+- `recovering`完了後、次動作があればその要求の`preparing`
+- `recovering`完了後、次動作がなければ現在行動を`null`
+
+事後動作を持たない行動でも、長さ0 Tickの`recovering`を経由したものとして同じ遷移規則を適用する。許可されていない遷移要求はSimulator全体の内部整合性Errorとする。
+
+段階時間、効果、および完了条件を所有する後続サブシステムは、現在段階を直接書き換えず、継続、正常完了、またはキャンセルの遷移結果を共通行動状態更新へ返す。Phase 5の既定処理は`preparing`の継続だけを返す。
+
 ---
 
 ## `actionRequests`のTickライフサイクル

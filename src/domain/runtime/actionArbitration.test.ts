@@ -156,4 +156,27 @@ describe("action request arbitration", () => {
       message: "Phase 5ではpreparing以外の現在行動を調停できません",
     });
   });
+
+  it("要求がnullでも調停できない現在行動段階を内部整合性Errorにする", () => {
+    const actionState = {
+      ...createEmptyRobotActionState(),
+      combat: {
+        current: {
+          request: { type: "melee" },
+          phase: "recovering",
+          phaseElapsedTicks: int32(0),
+          progress: {},
+        },
+        next: null,
+      },
+    } as unknown as RobotActionState;
+
+    expect(
+      arbitrateRobotActionRequests(actionState, createEmptyActionRequests()),
+    ).toEqual({
+      success: false,
+      code: "inconsistent_session",
+      message: "Phase 5ではpreparing以外の現在行動を調停できません",
+    });
+  });
 });
