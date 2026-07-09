@@ -131,13 +131,7 @@ Tick開始時、すべてのRobotの`actionRequests`を両カテゴリとも`nul
 
 ## Game Session開始操作
 
-Game Session生成直後は`ready`とする。
-
-明示的な開始操作は、World Stateの`status`だけを`running`へ変更した新しいGame Sessionを返す。Tick、Robot、Random Stateその他の値を変更しない。
-
-開始操作は`ready`であるGame Sessionだけを受け付ける。`running`または`finished`の場合は状態を変更せずErrorを返す。
-
-Phase 5では`finished`へ遷移する処理を実装しない。
+Game Session開始操作は`docs/specs/current/simulator/game_session_start.md`に実装済み仕様として定義する。
 
 ---
 
@@ -145,7 +139,7 @@ Phase 5では`finished`へ遷移する処理を実装しない。
 
 Phase 5は実時間から独立した同期的な1 Tick更新APIを提供する。`requestAnimationFrame`、タイマー、FPS、経過実時間を参照しない。
 
-開始操作と1 Tick更新は入力Game Sessionを変更しない。成功時に新しいGame Sessionを返し、失敗時は入力Game Sessionをそのまま利用できる。
+1 Tick更新は入力Game Sessionを変更しない。成功時に新しいGame Sessionを返し、失敗時は入力Game Sessionをそのまま利用できる。
 
 1 Tick更新は`running`のGame Sessionだけを受け付ける。`ready`または`finished`の場合は状態を変更せずErrorを返す。
 
@@ -156,23 +150,7 @@ Phase 5は実時間から独立した同期的な1 Tick更新APIを提供する�
 
 Robot別AIデバッグ情報はRuntime Robot IDと`AIDebugInfo`を持つ。World StateまたはReplay Dataへ格納せず、ゲーム結果と決定論的なWorld State変化へ影響させない。
 
-開始操作と1 Tick更新は次の共通結果型を使用する。
-
-```ts
-type SimulatorErrorCode =
-  | "invalid_game_status"
-  | "tick_overflow"
-  | "inconsistent_session"
-  | "internal_simulator_error";
-
-type SimulatorResult<T> =
-  | { readonly success: true; readonly data: T }
-  | {
-      readonly success: false;
-      readonly code: SimulatorErrorCode;
-      readonly message: string;
-    };
-```
+1 Tick更新は`docs/specs/current/simulator/game_session_start.md`の共通結果型を使用する。
 
 Game Session開始前検証は複数の不正をまとめて返すため、`SimulatorResult`ではなく既存の`LoadResult<GameSession>`と`DataValidationError[]`を使用する。
 
