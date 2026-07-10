@@ -16,6 +16,7 @@ Pull Requestは、選択したIssueのAcceptance Criteria、変更内容、お�
 - `xorshift32`共通擬似乱数生成器
 - Game Session開始前検証と初期化
 - Game Session開始操作とSimulator共通結果型
+- 行動要求の調停とActionStatusSnapshot生成
 - Program Editor
 - Program Validator
 - AI実行エンジンと命令
