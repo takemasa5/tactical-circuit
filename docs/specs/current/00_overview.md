@@ -8,7 +8,7 @@ Pull Requestは、選択したIssueのAcceptance Criteria、変更内容、お�
 
 ## 収録範囲
 
-現在はPhase 0からPhase 4までと、Phase 5のうち実装済みの範囲について、次の仕様を収録する。
+現在はPhase 0からPhase 5までについて、次の仕様を収録する。
 
 - 開発環境
 - 座標系と共通データ規約

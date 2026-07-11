@@ -129,66 +129,16 @@ Game Session生成時の参加者、Robot State、Obstacle State、および順�
 
 ## 必須テスト
 
-### Game Session生成
+Phase 5の必須テストは対応する実装済み仕様とともに`docs/specs/current/`へ反映済み。
 
-- 検証済みの参加者、Map、Game Rule、シードから`ready`のGame Sessionを生成できる
-- 参加者順にRuntime Robot IDとSpawn Pointを割り当てる
-- Robot StateのHP、エネルギー、熱、速度、装弾数、Part Damage、初期Weapon、AI Runtime Stateを仕様どおり初期化する
-- 同じRobot設計データを複数参加者が使用しても独立した実行時状態を持つ
-- 不正な参加者を除外せず、Game Session全体を開始拒否する
-- 参加Programが使用する命令のCPUコストが上限を超える場合に拒否する
-- 未使用Instruction DefinitionのCPUコストが上限を超えても拒否しない
-
-### Master Dataと座標
-
-- 最大BodyサイズのSpawn Point矩形がMap外、Obstacle内部、または別Spawn Point内部へ重なるMapを拒否する
-- 最大Bodyサイズの矩形がMap境界、Obstacle、または別Spawn Pointへ辺だけ接するMapを受け付ける
-- Spawn Pointを持つMapがあり、Robot Body Definitionが0件の場合はData Repositoryを公開しない
-- 奇数サイズと符号付き32bit境界値を含むAABB比較が安全整数で決定論的に動作する
-
-### 開始とTick
-
-- `ready`から`running`へ遷移してもTickとゲーム状態が変化しない
-- `running`だけが1 Tick更新できる
-- 1 Tick成功時だけTickが1増える
-- 入力Game Sessionを変更せず、更新後の新しいGame Sessionを返す
-- 前Tickの`actionRequests`を空にしてから当該TickのExecution Resultで置き換える
-- AIを参加者順に実行し、Random Stateを次のRobotへ引き継ぐ
-- Sensor Snapshotが空である
-- Execution InputのRobot Snapshotが`actionState`を含まず、専用Schemaが`actionState`を拒否する
-- Robot別AIデバッグ情報を参加者順に返し、World Stateへ格納しない
-
-### 行動状態とWait Action
-
-- 新しい要求を同じTickに`preparing`の現在行動として採用する
-- `preparing`中の同一要求を無視する
-- `preparing`中の異なる要求で現在行動を置き換える
-- 現在行動または次動作があれば`running`、両方なければ`idle`を生成する
-- Wait Actionが同じExecution Contextで先に生成済みの要求を見て待機する
-- 次TickのWait ActionがTick開始時の`ActionStatusSnapshot`を見て待機する
-- `actionState`を含むWorld StateとReplay保存データを検証および正規化できる
-
-### エラーと乱数
-
-- 1体のAI実行時エラー後も、正常終了済み変更を反映し、後続RobotとTick更新を継続する
-- 次TickにエラーRobotをStart Nodeから再実行する
-- 回復不能エラーでは入力Game Sessionを変更せず、Tickを増加させない
-- 0シードの置換、既知の`xorshift32`列、`nextInt`の範囲、異常範囲で状態を進めないことを検証する
-- `nextInt`の異常範囲が`invalid_random_range`と入力と同じRandom Stateを返す
+- Game Session生成、開始前検証、初期World State: `docs/specs/current/simulator/game_session_creation.md`
+- 開始操作: `docs/specs/current/simulator/game_session_start.md`
+- 同期的な1 Tick更新、AI実行時エラー、回復不能エラー、オブジェクト順序: `docs/specs/current/simulator/tick_update.md`
+- 行動要求の調停と`ActionStatusSnapshot`: `docs/specs/current/simulator/action_arbitration.md`
+- `xorshift32`共通擬似乱数生成器: `docs/specs/current/14_determinism_rules.md`
 
 ---
 
 ## Phase 5完了条件
 
-Phase 5は次をすべて満たした時点で完了とする。
-
-- Game Session開始前検証が実装されている
-- 空のMap上にRobotを初期化し、明示的に開始できる
-- 同期APIでWorld Stateを1 Tickずつ更新できる
-- AI Runtime State、行動要求、共通Random Stateが仕様順に更新される
-- 現在行動、次動作、`ActionStatusSnapshot`が実装されている
-- `PH-002`のWait Action統合テストが成功する
-- Robot単位のAI実行時エラーで他RobotまたはTick更新が停止しない
-- 共通擬似乱数生成器の単体テストが成功する
-- 同じ入力から同じ更新後Game Sessionと同じRobot別AIデバッグ情報を得る
-- Phase 6以降の移動、センサー、武器、勝敗、リプレイ、実時間Runnerが混入していない
+Phase 5の完了条件は満たされ、対応する規範的仕様は`docs/specs/current/`へ反映済み。
