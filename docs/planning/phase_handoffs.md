@@ -40,10 +40,11 @@ Phase 4でInstruction Dispatcherと命令実装Registryを追加する際、Regi
 
 ## PH-002 Simulator行動状態とActionStatusSnapshot
 
-- 状態: `pending`
+- 状態: `resolved`
 - 発生Phase: Phase 4 AI実行エンジン
 - 対象Phase: Phase 5 シミュレーター基盤
 - 関連: PR #27 review thread `PRRT_kwDOTGu1Vs6NnpzP`
+- Phase 5設計: `docs/specs/planned/simulator/phase5_foundation.md`
 
 ### 背景
 
@@ -54,6 +55,12 @@ Phase 4ではWait Action命令が参照する`movement`と`combat`の`idle`ま�
 Simulatorがカテゴリごとに現在の行動と次動作を保持し、共通の段階遷移規則に従って更新する。現在の行動または次動作が存在する場合に`running`、どちらも存在しない場合に`idle`となるActionStatusSnapshotをTick開始時に生成する。
 
 Wait Actionが同一Tickで生成済みの行動要求とActionStatusSnapshotの両方を使用して待機できる統合テストを追加する。
+
+### 対応根拠
+
+- 仕様: `docs/specs/current/13_data_ownership.md`でRobot Stateの行動状態、`docs/specs/current/simulator/action_arbitration.md`で行動要求の調停と`ActionStatusSnapshot`生成、`docs/specs/current/simulator/tick_update.md`でTick開始時SnapshotとAI実行順を定義済み
+- 実装: `src/domain/runtime/actionArbitration.ts`でカテゴリ別の現在行動、次動作、`ActionStatusSnapshot`を生成し、`src/domain/runtime/updateGameSessionTick.ts`でTick開始時のSnapshotをAI Engineへ渡す
+- テスト: `src/domain/runtime/updateGameSessionTick.test.ts`でWait Actionが同一Tick要求と次Tickの`ActionStatusSnapshot`の両方で待機することを確認し、`src/domain/runtime/createGameSession.test.ts`でGame Session生成、開始、複数Robotの複数Tick同期更新を統合検証
 
 ---
 

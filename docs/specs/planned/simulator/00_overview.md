@@ -10,6 +10,8 @@
 
 個々の処理の詳細は各仕様書で定義し、本書ではシミュレーター全体の共通仕様を扱う。
 
+Phase 5で実装する基盤の詳細は`phase5_foundation.md`で定義する。
+
 ---
 
 # 基本理念
@@ -325,6 +327,7 @@ FrameはTick昇順に処理し、同一Frame内のイベントはイベント配
 
 シミュレーターの詳細仕様は以下で定義する。
 
+- phase5_foundation.md
 - world.md
 - tick.md
 - movement.md

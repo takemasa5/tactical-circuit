@@ -8,11 +8,16 @@ Pull Requestは、選択したIssueのAcceptance Criteria、変更内容、お�
 
 ## 収録範囲
 
-現在はPhase 0からPhase 4までに実装された次の仕様を収録する。
+現在はPhase 0からPhase 5までについて、次の仕様を収録する。
 
 - 開発環境
 - 座標系と共通データ規約
 - データ所有権、決定論、Master Data
+- `xorshift32`共通擬似乱数生成器
+- Game Session開始前検証と初期化
+- Game Session開始操作とSimulator共通結果型
+- 同期的な1 Tick更新とAI Engine統合
+- 行動要求の調停とActionStatusSnapshot生成
 - Program Editor
 - Program Validator
 - AI実行エンジンと命令

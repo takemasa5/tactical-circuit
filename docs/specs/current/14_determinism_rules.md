@@ -33,6 +33,8 @@
 
 複数の演算からなる処理は、個別仕様で定めた順序で評価する。実装都合による演算順序の入れ替えを行わない。
 
+例外として、奇数サイズを持つ軸平行矩形の境界、包含、面積重複の比較に限り、座標を2倍した一時的な安全整数を使用できる。各演算結果は`Number.isSafeInteger`を満たさなければならず、満たさない場合は対象処理を失敗させる。丸め、飽和、巡回を行わない。この一時値をWorld State、保存データ、行動進捗、またはゲームロジックの数値結果として保持しない。
+
 ---
 
 # 決定論的な文字列順序
@@ -88,6 +90,31 @@ x = x XOR (x << 5)
 
 ## 乱数API
 
+乱数APIは入力Random Stateを変更せず、生成値と更新後Random Stateを返す純粋関数とする。
+
+```ts
+type RandomGeneration<TValue> = {
+  readonly value: TValue;
+  readonly randomState: RandomState;
+};
+
+type RandomRangeResult =
+  | {
+      readonly success: true;
+      readonly data: RandomGeneration<Int32>;
+    }
+  | {
+      readonly success: false;
+      readonly code: "invalid_random_range";
+      readonly message: string;
+      readonly randomState: RandomState;
+    };
+```
+
+- `initializeRandomState(seed)`: シードの32bitビット列を保持し、0の置換規則を適用したRandom Stateを返す
+- `nextUint32(state)`: `RandomGeneration<number>`として符号なし32bit整数の生成値と更新後Random Stateを返す
+- `nextInt(state, minInclusive, maxExclusive)`: `RandomRangeResult`を返す
+
 `nextUint32()`は乱数内部でのみ使用する。戻り値は0以上`4294967295`以下とする。
 
 `nextInt(minInclusive, maxExclusive)`は以下の範囲の符号付き32bit整数を返す。
@@ -105,7 +132,7 @@ result = minInclusive + (nextUint32() % range)
 
 `range`は乱数の範囲変換中に限り符号なし32bit整数として扱う。
 
-`minInclusive`が`maxExclusive`以上の場合はエラーとし、乱数内部状態を進めない。
+`minInclusive`が`maxExclusive`以上の場合は例外を送出せず、`success: false`、`code: "invalid_random_range"`、プレイヤーへ表示可能な`message`、入力と同じRandom Stateを返す。乱数内部状態を進めない。
 
 剣余による範囲変換のごく小さな偏りは仕様として許容する。
 

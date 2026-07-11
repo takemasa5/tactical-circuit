@@ -187,6 +187,7 @@ const design: RobotDesign = {
   id: designId,
   bodyDefinitionId: bodyId,
   programId,
+  initialWeaponHand: null,
   equipment: {},
   ammunition: {},
   metadata: {
@@ -219,6 +220,10 @@ const robot: RobotState = {
     memory: { values: Array.from({ length: 20 }, () => int32(0)) },
   },
   actionRequests: { movement: null, combat: null },
+  actionState: {
+    movement: { current: null, next: null },
+    combat: { current: null, next: null },
+  },
 };
 
 const worldState: WorldState = {
@@ -322,6 +327,56 @@ describe("Replay codec", () => {
         type: "fire",
         targetDirection: 90,
         targetPosition: { x: 20, y: 30 },
+      });
+    }
+  });
+
+  it("行動状態を保存して読み戻し、要求内の角度を正規化する", () => {
+    const valid = replay();
+    const loaded = loadReplay(
+      saveReplay({
+        ...valid,
+        replayData: {
+          ...valid.replayData,
+          initialWorldState: {
+            ...valid.replayData.initialWorldState,
+            robots: [
+              {
+                ...robot,
+                actionState: {
+                  movement: {
+                    current: {
+                      request: { type: "turn_right", turnTo: int32(450) },
+                      phase: "preparing",
+                      phaseElapsedTicks: int32(0),
+                      progress: null,
+                    },
+                    next: { type: "turn_left", turnTo: int32(-90) },
+                  },
+                  combat: { current: null, next: null },
+                },
+              },
+            ],
+          },
+        },
+      }),
+      "0.1.1",
+      repository(),
+    );
+
+    expect(loaded.success).toBe(true);
+    if (loaded.success) {
+      expect(
+        loaded.data.replayData.initialWorldState.robots[0]?.actionState
+          .movement,
+      ).toEqual({
+        current: {
+          request: { type: "turn_right", turnTo: 90 },
+          phase: "preparing",
+          phaseElapsedTicks: 0,
+          progress: null,
+        },
+        next: { type: "turn_left", turnTo: 270 },
       });
     }
   });
