@@ -73,7 +73,9 @@ Robotへ帰属できない次のような異常は、1 Tick更新全体の失敗
 
 Tick更新では次の順序を維持する。
 
+- Robot State: Tick開始時のWorld State配列順
+- Obstacle State: Tick開始時のWorld State配列順
+- Bullet State: Phase 5では常に空配列
 - AI実行とRobot別デバッグ情報: 参加者順
-- Bullet State: 生成順
 
 順序不問のレジスタ、フラグなどのオブジェクトを列挙してゲーム結果を決めない。列挙が必要な場合はキーのASCII文字列昇順を使用する。

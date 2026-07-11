@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 
 import type { Int32 } from "../data/common";
 import type { NodeId, ProgramId, RobotDesignId } from "../data/ids";
+import { createAIEngine } from "../ai/engine";
+import { productionInstructionRegistry } from "../ai/instructions";
 import type {
   GameRuleDefinition,
   GameRuleId,
@@ -24,6 +26,8 @@ import {
 import type { Program } from "../program/models";
 import type { RobotDesign, SlotId } from "../robotDesign/models";
 import { createGameSession } from "./createGameSession";
+import { startGameSession } from "./startGameSession";
+import { updateGameSessionTick } from "./updateGameSessionTick";
 
 const int32 = (value: number): Int32 => value as Int32;
 const uuid = (suffix: string): string =>
@@ -31,6 +35,9 @@ const uuid = (suffix: string): string =>
 
 const startInstructionId = `instruction_${uuid("1")}` as InstructionId;
 const unusedInstructionId = `instruction_${uuid("2")}` as InstructionId;
+const switchWeaponInstructionId = `instruction_${uuid("10")}` as InstructionId;
+const waitActionInstructionId = `instruction_${uuid("11")}` as InstructionId;
+const endInstructionId = `instruction_${uuid("12")}` as InstructionId;
 const bodyId = `robot_body_${uuid("3")}` as RobotBodyId;
 const projectileId = `projectile_${uuid("4")}` as ProjectileId;
 const weaponId = `weapon_${uuid("5")}` as WeaponId;
@@ -201,7 +208,10 @@ const repository = (
     { dataType: "map", definition: map },
     { dataType: "game_rule", definition: gameRule },
   ];
-  const result = createDataRepository(entries, new Set(["start", "unused"]));
+  const result = createDataRepository(
+    entries,
+    new Set(["start", "unused", "switch_weapon", "wait_action", "end"]),
+  );
   if (!result.success) throw new Error(JSON.stringify(result.errors));
   return result.data;
 };
@@ -358,5 +368,187 @@ describe("createGameSession", () => {
 
   it("同一入力から同一Game Sessionを生成する", () => {
     expect(createGameSession(input())).toEqual(createGameSession(input()));
+  });
+
+  it("検証済み入力から開始し、複数Robotを複数Tick同期更新する", () => {
+    const entries: readonly MasterDataEntry[] = [
+      {
+        dataType: "instruction",
+        definition: {
+          ...instruction(startInstructionId, 0, "start"),
+          outputPaths: [
+            {
+              id: "next",
+              displayName: "Next",
+              description: "次のノード",
+              required: true,
+              displayOrder: int32(0),
+            },
+          ],
+        },
+      },
+      {
+        dataType: "instruction",
+        definition: {
+          ...instruction(switchWeaponInstructionId, 1, "switch_weapon"),
+          category: "action",
+          parameters: [
+            {
+              id: "hand",
+              displayName: "Hand",
+              description: "切替先の手",
+              valueType: "enum",
+              required: true,
+              defaultValue: "right",
+              enumValues: ["right", "left"],
+            },
+          ],
+          outputPaths: [
+            {
+              id: "next",
+              displayName: "Next",
+              description: "次のノード",
+              required: true,
+              displayOrder: int32(0),
+            },
+          ],
+        },
+      },
+      {
+        dataType: "instruction",
+        definition: {
+          ...instruction(waitActionInstructionId, 0, "wait_action"),
+          parameters: [
+            {
+              id: "category",
+              displayName: "Category",
+              description: "待機する行動カテゴリ",
+              valueType: "enum",
+              required: true,
+              defaultValue: "movement",
+              enumValues: ["movement", "combat"],
+            },
+          ],
+          outputPaths: [
+            {
+              id: "next",
+              displayName: "Next",
+              description: "次のノード",
+              required: true,
+              displayOrder: int32(0),
+            },
+          ],
+        },
+      },
+      {
+        dataType: "instruction",
+        definition: instruction(endInstructionId, 1, "end"),
+      },
+      { dataType: "robot_body", definition: body },
+      { dataType: "projectile", definition: projectile },
+      { dataType: "weapon", definition: weapon },
+      { dataType: "map", definition: map },
+      { dataType: "game_rule", definition: gameRule },
+    ];
+    const dataRepository = repository(10, entries);
+    const waitCombatProgram: Program = {
+      ...program,
+      nodes: [
+        {
+          id: "node_1" as NodeId,
+          instructionId: startInstructionId,
+          parameterValues: {},
+          connections: { next: "node_2" as NodeId },
+        },
+        {
+          id: "node_2" as NodeId,
+          instructionId: switchWeaponInstructionId,
+          parameterValues: { hand: "left" },
+          connections: { next: "node_3" as NodeId },
+        },
+        {
+          id: "node_3" as NodeId,
+          instructionId: waitActionInstructionId,
+          parameterValues: { category: "combat" },
+          connections: { next: "node_4" as NodeId },
+        },
+        {
+          id: "node_4" as NodeId,
+          instructionId: endInstructionId,
+          parameterValues: {},
+          connections: {},
+        },
+      ],
+      nextNodeSequence: int32(5),
+    };
+
+    const runTwoTicks = () => {
+      const created = createGameSession({
+        ...input(dataRepository),
+        participants: [
+          { robotDesign, program: waitCombatProgram },
+          { robotDesign, program: waitCombatProgram },
+        ],
+      });
+      expect(created.success).toBe(true);
+      if (!created.success) return created;
+
+      const started = startGameSession(created.data);
+      expect(started.success).toBe(true);
+      if (!started.success) return started;
+
+      const aiEngine = createAIEngine({
+        repository: dataRepository,
+        instructionRegistry: productionInstructionRegistry,
+      });
+      const firstTick = updateGameSessionTick(started.data, {
+        repository: dataRepository,
+        aiEngine,
+      });
+      expect(firstTick.success).toBe(true);
+      if (!firstTick.success) return firstTick;
+
+      const secondTick = updateGameSessionTick(firstTick.data.gameSession, {
+        repository: dataRepository,
+        aiEngine,
+      });
+      return secondTick;
+    };
+
+    const result = runTwoTicks();
+    expect(result.success).toBe(true);
+    if (!result.success) return;
+
+    expect(result.data.gameSession.worldState).toMatchObject({
+      tick: 2,
+      status: "running",
+      bullets: [],
+      obstacles: map.obstacles,
+    });
+    expect(
+      result.data.gameSession.worldState.robots.map(({ id }) => id),
+    ).toEqual(["robot_1", "robot_2"]);
+    expect(
+      result.data.aiDebugInfoByRobot.map(({ robotId }) => robotId),
+    ).toEqual(["robot_1", "robot_2"]);
+    expect(
+      result.data.gameSession.worldState.robots.map(
+        ({ actionRequests }) => actionRequests.combat,
+      ),
+    ).toEqual([null, null]);
+    expect(
+      result.data.gameSession.worldState.robots.map(
+        ({ actionState }) => actionState.combat.current?.request,
+      ),
+    ).toEqual([
+      { type: "switch_weapon", hand: "left" },
+      { type: "switch_weapon", hand: "left" },
+    ]);
+    expect(
+      result.data.gameSession.worldState.robots.map(
+        ({ aiRuntimeState }) => aiRuntimeState.nextNodeId,
+      ),
+    ).toEqual(["node_3", "node_3"]);
+    expect(runTwoTicks()).toEqual(result);
   });
 });
