@@ -227,10 +227,28 @@ Instruction Definitionの`cpuCost`はData Repositoryで0以上であることを
 - `maxStrafeSpeed`
 - `acceleration`
 - `turnSpeedDegree`
+- `forwardPrepareTicks`
+- `forwardRecoveryTicks`
+- `backwardPrepareTicks`
+- `backwardRecoveryTicks`
+- `strafePrepareTicks`
+- `strafeRecoveryTicks`
+- `turnPrepareTicks`
+- `turnRecoveryTicks`
+- `blockedCancelTicks`
 - `energyConsumption`
 - `weight`
 
 左右の横移動は同じ`maxStrafeSpeed`を使用する。
+
+`forwardPrepareTicks`と`forwardRecoveryTicks`はMove Forwardに使用する。
+`backwardPrepareTicks`と`backwardRecoveryTicks`はMove Backwardに使用する。
+`strafePrepareTicks`と`strafeRecoveryTicks`はStrafe LeftおよびStrafe Rightに共通で使用する。
+`turnPrepareTicks`と`turnRecoveryTicks`はTurn LeftおよびTurn Rightに共通で使用する。
+
+`blockedCancelTicks`は前進、後退、左右横移動で連続して実移動距離0のTickが続いた場合の自動キャンセル閾値とする。`0`は詰まり判定による自動キャンセルなしを表す。
+
+`maxForwardSpeed`、`maxBackwardSpeed`、`maxStrafeSpeed`、`acceleration`はMaster Data上では座標単位/Tickとして扱う。`turnSpeedDegree`は角度/Tickとして扱う。
 
 ### Armor Definition
 

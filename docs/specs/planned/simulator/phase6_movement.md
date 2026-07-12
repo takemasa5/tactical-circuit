@@ -10,8 +10,6 @@ Phase 6完了時点では、AIが前進、後退、左右横移動、左右旋�
 
 Phase 6では以下を実装する。
 
-- Engine Definitionの移動段階時間と詰まり判定値
-- Game Session作成時のEngine装備数検証
 - Strafe Left命令、Strafe Right命令、Stop命令
 - `MovementProgress`の具体型
 - 固定小数点による移動計算
@@ -32,43 +30,6 @@ Phase 6では以下を実装する。
 - Tick上限による終了
 - Replay差分イベント
 - 実時間または描画フレームとの接続
-
-## Engine Definition
-
-Engine Definitionへ次のフィールドを追加する。
-
-- `forwardPrepareTicks`
-- `forwardRecoveryTicks`
-- `backwardPrepareTicks`
-- `backwardRecoveryTicks`
-- `strafePrepareTicks`
-- `strafeRecoveryTicks`
-- `turnPrepareTicks`
-- `turnRecoveryTicks`
-- `blockedCancelTicks`
-
-各フィールドは0以上の符号付き32bit整数とする。
-
-`forwardPrepareTicks`と`forwardRecoveryTicks`はMove Forwardに使用する。
-`backwardPrepareTicks`と`backwardRecoveryTicks`はMove Backwardに使用する。
-`strafePrepareTicks`と`strafeRecoveryTicks`はStrafe LeftおよびStrafe Rightに共通で使用する。
-`turnPrepareTicks`と`turnRecoveryTicks`はTurn LeftおよびTurn Rightに共通で使用する。
-
-`blockedCancelTicks`は前進、後退、左右横移動で連続して実移動距離0のTickが続いた場合の自動キャンセル閾値とする。`0`は詰まり判定による自動キャンセルなしを表す。`1`以上の場合、連続進捗0Tick数がその値に達した時点で対象移動行動をキャンセルし、`recovering`へ遷移する。1以上の実移動距離が発生したTickでは連続進捗0Tick数を0へ戻す。
-
-`maxForwardSpeed`、`maxBackwardSpeed`、`maxStrafeSpeed`、`acceleration`はMaster Data上では座標単位/Tickとして扱い、Movement System内部で固定小数点スケールへ変換する。
-
-`turnSpeedDegree`は角度/Tickとして扱い、固定小数点スケールへ変換しない。
-
-Phase 6のMovement Systemは`energyConsumption`を参照しない。
-
-## Engine装備検証
-
-Robot設計データの保存および読込では、Engine装備数が0個または2個以上であることを許容する。
-
-Game Session作成時は、参加RobotごとにEngineをちょうど1つ装備していることを検証する。装備Engineが0個または2個以上の場合、Game Session作成は検証Errorを返し、Game Sessionを作成しない。
-
-Engine装備数検証は参加RobotのRobot設計データとRobot Body DefinitionのSlot Definitionを使用する。Slotの`category`が`engine`であり、Robot設計データの`equipment`に対応するSlot IDが存在し、参照先がEngine Definitionである装備をEngine装備として数える。
 
 ## 移動系命令
 
@@ -270,14 +231,13 @@ Game Session、World State、Robot設計データ、Master Data間の内部整�
 
 Phase 6は変更対象ファイルを小さく保つため、次のIssueへ分割する。
 
-1. Engine Definition拡張とGame Session作成時のEngine個数検証
-2. Strafe Left、Strafe Right、Stop命令追加
-3. MovementProgressとAction State SchemaおよびReplay保存対応
-4. 固定小数点、方向ベクトル、移動距離計算ユーティリティ
-5. Map境界およびObstacle衝突判定ユーティリティ
-6. Movement Systemの前後移動および左右横移動
-7. Movement SystemのTurn、Stop、キャンセル遷移
-8. Tick統合と複数Tickシナリオテスト
+1. Strafe Left、Strafe Right、Stop命令追加
+2. MovementProgressとAction State SchemaおよびReplay保存対応
+3. 固定小数点、方向ベクトル、移動距離計算ユーティリティ
+4. Map境界およびObstacle衝突判定ユーティリティ
+5. Movement Systemの前後移動および左右横移動
+6. Movement SystemのTurn、Stop、キャンセル遷移
+7. Tick統合と複数Tickシナリオテスト
 
 各Issueは本書の該当見出しをSource Specとして指定し、対象外のPhase 6項目および後続Issueの範囲をOut of Scopeへ明記する。
 
