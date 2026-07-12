@@ -44,8 +44,22 @@ describe("Editor Master Data", () => {
     expect(masterData.instructions).toHaveLength(
       instructionManifest.files.length,
     );
-    expect(masterData.instructions).toHaveLength(13);
+    expect(masterData.instructions).toHaveLength(16);
     expect(byImplementationId.get("fire")?.category).toBe("action");
+    expect(byImplementationId.get("strafe_left")).toMatchObject({
+      category: "action",
+      parameters: [],
+      outputPaths: [expect.objectContaining({ id: "next", required: true })],
+      cpuCost: 1,
+    });
+    expect(byImplementationId.get("strafe_right")).toMatchObject({
+      parameters: [],
+      cpuCost: 1,
+    });
+    expect(byImplementationId.get("stop")).toMatchObject({
+      parameters: [],
+      cpuCost: 1,
+    });
     expect(byImplementationId.get("detect_bullet")).toMatchObject({
       id: "instruction_73d91875-a82c-4c91-b41f-c7598191bbff",
       outputPaths: [

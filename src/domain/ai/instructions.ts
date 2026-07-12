@@ -51,6 +51,14 @@ const move =
       },
     });
 
+const basicMovement =
+  (type: "strafe_left" | "strafe_right" | "stop"): InstructionImplementation =>
+  (input) =>
+    succeed(next(input), {
+      ...createEmptyContextChanges(),
+      movementRequest: { type },
+    });
+
 const turn: InstructionImplementation = (input) => {
   const direction = parameter<"left" | "right">(input, "direction");
   const current = normalizeAngle(input.context.input.robot.direction);
@@ -166,6 +174,9 @@ const entries = [
   ["return", returnInstruction],
   ["move_forward", move("forward")],
   ["move_backward", move("backward")],
+  ["strafe_left", basicMovement("strafe_left")],
+  ["strafe_right", basicMovement("strafe_right")],
+  ["stop", basicMovement("stop")],
   ["turn", turn],
   ["fire", fire],
   ["switch_weapon", switchWeapon],

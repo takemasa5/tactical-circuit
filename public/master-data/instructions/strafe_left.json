@@ -1,0 +1,23 @@
+{
+  "dataType": "instruction",
+  "formatVersion": "0.1.1",
+  "payload": {
+    "id": "instruction_1157e161-e36f-499c-b330-da32bf4fe9f1",
+    "displayName": "Strafe Left",
+    "description": "自機を左方向へ横移動させます",
+    "enabled": true,
+    "implementationId": "strafe_left",
+    "category": "action",
+    "parameters": [],
+    "outputPaths": [
+      {
+        "id": "next",
+        "displayName": "Next",
+        "description": "次のノード",
+        "required": true,
+        "displayOrder": 0
+      }
+    ],
+    "cpuCost": 1
+  }
+}

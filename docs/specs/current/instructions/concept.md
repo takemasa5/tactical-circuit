@@ -509,6 +509,25 @@ Simulator
 移動処理
 ```
 
+移動系行動要求は以下の型を持つ。
+
+```ts
+type MovementRequest =
+  | { readonly type: "forward"; readonly distance: Int32 }
+  | { readonly type: "backward"; readonly distance: Int32 }
+  | { readonly type: "strafe_left" }
+  | { readonly type: "strafe_right" }
+  | { readonly type: "turn_left"; readonly turnTo: Int32 }
+  | { readonly type: "turn_right"; readonly turnTo: Int32 }
+  | { readonly type: "stop" };
+```
+
+`forward`と`backward`の同一判定は`type`だけを使用し、`distance`を使用しない。
+
+`strafe_left`、`strafe_right`、`stop`は`type`が同じ場合に同一要求とする。
+
+`turn_left`と`turn_right`の同一判定は`type`だけを使用し、`turnTo`を使用しない。
+
 ---
 
 # レジスタとメモリ

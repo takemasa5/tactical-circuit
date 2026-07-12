@@ -72,6 +72,9 @@ describe("Production Instruction Registry", () => {
         "return",
         "move_forward",
         "move_backward",
+        "strafe_left",
+        "strafe_right",
+        "stop",
         "turn",
         "fire",
         "switch_weapon",
@@ -81,8 +84,32 @@ describe("Production Instruction Registry", () => {
         "wait_action",
       ].sort(),
     );
-    expect(productionInstructionRegistry.size).toBe(13);
+    expect(productionInstructionRegistry.size).toBe(16);
   });
+
+  it.each([
+    ["strafe_left", "strafe_left"],
+    ["strafe_right", "strafe_right"],
+    ["stop", "stop"],
+  ] as const)(
+    "%sは移動系行動要求を生成してnextへ進む",
+    (implementationId, type) => {
+      const result = run(implementationId);
+      expect(result).toMatchObject({
+        success: true,
+        result: {
+          nextNodeId: nodeId(2),
+          contextChanges: {
+            movementRequest: { type },
+          },
+        },
+      });
+      if (result.success) {
+        expect(result.result.contextChanges.combatRequest).toBeUndefined();
+        expect(result.result.interruptTick).toBe(false);
+      }
+    },
+  );
 
   it("Turnは左右とも現在方向とdegreeの和をturnToにする", () => {
     for (const direction of ["left", "right"] as const) {
