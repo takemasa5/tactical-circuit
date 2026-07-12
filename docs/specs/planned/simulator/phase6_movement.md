@@ -31,47 +31,6 @@ Phase 6では以下を実装する。
 - Replay差分イベント
 - 実時間または描画フレームとの接続
 
-## 移動系命令
-
-Phase 6では次の命令を追加する。
-
-- Strafe Left
-- Strafe Right
-- Stop
-
-Strafe Left命令は`strafe_left`の移動系行動要求を生成する。
-Strafe Right命令は`strafe_right`の移動系行動要求を生成する。
-Stop命令は`stop`の移動系行動要求を生成する。
-
-各命令は行動要求の生成だけを担当し、Robotの位置、向き、速度、World Stateを直接変更しない。実際の移動、旋回、停止はSimulatorが担当する。
-
-Strafe Left、Strafe Right、Stopはいずれも`next`をrequiredな出力パスとし、実行中Nodeの`connections.next`を`nextNodeId`として返す。CPU消費量はInstruction Definitionの`cpuCost`を使用する。公開Master Dataでの初期値は1とする。
-
-Strafe Left、Strafe Right、Stopはレジスタ、フラグ、永続AIメモリ、コールスタック、戦闘系行動要求、Random Stateを変更しない。
-
-同一Tickですでに移動系行動要求が生成されている場合、各命令は自身の移動系行動要求で上書きする。戦闘系行動要求は変更しない。
-
-## 移動系行動要求
-
-Phase 6のMovement Systemは次の移動系行動要求を実行対象とする。
-
-```ts
-type MovementRequest =
-  | { readonly type: "forward"; readonly distance: Int32 }
-  | { readonly type: "backward"; readonly distance: Int32 }
-  | { readonly type: "strafe_left" }
-  | { readonly type: "strafe_right" }
-  | { readonly type: "turn_left"; readonly turnTo: Int32 }
-  | { readonly type: "turn_right"; readonly turnTo: Int32 }
-  | { readonly type: "stop" };
-```
-
-`forward`と`backward`の同一判定は既存仕様どおり`type`だけを使用し、`distance`を使用しない。
-
-`strafe_left`、`strafe_right`、`stop`は`type`が同じ場合に同一要求とする。
-
-`turn_left`と`turn_right`の同一判定は既存仕様どおり`type`だけを使用し、`turnTo`を使用しない。
-
 ## MovementProgress
 
 Phase 6では`MovementProgress`を行動`type`ごとの判別可能な共用体として定義する。

@@ -1,0 +1,23 @@
+{
+  "dataType": "instruction",
+  "formatVersion": "0.1.1",
+  "payload": {
+    "id": "instruction_d3b66c90-e3e0-433f-a2b1-882a050b071d",
+    "displayName": "Stop",
+    "description": "移動系行動の停止を要求します",
+    "enabled": true,
+    "implementationId": "stop",
+    "category": "action",
+    "parameters": [],
+    "outputPaths": [
+      {
+        "id": "next",
+        "displayName": "Next",
+        "description": "次のノード",
+        "required": true,
+        "displayOrder": 0
+      }
+    ],
+    "cpuCost": 1
+  }
+}

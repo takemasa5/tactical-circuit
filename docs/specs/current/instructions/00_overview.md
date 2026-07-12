@@ -257,6 +257,9 @@ AIは計算結果や状態保持のためにレジスタおよびメモリを利
 - `details/fire.md`
 - `details/move_backward.md`
 - `details/move_forward.md`
+- `details/stop.md`
+- `details/strafe_left.md`
+- `details/strafe_right.md`
 - `details/switch_weapon.md`
 - `details/turn.md`
 - `details/wait_action.md`

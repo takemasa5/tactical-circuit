@@ -10,6 +10,9 @@
     "move_forward.json",
     "return.json",
     "start.json",
+    "stop.json",
+    "strafe_left.json",
+    "strafe_right.json",
     "switch_weapon.json",
     "turn.json",
     "wait_action.json"
