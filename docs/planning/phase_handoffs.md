@@ -80,3 +80,22 @@ Phase 4ではFireを発射試行1回、Switch Weaponを切替試行1回で実動
 FireとSwitch Weaponについて、予備動作、実動作、事後動作のTick数、効果を適用するTick、実動作のキャンセル可否、および値を保持するMaster Dataを定義する。
 
 FireまたはSwitch Weaponの要求採用からcombat行動が`idle`になるまでの段階遷移と、Wait Actionが解除されるTickを検証するテストを追加する。
+
+---
+
+## PH-004 移動に伴うエネルギー消費と熱発生
+
+- 状態: `pending`
+- 発生Phase: Phase 6 移動システム
+- 対象Phase: Phase 9 戦闘システム
+- Phase 6設計: `docs/specs/planned/simulator/phase6_movement.md`
+
+### 背景
+
+Phase 6ではMovement SystemがEngine Definitionの移動性能を使用するが、`energyConsumption`、Robot Stateの`energy`、`heat`による行動不能や熱処理は扱わない。移動コア、衝突判定、行動状態遷移を先に確定するため、移動に伴うリソース消費は対象外とする。
+
+### 対応条件
+
+移動、旋回、横移動、停止について、Engine Definitionの`energyConsumption`をどのタイミングで消費するか、エネルギー不足時に要求を採用しないのか実動作を停止するのか、および熱発生または排熱を扱うかを定義する。
+
+Wait Action、ActionStatusSnapshot、勝敗または行動不能判定と矛盾しないよう、エネルギー不足または熱状態によって移動系行動が`idle`へ戻るTickを検証するテストを追加する。
