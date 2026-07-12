@@ -173,6 +173,15 @@ export type EngineDefinition = MasterDataBase<EngineId> & {
   readonly maxStrafeSpeed: Int32;
   readonly acceleration: Int32;
   readonly turnSpeedDegree: Int32;
+  readonly forwardPrepareTicks: Int32;
+  readonly forwardRecoveryTicks: Int32;
+  readonly backwardPrepareTicks: Int32;
+  readonly backwardRecoveryTicks: Int32;
+  readonly strafePrepareTicks: Int32;
+  readonly strafeRecoveryTicks: Int32;
+  readonly turnPrepareTicks: Int32;
+  readonly turnRecoveryTicks: Int32;
+  readonly blockedCancelTicks: Int32;
   readonly energyConsumption: Int32;
   readonly weight: Int32;
 };

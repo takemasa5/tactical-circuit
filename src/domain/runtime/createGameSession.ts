@@ -116,6 +116,23 @@ const validateGameRuleReferences = (
   return errors;
 };
 
+const countEquippedEngines = (
+  robotDesign: RobotDesign,
+  repository: DataRepository,
+): number | undefined => {
+  const body = repository.get("robot_body", robotDesign.bodyDefinitionId);
+  if (body === undefined) return undefined;
+
+  const slots = new Map(body.slots.map((slot) => [slot.id, slot]));
+  return Object.entries(robotDesign.equipment).filter(([slotId, partId]) => {
+    const slot = slots.get(slotId);
+    return (
+      slot?.category === "engine" &&
+      repository.get("engine", partId) !== undefined
+    );
+  }).length;
+};
+
 const validateParticipant = (
   participant: GameSessionCreationParticipant,
   participantIndex: number,
@@ -155,6 +172,19 @@ const validateParticipant = (
         "初期選択した手に対応するWeapon Slotがありません",
         robotDesign.initialWeaponHand,
         "対応するWeapon Slotを持つRobot Body",
+      ),
+    );
+  }
+
+  const engineCount = countEquippedEngines(robotDesign, repository);
+  if (engineCount !== undefined && engineCount !== 1) {
+    errors.push(
+      validationError(
+        "invalid_engine_equipment_count",
+        `${participantPath}/robotDesign/equipment`,
+        "参加RobotはEngineをちょうど1つ装備する必要があります",
+        engineCount,
+        "1件のEngine装備",
       ),
     );
   }

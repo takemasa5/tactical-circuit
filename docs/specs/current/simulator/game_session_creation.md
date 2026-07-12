@@ -25,6 +25,7 @@
 - Map DefinitionのSpawn Point数が参加者数以上である
 - 参加者順に発番したRuntime Robot IDが一意である
 - Robot設計データのBody、装備、初期装弾数、初期選択Weaponの参照が有効である
+- 参加RobotごとにEngineをちょうど1つ装備している
 - Robot設計データの`programId`と渡されたProgramのIDが一致する
 - Program ValidatorがProgramにErrorを返さない
 - Programの参照値と、使用するInstruction Definitionの既定参照値に含まれるレジスタ、フラグ、メモリ参照用レジスタがGame Rule Definitionに存在する
@@ -33,6 +34,8 @@
 メモリ容量とコールスタック容量は、検証済みGame Rule Definitionの正の`memorySize`と`callStackSize`を実行時の前提とする。Data Repository内の未使用Instruction DefinitionはCPU上限との照合対象にしない。
 
 Data Repositoryで検証済みのMap配置を信頼し、参加Robotの実サイズを使った配置の再検証は行わない。同じRobot設計データまたはProgramを複数の参加者が使用できる。
+
+Engine装備数検証は参加RobotのRobot設計データとRobot Body DefinitionのSlot Definitionを使用する。Slotの`category`が`engine`であり、Robot設計データの`equipment`に対応するSlot IDが存在し、参照先がEngine Definitionである装備をEngine装備として数える。Robot設計データの保存および読込では、Engine装備数が0個または2個以上であることを許容する。
 
 ## 初期Game Session
 

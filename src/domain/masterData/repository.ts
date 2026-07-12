@@ -851,17 +851,27 @@ const validateEngine = (
   path: string,
   errors: DataValidationError[],
 ): void => {
-  const values = [
-    definition.maxForwardSpeed,
-    definition.maxBackwardSpeed,
-    definition.maxStrafeSpeed,
-    definition.acceleration,
-    definition.turnSpeedDegree,
-    definition.energyConsumption,
-  ];
-  values.forEach((value, index) =>
-    validateNonNegative(value, `${path}/performance/${index}`, errors),
-  );
+  const fields = [
+    "maxForwardSpeed",
+    "maxBackwardSpeed",
+    "maxStrafeSpeed",
+    "acceleration",
+    "turnSpeedDegree",
+    "forwardPrepareTicks",
+    "forwardRecoveryTicks",
+    "backwardPrepareTicks",
+    "backwardRecoveryTicks",
+    "strafePrepareTicks",
+    "strafeRecoveryTicks",
+    "turnPrepareTicks",
+    "turnRecoveryTicks",
+    "blockedCancelTicks",
+    "energyConsumption",
+  ] as const;
+
+  fields.forEach((field) => {
+    validateNonNegative(definition[field], `${path}/${field}`, errors);
+  });
 };
 
 const validateArmor = (

@@ -7,6 +7,8 @@ import { productionInstructionRegistry } from "../ai/instructions";
 import type {
   GameRuleDefinition,
   GameRuleId,
+  EngineDefinition,
+  EngineId,
   InstructionDefinition,
   InstructionId,
   MapDefinition,
@@ -41,11 +43,13 @@ const endInstructionId = `instruction_${uuid("12")}` as InstructionId;
 const bodyId = `robot_body_${uuid("3")}` as RobotBodyId;
 const projectileId = `projectile_${uuid("4")}` as ProjectileId;
 const weaponId = `weapon_${uuid("5")}` as WeaponId;
+const engineId = `engine_${uuid("13")}` as EngineId;
 const mapId = `map_${uuid("6")}` as MapId;
 const gameRuleId = `game_rule_${uuid("7")}` as GameRuleId;
 const programId = `program_${uuid("8")}` as ProgramId;
 const robotDesignId = `robo_${uuid("9")}` as RobotDesignId;
 const weaponSlotId = "slot_right" as SlotId;
+const engineSlotId = "slot_engine" as SlotId;
 
 const instruction = (
   id: InstructionId,
@@ -86,6 +90,11 @@ const body: RobotBodyDefinition = {
       category: "weapon",
       weaponMount: "left_hand",
     },
+    {
+      id: engineSlotId,
+      displayName: "Engine",
+      category: "engine",
+    },
   ],
 };
 
@@ -116,6 +125,29 @@ const weapon: WeaponDefinition = {
   aimSpreadDegree: int32(0),
   weight: int32(1),
   ammunitionWeight: int32(1),
+};
+
+const engine: EngineDefinition = {
+  id: engineId,
+  displayName: "Engine",
+  description: "",
+  enabled: true,
+  maxForwardSpeed: int32(4),
+  maxBackwardSpeed: int32(2),
+  maxStrafeSpeed: int32(3),
+  acceleration: int32(1),
+  turnSpeedDegree: int32(10),
+  forwardPrepareTicks: int32(1),
+  forwardRecoveryTicks: int32(1),
+  backwardPrepareTicks: int32(1),
+  backwardRecoveryTicks: int32(1),
+  strafePrepareTicks: int32(1),
+  strafeRecoveryTicks: int32(1),
+  turnPrepareTicks: int32(1),
+  turnRecoveryTicks: int32(1),
+  blockedCancelTicks: int32(0),
+  energyConsumption: int32(1),
+  weight: int32(5),
 };
 
 const map: MapDefinition = {
@@ -178,7 +210,7 @@ const robotDesign: RobotDesign = {
   bodyDefinitionId: bodyId,
   programId,
   initialWeaponHand: "right",
-  equipment: { [weaponSlotId]: weaponId },
+  equipment: { [weaponSlotId]: weaponId, [engineSlotId]: engineId },
   ammunition: { [weaponSlotId]: int32(3) },
   metadata: {
     name: "Robot",
@@ -205,6 +237,7 @@ const repository = (
     { dataType: "robot_body", definition: body },
     { dataType: "projectile", definition: projectile },
     { dataType: "weapon", definition: weapon },
+    { dataType: "engine", definition: engine },
     { dataType: "map", definition: map },
     { dataType: "game_rule", definition: gameRule },
   ];
@@ -216,10 +249,13 @@ const repository = (
   return result.data;
 };
 
-const input = (dataRepository = repository()) => ({
+const input = (
+  dataRepository = repository(),
+  participantRobotDesign = robotDesign,
+) => ({
   participants: [
-    { robotDesign, program },
-    { robotDesign, program },
+    { robotDesign: participantRobotDesign, program },
+    { robotDesign: participantRobotDesign, program },
   ],
   mapId,
   gameRuleId,
@@ -259,7 +295,7 @@ describe("createGameSession", () => {
         energy: 80,
         heat: 0,
         status: "active",
-        partDamage: { [weaponSlotId]: 0 },
+        partDamage: { [engineSlotId]: 0, [weaponSlotId]: 0 },
         selectedWeaponSlotId: weaponSlotId,
         ammunition: { [weaponSlotId]: 3 },
         actionRequests: { movement: null, combat: null },
@@ -322,6 +358,7 @@ describe("createGameSession", () => {
       { dataType: "robot_body", definition: body },
       { dataType: "projectile", definition: projectile },
       { dataType: "weapon", definition: weapon },
+      { dataType: "engine", definition: engine },
       { dataType: "map", definition: map },
       { dataType: "game_rule", definition: gameRule },
     ];
@@ -336,6 +373,71 @@ describe("createGameSession", () => {
     expect(result.errors[0]?.path).toContain(
       "/instructionDefinition/parameters/0/defaultValue",
     );
+  });
+
+  it("参加RobotのEngine装備がちょうど1つでない場合は拒否する", () => {
+    const resultWithoutEngine = createGameSession(
+      input(undefined, {
+        ...robotDesign,
+        equipment: { [weaponSlotId]: weaponId },
+      }),
+    );
+
+    expect(resultWithoutEngine.success).toBe(false);
+    if (resultWithoutEngine.success) return;
+    expect(
+      resultWithoutEngine.errors.filter(
+        ({ code }) => code === "invalid_engine_equipment_count",
+      ),
+    ).toHaveLength(2);
+
+    const secondEngineSlotId = "slot_engine_2" as SlotId;
+    const bodyWithTwoEngineSlots: RobotBodyDefinition = {
+      ...body,
+      slots: [
+        ...body.slots,
+        {
+          id: secondEngineSlotId,
+          displayName: "Second engine",
+          category: "engine",
+        },
+      ],
+    };
+    const entries: readonly MasterDataEntry[] = [
+      {
+        dataType: "instruction",
+        definition: instruction(startInstructionId, 10),
+      },
+      {
+        dataType: "instruction",
+        definition: instruction(unusedInstructionId, 11, "unused"),
+      },
+      { dataType: "robot_body", definition: bodyWithTwoEngineSlots },
+      { dataType: "projectile", definition: projectile },
+      { dataType: "weapon", definition: weapon },
+      { dataType: "engine", definition: engine },
+      { dataType: "map", definition: map },
+      { dataType: "game_rule", definition: gameRule },
+    ];
+
+    const resultWithTwoEngines = createGameSession(
+      input(repository(10, entries), {
+        ...robotDesign,
+        equipment: {
+          [weaponSlotId]: weaponId,
+          [engineSlotId]: engineId,
+          [secondEngineSlotId]: engineId,
+        },
+      }),
+    );
+
+    expect(resultWithTwoEngines.success).toBe(false);
+    if (resultWithTwoEngines.success) return;
+    expect(
+      resultWithTwoEngines.errors.filter(
+        ({ code }) => code === "invalid_engine_equipment_count",
+      ),
+    ).toHaveLength(2);
   });
 
   it("開始前検証の複数Errorを集約し、部分的なGame Sessionを返さない", () => {
@@ -447,6 +549,7 @@ describe("createGameSession", () => {
       { dataType: "robot_body", definition: body },
       { dataType: "projectile", definition: projectile },
       { dataType: "weapon", definition: weapon },
+      { dataType: "engine", definition: engine },
       { dataType: "map", definition: map },
       { dataType: "game_rule", definition: gameRule },
     ];

@@ -61,6 +61,15 @@ const definitions: Readonly<Record<MasterDataType, object>> = {
     maxStrafeSpeed: 0,
     acceleration: 0,
     turnSpeedDegree: 0,
+    forwardPrepareTicks: 0,
+    forwardRecoveryTicks: 0,
+    backwardPrepareTicks: 0,
+    backwardRecoveryTicks: 0,
+    strafePrepareTicks: 0,
+    strafeRecoveryTicks: 0,
+    turnPrepareTicks: 0,
+    turnRecoveryTicks: 0,
+    blockedCancelTicks: 0,
     energyConsumption: 0,
     weight: 0,
   },
@@ -151,6 +160,24 @@ describe("Master Data schemas", () => {
             required: true,
           },
         ],
+      }),
+    ).toBe(false);
+  });
+
+  it("Engine Definitionの移動段階時間と詰まり判定値を必須の0以上整数として検証する", () => {
+    const validator = getMasterDataValidator("engine");
+
+    expect(
+      validator({
+        ...definitions.engine,
+        blockedCancelTicks: -1,
+      }),
+    ).toBe(false);
+
+    expect(
+      validator({
+        ...definitions.engine,
+        forwardPrepareTicks: undefined,
       }),
     ).toBe(false);
   });
