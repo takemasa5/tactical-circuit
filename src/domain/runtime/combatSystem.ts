@@ -1,6 +1,5 @@
 import { INT32_MAX, type Int32 } from "../data/common";
 import type { DataRepository } from "../masterData/repository";
-import type { SlotId } from "../robotDesign/models";
 import { scaleDirectionVector } from "./deterministicGeometry";
 import { createBulletId } from "./factories";
 import type { BulletState, GameSession, RobotState } from "./models";
@@ -28,7 +27,7 @@ const resolveWeapon = (
   );
   const slotId = robot.selectedWeaponSlotId;
   if (participant === undefined || slotId === null) return undefined;
-  const weaponId = participant.robotDesign.equipment[slotId as SlotId];
+  const weaponId = participant.robotDesign.equipment[slotId];
   if (weaponId === undefined) return undefined;
   const weapon = repository.get("weapon", weaponId);
   if (weapon === undefined) return undefined;

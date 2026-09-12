@@ -18,6 +18,7 @@ Pull Requestは、選択したIssueのAcceptance Criteria、変更内容、お�
 - Game Session開始操作とSimulator共通結果型
 - 同期的な1 Tick更新とAI Engine統合
 - 行動要求の調停とActionStatusSnapshot生成
+- 新Phase 1の固定Master Data、最小戦闘、およびSnapshot生成
 - Program Editor
 - Program Validator
 - AI実行エンジンと命令

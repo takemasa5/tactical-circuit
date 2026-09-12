@@ -116,7 +116,7 @@ type RobotActionState = {
 };
 ```
 
-`MovementProgress`と`CombatProgress`は、対応する後続Phaseで行動`type`ごとの判別可能な共用体として追加する。共通の単一数値を進捗として使用しない。現在は具体的な`executing`進捗を定義しない。
+`MovementProgress`は行動`type`ごとの判別可能な共用体とする。Phase 1では、Move Forwardが固定小数点内部位置と累積実移動距離、Turnが旋回方向を保持する。`CombatProgress`はPhase 1では具体型を持たず、Fireの発射間隔は`recovering`の`phaseElapsedTicks`で管理する。
 
 World State SchemaとReplay Data Schemaは`actionState`を検証する。Replay保存時は現在行動と次動作に含まれる要求を、`actionRequests`と同じ規則で正規化する。
 
@@ -251,6 +251,8 @@ Replay DataはReplay Systemが所有する。
 リプレイ再生時に乱数の生成や再判定を行わない。乱数によって発生した結果はWorld Stateの変更内容として記録する。
 
 Simulatorは変更内容をReplay Systemへ通知するが、Replay Dataを直接更新しない。
+
+Phase 1の固定対戦Application ServiceはReplay Dataとは別に、開始時と各Tick完了後のWorld Stateを独立して複製、freezeした一時Snapshot配列を所有する。この配列は同一ブラウザーセッション内の先頭からの再生にだけ使用し、永続保存しない。
 
 ---
 

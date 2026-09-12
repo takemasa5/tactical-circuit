@@ -247,10 +247,11 @@ const updateTurn = (
   }
 
   const turn = Math.min(remaining, turnSpeed) as Int32;
-  const direction = normalizeAngle(
-    (robot.direction +
-      (current.request.type === "turn_right" ? turn : -turn)) as Int32,
-  );
+  const signedTurn =
+    current.request.type === "turn_right"
+      ? turn
+      : ((0 - Number(turn)) as Int32);
+  const direction = normalizeAngle((robot.direction + signedTurn) as Int32);
   const completed = turn === remaining;
   return {
     success: true,
