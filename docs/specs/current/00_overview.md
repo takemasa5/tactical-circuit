@@ -8,7 +8,7 @@ Pull Requestは、選択したIssueのAcceptance Criteria、変更内容、お�
 
 ## 収録範囲
 
-現在はPhase 0からPhase 5までについて、次の仕様を収録する。
+旧ロードマップのPhase 0からPhase 5までと、旧Phase 6の一部について、次の仕様を収録する。
 
 - 開発環境
 - 座標系と共通データ規約
@@ -23,6 +23,8 @@ Pull Requestは、選択したIssueのAcceptance Criteria、変更内容、お�
 - AI実行エンジンと命令
 
 文書内で明示的に「将来」「将来拡張」と記載した項目は、現在の実装要件ではない。
+
+2026年9月以降の新しいPhase構成は`docs/planning/milestones/mvp.md`に従う。現在仕様や過去のIssueに残るPhase番号は実装時点の履歴を表し、今後の実装順を表さない。
 
 ## 更新ルール
 
