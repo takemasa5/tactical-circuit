@@ -5,6 +5,7 @@ import {
   arbitrateRobotActionRequests,
   createActionStatusSnapshot,
 } from "./actionArbitration";
+import { resolveBattleTick } from "./battleResolution";
 import {
   createEmptyActionRequests,
   createEmptyRobotActionState,
@@ -111,6 +112,9 @@ export const updateGameSessionTick = (
     }
 
     const tickStartSession = structuredClone(gameSession);
+    const tickStartBulletIds = new Set(
+      gameSession.worldState.bullets.map(({ id }) => id),
+    );
     let workingWorld = structuredClone(gameSession.worldState);
     workingWorld = {
       ...workingWorld,
@@ -260,15 +264,20 @@ export const updateGameSessionTick = (
       };
     }
 
+    const resolvedWorld = resolveBattleTick(
+      gameSession,
+      workingWorld,
+      tickStartBulletIds,
+      dependencies.repository,
+    );
+    if (!resolvedWorld.success) return resolvedWorld;
+
     return {
       success: true,
       data: {
         gameSession: {
           ...structuredClone(gameSession),
-          worldState: {
-            ...workingWorld,
-            tick: (workingWorld.tick + 1) as Int32,
-          },
+          worldState: resolvedWorld.data,
         },
         aiDebugInfoByRobot,
       },
