@@ -6,6 +6,8 @@
 
 各事項は解決時にも削除せず、状態と対応根拠を更新する。
 
+2026年9月以降の対象Phaseは`docs/planning/milestones/mvp.md`の新ロードマップに従う。解決済み事項のPhase番号と、過去のPull Requestに対応する発生Phaseは履歴として変更しない。
+
 ## 状態
 
 - `pending`: 対象Phaseでの確認または実装が必要
@@ -68,12 +70,12 @@ Wait Actionが同一Tickで生成済みの行動要求とActionStatusSnapshotの
 
 - 状態: `pending`
 - 発生Phase: Phase 4 AI実行エンジン
-- 対象Phase: Phase 8 武器
+- 対象Phase: 新Phase 4 Weaponと戦闘の拡張（旧計画: Phase 8 武器）
 - 関連: PR #27 review thread `PRRT_kwDOTGu1Vs6NnpzP`
 
 ### 背景
 
-Phase 4ではFireを発射試行1回、Switch Weaponを切替試行1回で実動作完了と定義する。予備動作、試行を行うTick、事後動作の長さ、実動作のキャンセル可否はWeaponとSimulatorの実装が存在しないため確定できない。
+旧Phase 4ではFireを発射試行1回、Switch Weaponを切替試行1回で実動作完了と定義する。予備動作、試行を行うTick、事後動作の長さ、実動作のキャンセル可否はWeaponとSimulatorの実装が存在しないため確定できない。
 
 ### 対応条件
 
@@ -87,12 +89,12 @@ FireまたはSwitch Weaponの要求採用からcombat行動が`idle`になるま
 
 - 状態: `pending`
 - 発生Phase: Phase 6 移動システム
-- 対象Phase: Phase 9 戦闘システム
+- 対象Phase: 新Phase 5 Robot構築とリソース管理（旧計画: Phase 9 戦闘システム）
 - Phase 6設計: `docs/specs/planned/simulator/phase6_movement.md`
 
 ### 背景
 
-Phase 6ではMovement SystemがEngine Definitionの移動性能を使用するが、`energyConsumption`、Robot Stateの`energy`、`heat`による行動不能や熱処理は扱わない。移動コア、衝突判定、行動状態遷移を先に確定するため、移動に伴うリソース消費は対象外とする。
+旧Phase 6ではMovement SystemがEngine Definitionの移動性能を使用するが、`energyConsumption`、Robot Stateの`energy`、`heat`による行動不能や熱処理は扱わない。移動コア、衝突判定、行動状態遷移を先に確定するため、移動に伴うリソース消費は対象外とする。
 
 ### 対応条件
 

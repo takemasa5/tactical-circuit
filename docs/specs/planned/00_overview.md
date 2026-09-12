@@ -8,6 +8,7 @@
 
 ## 現在の内容
 
+- Phase 1 Playable MVPの合意済み範囲と詳細設計項目
 - システム全体の将来アーキテクチャ
 - 完成形のゲームループ
 - シミュレーター
@@ -18,8 +19,11 @@
 
 1. 設計者がPOと仕様を確定する。
 2. Phase設計完了時に、設計者が`develop`を確認し、存在しなければデフォルトブランチから作成する。
-3. 設計者がSource Spec、Acceptance Criteria、Out of Scope、依存関係を含むIssueを作成する。
-4. 実装者がIssueの範囲だけを実装する。
-5. 実装済みとなった仕様を`docs/specs/current/`へ移し、将来仕様側から削除する。
+3. 設計者が利用者または上位モジュールから確認できる縦断的なWork Packageへ分割する。
+4. Source Spec、Acceptance Scenario、Acceptance Criteria、実装チェックポイント、Out of Scope、依存関係を含むIssueを作成する。
+5. 実装者がIssueの範囲だけを実装し、Draft Pull Requestで再開地点と確認結果を管理する。
+6. 実装済みとなった仕様を`docs/specs/current/`へ移し、将来仕様側から削除する。
 
-将来仕様の別項目や後続Issueの範囲は、同じPull Requestへ含めない。
+内部モデル、Schema、計算Utility、個別テストは、最初の利用箇所と同じWork Packageのチェックポイントとして扱う。独立した成果、PO判断、外部依存、またはリリース条件を持つ将来仕様は、別のWork Packageへ分ける。
+
+今後のPhase構成は`docs/planning/milestones/mvp.md`、開発とレビューの進め方は`docs/planning/development_workflow.md`に従う。文書内に残る旧Phase番号の扱いもロードマップで定義する。

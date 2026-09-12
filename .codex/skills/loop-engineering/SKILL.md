@@ -1,142 +1,95 @@
 ---
 name: loop-engineering
-description: "Advance exactly one GitHub Issue by one lifecycle phase per invocation. Resume from an existing pull request first, never poll or sleep for CI/review, and stop after implementation, CI repair, review response, or merge."
+description: "Resume and advance one GitHub Work Package through durable checkpoints. Reuse its draft pull request, persist resume state, run acceptance scenarios, and stop only for external wait, PO or human input, release review, or completion."
 ---
 
 # Loop Engineering
 
 ## Goal
 
-一つのGitHub Issueを、起動ごとにライフサイクルの一段階だけ進める。
+一つのGitHub Work Packageを既存状態から再開し、外部の確認待ちまたは判断待ちになるまで、再開可能なチェックポイントを積み重ねて進める。
 
-このSkillは同一起動内でPull Request作成、レビュー待機、指摘対応、マージまでを連続実行しない。外部状態の変化は次回起動時に確認する。
+チェックポイントを完了しただけでは停止せず、同じWork Packageの次のチェックポイントを安全に進められる場合は継続する。
 
-## Repository Role
+## Repository Rules
 
-- `.codex/roles/implementer.md`に従う。
-- リポジトリの`AGENTS.md`とロール別指示はこのSkillより優先する。
+- `AGENTS.md`、`.codex/roles/implementer.md`、`docs/planning/development_workflow.md`に従う。
+- ユーザーがWork Packageを指定した場合はそれを使用する。未指定の場合は、依存関係と仕様が確定したopenなWork Packageを一つ選ぶ。
+- 一度選択したWork Packageを実行中に変更しない。
+- Work Package外の問題を同じPull Requestへ混在させない。
+
+## Resume First
+
+実装前に次を確認する。
+
+1. Work Packageに紐づく既存Pull Requestと`Resume State`
+2. base branch、head branch、最新head commit、checks、review、未解決thread、およびラベル
+3. ローカルとリモートの作業ブランチ、`git status`、未commit差分
+4. 完了済みAcceptance Criteria、次のチェックポイント、前回の検査結果
+5. `question`ラベル、PO確認事項、人の動作確認結果
+
+既存Pull Requestまたは作業ブランチがある場合は新しく作らず、その状態から再開する。完了済みの変更や検査を理由なく作り直さない。
 
 ## Preconditions
 
-- ユーザーがIssueを指定した場合は、そのIssueを使用する。
-- Issueが未指定の場合は、依存関係が完了しているopenなIssueを一つ選択する。
-- 一度選択したIssueを、その起動中に変更しない。
-- IssueのGoal、Source Spec、Phase Handoff、Acceptance Criteria、Out of Scope、Dependenciesを確認する。
-- IssueにPhase Handoff欄がない場合は、実装を開始せずPOまたはdesignerへ確認する。
-- Phase Handoffが`Applicable: Yes`の場合のみ、Source Specで指定された`phase_handoffs.md`の該当箇所を読む。
-- Phase Handoffが`Applicable: No`の場合は、`phase_handoffs.md`を読まない。
+- Goal、User-visible Outcome、Source Spec、Phase Handoff、Acceptance Scenario、Acceptance Criteria、Implementation Checkpoints、Out of Scope、Dependenciesを確認する。
+- 仕様が不足または競合する場合は実装せず、選択肢と影響をPOへ提示する。
+- 依存Work Packageが未完了の場合は、その依存が必要な理由を報告して停止する。
+- `develop`がGitHubリポジトリに存在しない場合は、設計者による作成を待って停止する。
 
-## Start by Resuming State
+## Work Package Execution
 
-毎回、実装を始める前に次の順序で状態を確認する。
+Pull Requestがない場合は、`develop`を基点とする作業ブランチとDraft Pull Requestを作る。本文に対象Issue、Acceptance Scenario、チェックポイント、および`Resume State`を記載し、`@codex review`は記載しない。
 
-1. 選択したIssueに対応する既存Pull Requestを探す。
-2. Pull Requestが存在する場合は、そのbase branch、head branch、最新head commit、checks、review、thread-awareなレビューコメント、ラベルを確認する。
-3. Pull Requestが存在しない場合は、既存のローカルまたはリモート作業ブランチと未完了変更を確認する。
-4. Pull Requestのbaseまたは新規Pull Requestのbaseとなる`develop`がGitHubリポジトリに存在することを確認する。ローカルに`develop`がないことだけを欠落と判断せず、リモートブランチを取得してtracking branchを作成する。GitHubリポジトリにも存在しない場合、実装者は作成せず、Phase設計完了時の設計者による作成を待って停止する。
-5. `question`ラベルまたは未解決の仕様質問がある場合は、変更せずに質問内容を報告して停止する。
+次の未完了チェックポイントを実装し、関連する最小テストを実行する。チェックポイント完了時はcommit、push、および`Resume State`更新を行う。続けて安全に進められるチェックポイントがあれば、同じ実行中に継続する。
 
-既存Pull Requestがある場合、新規Pull Requestを作成せず、その状態から再開する。
+Work Packageの実装が揃ったら、次を実行する。
 
-## Select Exactly One Phase
+1. Acceptance CriteriaとOut of Scopeに対する自己確認
+2. Formatter、Lint、型チェック、テスト、Production build
+3. UIを含む場合は対応ブラウザ、含まない場合は公開APIまたは統合テストによるCodex動作確認
+4. 対象内で発見した問題の修正と同じAcceptance Scenarioの再実行
+5. Draft Pull Requestへの検査結果と最新`Resume State`の記録
 
-状態確認後、次の優先順位で今回実行するフェーズを一つだけ選ぶ。
+人の動作確認が必要な場合は、実行可能なScenarioと確認済みのCodex結果を提示して停止する。人の確認結果が記録され、required checkが成功し、未解決の対象内問題がなければWork Package Pull Requestを`develop`へマージできる。
 
-1. Pull Requestがない: Implementation Phase
-2. 最新head commitのrequired checkが失敗: CI Repair Phase
-3. 未分類または対応可能なレビュー指摘がある: Review Response Phase
-4. checkまたはreviewがpending: Pending State
-5. merge条件をすべて満たす: Merge Phase
-6. 上記に分類できない: Blocked State
+## CI and Feedback
 
-一つのフェーズを完了したら、次のフェーズへ進まず停止する。
+- required checkが失敗している場合は、ログから原因を特定し、対象内の失敗をまとめて修正してpushする。
+- checkがpendingの場合はpollやsleepを行わず、最新head commitとpending checkを`Resume State`へ記録して停止する。
+- 人の指摘は全件を確認して分類し、対象内の指摘を一括して修正する。指摘ごとに個別のレビューサイクルを作らない。
+- 仕様確認が必要な指摘は推測で修正せず、`question`ラベルと確認事項を記録して停止する。
 
-## Implementation Phase
+## Release Pull Request
 
-1. 関連する現在仕様、Issueが指定した将来仕様、既存コード、テストを読む。
-2. Acceptance Criteriaを満たす最小限の変更を実装する。
-3. 実装した動作を`docs/specs/current/`へ反映し、対応する規範的記述を`docs/specs/planned/`から除く。
-4. 必要なテストを追加し、関連するテスト、型チェック、Lint、フォーマット、ビルドを実行する。
-5. `develop`を対象とするPull Requestを作成する。
-6. Pull Request本文に`Closes #<issue-number>`と`@codex review`を記載する。
-7. Pull Requestの作成成功を確認して停止する。
+デフォルトブランチ向けのRelease作業が明示的に選択された場合だけ、次を行う。
 
-Pull Request作成後にcheckやreviewを待たず、同一起動で状態を再確認しない。
+1. 対象PhaseのWork Package、Codex動作確認、人の動作確認、および`develop`のrequired checkが完了していることを確認する。
+2. `develop`からデフォルトブランチへのRelease Pull Requestを作る。
+3. Release Candidateが確定した後、コメントで`@codex review`を一度だけ依頼して停止する。
+4. Codex指摘がある場合は全件を分類し、対象内の指摘を一括修正する。
+5. 修正が新しいロジック、外部仕様、または複数モジュールへ広がった場合だけ、対象を絞って再レビューを依頼する。
+6. required checkが成功し、未解決のブロッキング指摘がなく、POまたは人の承認条件を満たした後にデフォルトブランチへマージする。
 
-## CI Repair Phase
+GitHub上のCodex自動レビューは使用しない。Work Package Pull Request、通常のpush、CI修正、および個々の指摘修正では`@codex review`を依頼しない。
 
-1. 最新head commitで失敗したcheckのログを確認し、原因を特定する。
-2. Issueの範囲内で必要な最小限の修正を行う。
-3. 関連するローカル検査を実行する。
-4. 既存Pull Requestのブランチへpushする。
-5. コードまたは仕様を変更した場合は、Pull Requestへ`@codex review`をコメントする。
-6. pushまたは再実行要求の成功を確認して停止する。
+## Stop Conditions
 
-更新後のcheckやreviewを待たず、同一起動で状態を再確認しない。
+次の場合に停止し、`Resume State`と必要な次の入力を記録する。
 
-## Review Response Phase
+- POによる仕様決定が必要
+- 人の動作確認または承認が必要
+- checkまたはCodex Release Reviewがpending
+- 権限、外部障害、または未完了依存により進められない
+- Work PackageまたはReleaseが完了した
 
-1. 最新head commitに対する全レビュー指摘を、Issue、現在仕様、既存Issue、申し送り事項と照合する。
-2. 各指摘を、修正、追跡済み、変更不要、仕様確認のいずれかに分類する。
-3. 対象内の妥当な指摘を最小限の変更と再発防止テストで修正する。
-4. 変更しない指摘には、追跡先または具体的な根拠を返信する。
-5. 仕様確認が必要な場合は質問を説明し、`question`ラベルを付けて停止する。
-6. 関連するローカル検査を実行し、変更を既存Pull Requestのブランチへpushする。
-7. Pull Requestへ`@codex review`をコメントして停止する。
-
-再レビューや更新後のcheckを待たず、同一起動で状態を再確認しない。
-
-## Pending State
-
-- checkまたはreviewがpendingの場合、sleep、polling、再試行ループを行わない。
-- 現在pendingの対象と最新head commitを報告して停止する。
-- コメントがまだないことをreview完了とはみなさない。
-
-## Merge Phase
-
-次をすべて満たす場合だけ実行する。
-
-- 最新head commitのrequired checkがすべて成功している。
-- 最新head commitへのreviewが完了し、対応可能または未分類の指摘がない。
-- 全指摘が解決済み、根拠付きの変更不要、追跡済みのいずれかである。
-- `question`ラベルがない。
-- Pull RequestがIssueのAcceptance Criteriaを満たしている。
-
-実行手順:
-
-1. Pull Requestを`develop`へマージする。
-2. Pull Requestがmergedかつclosedであることを確認する。
-3. Issueがcloseされたことを確認する。自動でcloseされていない場合は、Acceptance Criteriaを再確認してからcloseする。
-4. リポジトリ指示に従ってマージ後のローカルブランチを整理する。
-5. 完了を報告して停止する。
-
-## Blocked State
-
-次の場合は、進行を推測で補わず、理由と必要な判断を報告して停止する。
-
-- 依存Issueが未完了
-- `develop`がGitHubリポジトリに存在せず、Phase設計完了時の設計者による作成が完了していない
-- 権限または外部障害により選択したフェーズを完了できない
-- Issue、現在仕様、Source Specが不足または競合する
-- POの仕様決定が必要
-
-## Safety
-
-- 選択したIssue以外へ切り替えない。
-- IssueのOut of Scopeや無関係な将来仕様を実装しない。
-- 無関係なファイルを変更しない。
-- ユーザーの変更を明示的な依頼なく取り消さない。
-- branch protection、required check、reviewを迂回しない。
-- 待機のための`sleep`、定期polling、長時間実行を行わない。
+待機のためのsleep、定期polling、再試行ループを行わない。
 
 ## Completion Report
 
-毎回、次を報告する。
-
-- 選択したIssue
-- 今回確認したPull Requestと最新head commit
-- 今回実行したフェーズ、またはPending／Blockedの状態
-- 作成または更新したPull RequestのURL
-- 実行したテストと検査
-- 現在のcheckとreviewの状態
-- 次回起動時に確認する状態
+- 選択したWork PackageまたはRelease
+- Pull Requestと最新head commit
+- 完了したチェックポイントとAcceptance Scenario
+- 実行した自動検査、Codex動作確認、人の動作確認
+- 現在のcheckとreview状態
+- 最新の`Resume State`と次に行うこと

@@ -20,7 +20,8 @@
 - 実装より仕様を優先する。
 - `docs/specs/current/`は現在の実装が満たすべき仕様であり、通常のレビュー基準とする。
 - `docs/specs/planned/`は将来仕様であり、未実装であること自体をレビュー指摘にしない。
-- GitHub Issueは一つのPull Requestで実装する範囲と完了条件を定義する。
+- GitHub Issueは、利用者または上位モジュールから一つの成果として確認できるWork Packageと、一つのPull Requestで完了する範囲を定義する。
+- 小さい実装単位はWork Package内のチェックポイントとcommitで管理し、内部UtilityやSchemaだけを最初の利用箇所から分離して独立したIssueにしない。
 - 例外として、実装Issueを登録する前の仕様変更だけを含むPull RequestはIssueなしで作成できる。この場合はPull Request本文にGoal、Source Inputs、Acceptance Criteria、Out of Scope、POの合意を記載し、それらをレビュー基準とする。
 - 選択したIssueが`docs/specs/planned/`の一部をSource Specとして指定した場合、その範囲だけを当該Issueの入力仕様として扱う。
 - Issue、`docs/specs/current/`、またはロール別指示が競合する場合は実装せず、POへ確認する。
@@ -33,6 +34,19 @@
 - `docs/specs/planned/`: 将来仕様
 - `docs/planning/`: マイルストーン、Issue雛形、申し送り、設計メモ
 - `docs/decisions/`: POが承認した重要な設計判断。必要になった時点で作成する
+
+## 開発フロー
+
+- Work Package、Draft Pull Request、動作確認、中断と再開、およびRelease Pull Requestは`docs/planning/development_workflow.md`に従う。
+- Work PackageのPull Requestは`develop`を対象とし、GitHub上のCodexレビューを要求しない。
+- `develop`からデフォルトブランチへのRelease Pull Requestは、マージ前に`@codex review`を一度実行する。
+- Codexレビューの指摘は一括して修正し、修正ごとに再レビューを要求しない。
+
+## Code Review Rules
+
+- IssueのAcceptance Criteriaと`docs/specs/current/`に反する、利用者へ影響する正しさの問題だけを指摘する。
+- 決定論、データ所有権、処理順、未実装仕様の`current`混入を重点的に確認する。
+- Formatter、Lint、型チェックなどCIで決定的に検査できる事項や、将来仕様の未実装を指摘しない。
 
 ## 判断の優先順位
 

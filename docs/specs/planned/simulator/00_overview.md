@@ -10,8 +10,9 @@
 
 個々の処理の詳細は各仕様書で定義し、本書ではシミュレーター全体の共通仕様を扱う。
 
-Phase 5で実装する基盤の詳細は`phase5_foundation.md`で定義する。
-Phase 6で実装する移動システムの詳細は`phase6_movement.md`で定義する。
+旧Phase 5で実装した基盤の履歴は`phase5_foundation.md`で定義する。
+旧Phase 6として設計した移動システムの未実装要件は`phase6_movement.md`に保持し、新ロードマップのPhase 2以降で縦断的なWork Packageへ再編する。
+新Phase 1の最小戦闘範囲は`docs/specs/planned/phase1_playable_mvp.md`で定義する。
 
 ---
 

@@ -1,4 +1,6 @@
-# Phase 6 移動システム
+# 旧Phase 6 移動システム
+
+> 新ロードマップでは、本書をPhase 2以降の移動・物理拡張に使用する機能バックログとして扱う。Phase 1 Playable MVPに必要な最小移動は`docs/specs/planned/phase1_playable_mvp.md`の詳細仕様で別途確定し、同じ内容を重複実装しない。
 
 ## 目的
 
@@ -186,9 +188,9 @@ Game Session、World State、Robot設計データ、Master Data間の内部整�
 
 固定小数点演算、座標計算、角度計算、Tick計算で符号付き32bit整数または仕様で許可した安全整数の範囲を超える場合は、対象Tick更新を失敗させる。失敗時は部分更新を確定しない。
 
-## Issue分割
+## Work Package再編
 
-Phase 6は変更対象ファイルを小さく保つため、次のIssueへ分割する。
+旧計画では変更対象ファイルを小さく保つため、次のIssueへ分割していた。
 
 1. Strafe Left、Strafe Right、Stop命令追加
 2. MovementProgressとAction State SchemaおよびReplay保存対応
@@ -198,7 +200,12 @@ Phase 6は変更対象ファイルを小さく保つため、次のIssueへ分�
 6. Movement SystemのTurn、Stop、キャンセル遷移
 7. Tick統合と複数Tickシナリオテスト
 
-各Issueは本書の該当見出しをSource Specとして指定し、対象外のPhase 6項目および後続Issueの範囲をOut of Scopeへ明記する。
+この分割は、内部モデルやUtilityごとにPull RequestとCodexレビューが増えるため廃止する。未実装要件は、Phase 1で実装済みとなった範囲を除いたうえで、次のような利用可能な縦断成果へ再編する。
+
+1. Map境界とObstacleを考慮し、前後・左右へ決定論的に移動できる
+2. 旋回、停止、キャンセル、および次動作をTick更新へ統合し、複数Tickで結果を確認できる
+
+`MovementProgress`、Action State Schema、Replay保存形式、固定小数点、方向ベクトル、および衝突Utilityは、これらを最初に使用するWork Packageのチェックポイントとして扱い、単独のIssueやPull Requestにしない。
 
 ## Phase 6完了条件
 
