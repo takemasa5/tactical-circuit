@@ -5,7 +5,7 @@
     "id": "instruction_d3b66c90-e3e0-433f-a2b1-882a050b071d",
     "displayName": "Stop",
     "description": "移動系行動の停止を要求します",
-    "enabled": true,
+    "enabled": false,
     "implementationId": "stop",
     "category": "action",
     "parameters": [],

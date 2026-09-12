@@ -1,0 +1,21 @@
+{
+  "dataType": "weapon",
+  "formatVersion": "0.1.1",
+  "payload": {
+    "id": "weapon_10000000-0000-4000-8000-000000000004",
+    "displayName": "Phase 1 Weapon",
+    "description": "Phase 1固定対戦用Weapon",
+    "enabled": true,
+    "projectileId": "projectile_10000000-0000-4000-8000-000000000005",
+    "damage": 25,
+    "maxAmmunition": 12,
+    "lifetimeTicks": 50,
+    "fireIntervalTicks": 10,
+    "reloadTicks": 0,
+    "heatGeneration": 0,
+    "energyConsumption": 0,
+    "aimSpreadDegree": 0,
+    "weight": 0,
+    "ammunitionWeight": 0
+  }
+}

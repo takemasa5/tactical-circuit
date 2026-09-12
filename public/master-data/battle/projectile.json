@@ -1,0 +1,14 @@
+{
+  "dataType": "projectile",
+  "formatVersion": "0.1.1",
+  "payload": {
+    "id": "projectile_10000000-0000-4000-8000-000000000005",
+    "displayName": "Phase 1 Projectile",
+    "description": "Phase 1固定対戦用Projectile",
+    "enabled": true,
+    "speed": 20,
+    "size": { "width": 8, "height": 8 },
+    "explosionRadius": 0,
+    "explosionDamage": 0
+  }
+}

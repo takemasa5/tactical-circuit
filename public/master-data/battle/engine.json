@@ -1,0 +1,26 @@
+{
+  "dataType": "engine",
+  "formatVersion": "0.1.1",
+  "payload": {
+    "id": "engine_10000000-0000-4000-8000-000000000002",
+    "displayName": "Phase 1 Engine",
+    "description": "Phase 1固定対戦用Engine",
+    "enabled": true,
+    "maxForwardSpeed": 4,
+    "maxBackwardSpeed": 0,
+    "maxStrafeSpeed": 0,
+    "acceleration": 4,
+    "turnSpeedDegree": 10,
+    "forwardPrepareTicks": 0,
+    "forwardRecoveryTicks": 0,
+    "backwardPrepareTicks": 0,
+    "backwardRecoveryTicks": 0,
+    "strafePrepareTicks": 0,
+    "strafeRecoveryTicks": 0,
+    "turnPrepareTicks": 0,
+    "turnRecoveryTicks": 0,
+    "blockedCancelTicks": 1,
+    "energyConsumption": 0,
+    "weight": 0
+  }
+}

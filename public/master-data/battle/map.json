@@ -1,0 +1,16 @@
+{
+  "dataType": "map",
+  "formatVersion": "0.1.1",
+  "payload": {
+    "id": "map_10000000-0000-4000-8000-000000000006",
+    "displayName": "Phase 1 Arena",
+    "description": "Phase 1固定対戦用Map",
+    "enabled": true,
+    "size": { "width": 800, "height": 450 },
+    "obstacles": [],
+    "spawnPoints": [
+      { "position": { "x": 200, "y": 225 }, "direction": 90 },
+      { "position": { "x": 600, "y": 225 }, "direction": 270 }
+    ]
+  }
+}

@@ -5,7 +5,7 @@
     "id": "instruction_007b2990-caaf-481a-996b-3e75547eb15a",
     "displayName": "Switch Weapon",
     "description": "選択中の武器を右手または左手へ切り替えます",
-    "enabled": true,
+    "enabled": false,
     "implementationId": "switch_weapon",
     "category": "action",
     "parameters": [

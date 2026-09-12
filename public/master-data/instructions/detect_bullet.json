@@ -5,7 +5,7 @@
     "id": "instruction_73d91875-a82c-4c91-b41f-c7598191bbff",
     "displayName": "Detect Bullet",
     "description": "範囲内に弾が存在するかどうかを判断します。敵弾、自弾のどちらにも反応します",
-    "enabled": true,
+    "enabled": false,
     "implementationId": "detect_bullet",
     "category": "branch",
     "parameters": [

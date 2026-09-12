@@ -1,0 +1,17 @@
+{
+  "dataType": "game_rule",
+  "formatVersion": "0.1.1",
+  "payload": {
+    "id": "game_rule_10000000-0000-4000-8000-000000000007",
+    "displayName": "Phase 1 Rule",
+    "description": "Phase 1固定対戦用Game Rule",
+    "enabled": true,
+    "cpuLimit": 100,
+    "tickLimit": 600,
+    "participantCount": 2,
+    "registerNames": ["A", "B", "C", "D"],
+    "flagNames": ["F1", "F2", "F3"],
+    "memorySize": 20,
+    "callStackSize": 20
+  }
+}

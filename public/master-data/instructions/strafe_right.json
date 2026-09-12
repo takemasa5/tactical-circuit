@@ -5,7 +5,7 @@
     "id": "instruction_36a5d6c4-f9ab-4637-8850-4789b03ec050",
     "displayName": "Strafe Right",
     "description": "自機を右方向へ横移動させます",
-    "enabled": true,
+    "enabled": false,
     "implementationId": "strafe_right",
     "category": "action",
     "parameters": [],
