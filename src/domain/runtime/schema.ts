@@ -116,6 +116,36 @@ const movementCurrentActionSchema = {
         progress: { type: "null" },
       },
     },
+    {
+      type: "object",
+      additionalProperties: false,
+      required: ["request", "phase", "phaseElapsedTicks", "progress"],
+      properties: {
+        request: movementRequestSchema,
+        phase: { const: "executing" },
+        phaseElapsedTicks: nonNegativeInt32,
+        progress: {
+          oneOf: [
+            {
+              type: "object",
+              additionalProperties: false,
+              required: ["type", "fixedPosition", "fixedMovedDistance"],
+              properties: {
+                type: { const: "forward" },
+                fixedPosition: positionSchema,
+                fixedMovedDistance: nonNegativeInt32,
+              },
+            },
+            {
+              type: "object",
+              additionalProperties: false,
+              required: ["type"],
+              properties: { type: { enum: ["turn_left", "turn_right"] } },
+            },
+          ],
+        },
+      },
+    },
   ],
 } as const;
 

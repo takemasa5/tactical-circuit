@@ -83,24 +83,12 @@ const combatRequestsAreSame: SameRequest<CombatRequest> = (left, right) => {
   }
 };
 
-const inconsistentActionState = <T>(message: string): SimulatorResult<T> => ({
-  success: false,
-  code: "inconsistent_session",
-  message,
-});
-
 const arbitrateCategory = <TRequest, TProgress>(
   state: ActionCategoryState<TRequest, TProgress>,
   request: TRequest | null,
   cloneRequest: CloneRequest<TRequest>,
   sameRequest: SameRequest<TRequest>,
 ): SimulatorResult<ActionCategoryState<TRequest, TProgress>> => {
-  if (state.current !== null && state.current.phase !== "preparing") {
-    return inconsistentActionState(
-      "Phase 5ではpreparing以外の現在行動を調停できません",
-    );
-  }
-
   if (request === null) {
     return {
       success: true,
@@ -115,6 +103,13 @@ const arbitrateCategory = <TRequest, TProgress>(
         current: createPreparingAction(request, cloneRequest),
         next: cloneRequest(state.next),
       },
+    };
+  }
+
+  if (state.current.phase !== "preparing") {
+    return {
+      success: true,
+      data: cloneActionCategoryState(state, cloneRequest),
     };
   }
 
