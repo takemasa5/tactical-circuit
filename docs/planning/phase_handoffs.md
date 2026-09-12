@@ -83,6 +83,10 @@ FireとSwitch Weaponについて、予備動作、実動作、事後動作のTic
 
 FireまたはSwitch Weaponの要求採用からcombat行動が`idle`になるまでの段階遷移と、Wait Actionが解除されるTickを検証するテストを追加する。
 
+### Phase 1での限定対応
+
+`docs/specs/planned/phase1_playable_mvp.md`ではPlayable MVPに必要な固定WeaponのFireだけを対象に、予備動作なし、発射試行後の固定発射間隔中は`running`、キャンセルと次動作なしという限定規則を定義する。この対応は複数Weapon、Switch Weapon、キャンセル、Master Dataによる完全な段階時間を扱わないため、PH-003は`pending`のままとする。
+
 ---
 
 ## PH-004 移動に伴うエネルギー消費と熱発生
