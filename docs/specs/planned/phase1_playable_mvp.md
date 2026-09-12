@@ -1,6 +1,6 @@
 # Phase 1 Playable MVP
 
-> Status: PO agreed on 2026-09-13; ready for implementation
+> Status: PO agreed on 2026-09-13; WP1-1 implemented, WP1-2 planned
 
 ## 目的
 
@@ -38,100 +38,13 @@ Phase 1では、複雑な個別機能を完成させる前に、プロダクト�
 
 ## ProgramとInstruction
 
-Phase 1で新しいNodeとして追加できるInstructionは次の9種類とする。
-
-- Start
-- End
-- Call
-- Return
-- Detect Enemy
-- Move Forward
-- Turn
-- Fire
-- Wait Action
-
-次のInstruction Definitionは`enabled: false`とし、新しいNodeの作成候補へ表示しない。
-
-- Check Ammunition
-- Detect Bullet
-- Move Backward
-- Stop
-- Strafe Left
-- Strafe Right
-- Switch Weapon
-
-正式リリース前の破壊的変更では`AGENTS.md`に従い、変更前に作成または保存された既存Programを破棄する。既存Programとの後方互換性を維持するための移行処理、互換レイヤー、または戦闘専用の互換性判定は追加しない。
+利用できるInstructionと正式リリース前の既存Programの扱いは、実装済みの`docs/specs/current/simulator/phase1_minimal_battle.md`および`AGENTS.md`に従う。
 
 起動時に有効な作業中Programが存在しない場合、Editorは後述のプレイヤー用サンプルProgramを表示する。ValidatorがErrorを返す場合、戦闘開始操作はGame Sessionを作成せず、Editor上の診断を維持する。
 
 ## 固定対戦データ
 
-Phase 1のUIは利用者へ構成選択を求めず、次の固定値を使用する。ID、表示名、説明、重量、および未使用リソースの値は既存Master Data規則を満たす値として実装時に定義するが、シミュレーション結果へ影響する値は本節の値に固定する。
-
-### Map
-
-- サイズ: 幅800、高さ450
-- Obstacle: なし
-- プレイヤー側Spawn: 位置`(200, 225)`、向き90度
-- 相手側Spawn: 位置`(600, 225)`、向き270度
-
-### Robot
-
-- 両参加者は同じRobot Bodyと装備構成を使用する
-- サイズ: 幅40、高さ40
-- 最大HP: 100
-- 最大Energy: 100
-- Heat Capacity: 100
-- Engine、Sensor、右手Weaponを各1つ装備する
-- 左手Weapon Slotは空とする
-- 初期選択Weaponは右手Weaponとする
-
-### Engine
-
-- `maxForwardSpeed`: 4座標単位/Tick
-- `turnSpeedDegree`: 10度/Tick
-- `acceleration`: 4。ただしPhase 1のMovement Systemは加速処理を行わず、最初の実動作Tickから`maxForwardSpeed`を使用する
-- 前進と旋回のprepare Tickおよびrecovery Tick: 0
-- `blockedCancelTicks`: 1
-- 後退速度および横移動速度: 0
-- エネルギー消費: 0
-
-### Sensor
-
-- 検出距離: 1000
-- 視野: 360度
-- エネルギー消費: 0
-
-Sensor Snapshotには、検出距離内にいる自機以外の`active`なRobotだけをRuntime Robot IDのASCII昇順で格納する。Bulletは格納しない。Obstacleによる遮蔽は行わない。
-
-距離は2点間のユークリッド距離を整数平方根で求め、端数を共通の丸め規則で整数へ確定する。相対方位は0度から359度の整数方向ベクトル表から内積が最大となる角度を選び、同値の場合は小さい角度を選ぶ。ゲーム実行時に三角関数を使用しない。
-
-### WeaponとProjectile
-
-- Damage: 25
-- 最大装弾数および初期装弾数: 12
-- 発射間隔: 10 Tick
-- リロード: なし
-- Bullet速度: 20座標単位/Tick
-- Bulletサイズ: 幅8、高さ8
-- Bullet寿命: 50 Tick
-- 照準拡散、爆発Damage、エネルギー消費、熱発生: 0
-
-Fire要求を採用したTickに、選択中Weaponの残弾が1以上なら残弾を1減らしてBulletを1個生成する。残弾が0の場合はBulletを生成しないが、発射試行は完了したものとする。Bulletの進行VectorはFire要求の`targetDirection`と固定の整数方向ベクトル表から生成する。
-
-Phase 1のFireには予備動作を設けない。発射試行後は、要求採用Tickを1 Tick目として合計`fireIntervalTicks`の間、combat行動を`running`とする。期間中の新しいcombat要求は採用しない。期間終了後にcombat行動を`idle`とする。Switch Weapon、キャンセル、および次動作は扱わない。この限定規則は`PH-003`の完全な戦闘行動段階仕様を解決しない。
-
-### Game Rule
-
-- 参加者数: 2
-- CPU上限: 100/Tick
-- Tick上限: 600
-- Register名: `A`、`B`、`C`、`D`
-- Flag名: `F1`、`F2`、`F3`
-- MemoryサイズおよびCall Stackサイズ: 20
-- 初期乱数シード: 固定値1
-
-Phase 1の固定処理は乱数を消費しない。
+Phase 1のUIは利用者へ構成選択を求めず、実装済みの`docs/specs/current/simulator/phase1_minimal_battle.md`に定義された固定Master Dataと戦闘規則を使用する。
 
 ## Playerと相手Program
 
@@ -143,66 +56,19 @@ Phase 1の固定処理は乱数を消費しない。
 
 ## 最小Movement規則
 
-Phase 1ではMove ForwardとTurnだけをMovement Systemで処理する。
-
-- 採用したTickにprepareを完了し、同Tickから実動作を開始する
-- 同じ行動の要求が続いても進捗を初期化しない
-- movement行動が`running`の間に受けた異なるmovement要求は採用しない
-- 行動完了時はrecoveryを設けず、同Tickの更新後に`idle`へ戻す
-- 行動中の`ActionStatusSnapshot`は既存仕様どおり`running`とする
-
-Move Forwardは0度から359度の固定小数点方向ベクトル表を使用する。スケールは1000とし、実行時に三角関数を使用しない。1 Tickの予定移動距離は`maxForwardSpeed`と要求の残り距離の小さい方とする。固定小数点の内部位置と実移動距離を進捗として保持し、World Stateへ格納する位置と速度は共通規則で整数へ丸める。
-
-Robot矩形がMap境界内に収まる位置だけを有効とする。予定位置が境界外になる場合は、進行経路上で最後に有効な整数位置まで移動して行動を終了する。ObstacleおよびRobotとの衝突判定は行わない。要求距離へ到達した場合も行動を終了し、速度を`(0, 0)`へ戻す。
-
-Turnは位置と速度を変更せず、1 Tickに`turnSpeedDegree`まで指定方向へ旋回する。最後のTickは要求角度を越えない。指定角度へ到達したTickに行動を終了する。
+実装済みのMove Forward、Turn、固定小数点Geometry、および境界処理は`docs/specs/current/simulator/phase1_minimal_battle.md`に従う。
 
 ## Bullet、Damage、勝敗
 
-Bullet同士、BulletとObstacle、およびBulletと発射元Robotの衝突は判定しない。Bulletと自機以外のRobotは、移動後の軸平行矩形が面積重複した場合に命中とする。辺または頂点だけの接触は命中としない。
-
-各Tickで更新対象となるのはTick開始時に存在したBulletだけとし、そのTickに生成したBulletは次Tickから移動する。既存BulletはBullet IDの連番昇順で次の順に処理する。
-
-1. 進行Vectorを位置へ加算する
-2. 残り寿命Tick数を1減らす
-3. 移動後の位置で対象Robotとの命中を判定する
-4. 命中したBulletを削除対象とし、WeaponのDamageを対象Robotへ加算する
-5. 命中しなかったBulletがMap外へ出た、または残り寿命が0になった場合は削除する
-
-すべてのBulletを処理した後、Robotごとに合計Damageを参加者順で同時適用する。Armor、部位Damage、防御値は使用しない。HPは0未満にせず、0になったRobotを`destroyed`とする。同じTickに両RobotのHPが0になることを許容する。
-
-撃破済みRobotはAI、Movement、およびFireを実行しない。撃破前に発射したBulletは通常どおり更新する。
-
-勝敗はTick更新後のTick値に対して、次の優先順位で判定する。
-
-1. Tickが600へ到達した場合、残HPやBulletにかかわらず`tick_limit`の引き分け
-2. Bulletが残っている場合、戦闘を継続
-3. 両Robotが`destroyed`なら`mutual_destruction`の引き分け
-4. 一方だけが`destroyed`なら、残ったRobotを勝者とする`opponent_destroyed`
-5. それ以外は戦闘を継続
+実装済みのBullet更新、Damage同時適用、および勝敗判定は`docs/specs/current/simulator/phase1_minimal_battle.md`に従う。
 
 ## 1 Tickの処理順
 
-Phase 1の1 Tickは、既存の`docs/specs/current/simulator/tick_update.md`を次の順に拡張する。
-
-1. Tick開始時World State Snapshotを確定する
-2. 参加者順にSensor Snapshotを生成する
-3. Tick開始時に`active`なRobotについて参加者順にAIを実行する
-4. AI実行結果とRandom Stateを既存規則どおり反映する
-5. 参加者順に行動要求を調停する
-6. 参加者順にMovementを更新する
-7. 参加者順にFireを処理し、新しいBulletを生成する
-8. Tick開始時から存在したBulletを更新して命中を収集する
-9. 参加者順にDamageと撃破状態を同時適用する
-10. Tickを1増加する
-11. Tick上限、残存Bullet、撃破状態の優先順位で勝敗を判定する
-12. 更新後World Stateを再生用Snapshotとして記録する
-
-Simulator全体の内部整合性Errorまたは整数オーバーフローでは、Tick開始前のGame Sessionを変更せず、部分更新と再生用Snapshotを確定しない。Robot単位のAI実行時Errorは既存仕様どおり他Robotとゲーム全体を停止させない。
+実装済みの処理順とError時の原子性は`docs/specs/current/simulator/tick_update.md`に従う。
 
 ## Battle生成と再生
 
-Application Layerは戦闘開始時に固定対戦入力からGame Sessionを作成し、同期的なDomain APIを呼び出して、戦闘終了までのWorld Stateを先に生成する。Domain APIは初期World Stateと各完了Tick後のWorld Stateを不変Snapshotとして配列へ保持する。最大要素数はTick上限+1とする。
+戦闘終了までの同期実行と不変Snapshot生成は、実装済みの`docs/specs/current/simulator/phase1_minimal_battle.md`に従う。
 
 Phase 1の再生では既存のReplay保存形式や差分イベントを生成しない。画面はSnapshot配列だけを先頭から読み取り、AI、Sensor、Movement、Weapon、Damage、または勝敗を再計算しない。Snapshot配列はブラウザーのメモリ上だけに保持し、Editorへ戻るか新しい戦闘を開始した時点で破棄する。
 
@@ -261,11 +127,9 @@ Phase 1はReact内の単一ページ状態として、Editor、Battle、Result�
 
 ## 責務とデータ所有権
 
+- Domain側の責務とSnapshot所有権は`docs/specs/current/13_data_ownership.md`および`docs/specs/current/simulator/phase1_minimal_battle.md`に従う
 - Program EditorはProgramだけを編集し、World Stateを変更しない
 - Program Validatorは戦闘開始前にProgramを検査し、ErrorがあるProgramの開始を許可しない
-- AI EngineはExecution Inputから行動要求を生成し、World Stateを変更しない
-- SimulatorはWorld Stateを変更できる唯一のDomainモジュールとする
-- 戦闘生成用Application ServiceはSimulatorを戦闘終了まで呼び出し、再生用Snapshotを所有する
 - Renderingは再生用World State Snapshotを読み取り、ゲーム結果へ影響を与えない
 - UI LayerはProgram、固定対戦入力、および画面状態をApplication Layerへ渡し、Domainロジックを直接所有しない
 

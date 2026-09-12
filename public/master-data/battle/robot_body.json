@@ -1,0 +1,31 @@
+{
+  "dataType": "robot_body",
+  "formatVersion": "0.1.1",
+  "payload": {
+    "id": "robot_body_10000000-0000-4000-8000-000000000001",
+    "displayName": "Phase 1 Robot",
+    "description": "Phase 1固定対戦用Robot Body",
+    "enabled": true,
+    "weight": 0,
+    "maxHp": 100,
+    "maxEnergy": 100,
+    "heatCapacity": 100,
+    "size": { "width": 40, "height": 40 },
+    "slots": [
+      {
+        "id": "slot_1",
+        "displayName": "Right Hand",
+        "category": "weapon",
+        "weaponMount": "right_hand"
+      },
+      {
+        "id": "slot_2",
+        "displayName": "Left Hand",
+        "category": "weapon",
+        "weaponMount": "left_hand"
+      },
+      { "id": "slot_3", "displayName": "Sensor", "category": "sensor" },
+      { "id": "slot_4", "displayName": "Engine", "category": "engine" }
+    ]
+  }
+}

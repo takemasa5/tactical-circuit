@@ -98,8 +98,20 @@ export type ActionCategoryState<TRequest, TProgress> = {
   readonly next: TRequest | null;
 };
 
-/** 具体的な移動進捗は対応する後続Phaseで行動別に追加する。 */
-export type MovementProgress = never;
+/** Phase 1の前進中にSimulatorだけが保持する固定小数点進捗。 */
+export type ForwardMovementProgress = {
+  readonly type: "forward";
+  readonly fixedPosition: Position;
+  readonly fixedMovedDistance: Int32;
+};
+
+/** Phase 1の旋回中にSimulatorだけが保持する進捗。 */
+export type TurnMovementProgress = {
+  readonly type: "turn_left" | "turn_right";
+};
+
+/** Phase 1でTickをまたぐ移動進捗。 */
+export type MovementProgress = ForwardMovementProgress | TurnMovementProgress;
 
 /** 具体的な戦闘進捗は対応する後続Phaseで行動別に追加する。 */
 export type CombatProgress = never;

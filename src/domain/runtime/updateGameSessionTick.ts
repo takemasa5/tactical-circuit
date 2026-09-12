@@ -5,10 +5,15 @@ import {
   arbitrateRobotActionRequests,
   createActionStatusSnapshot,
 } from "./actionArbitration";
+import { resolveBattleTick } from "./battleResolution";
 import {
   createEmptyActionRequests,
+  createEmptyRobotActionState,
   createExecutionRobotSnapshot,
 } from "./factories";
+import { updateCombatAction } from "./combatSystem";
+import { updateMovementAction } from "./movementSystem";
+import { createSensorSnapshot } from "./sensorSystem";
 import type {
   AIDebugInfo,
   ExecutionInput,
@@ -36,8 +41,6 @@ export type GameSessionTickDependencies = {
   readonly aiEngine: AIEngine;
 };
 
-const emptySensors = (): SensorSnapshot => ({ robots: [], bullets: [] });
-
 const internalError = <T>(message: string): SimulatorResult<T> => ({
   success: false,
   code: "inconsistent_session",
@@ -63,6 +66,7 @@ const createExecutionInput = (
   tick: Int32,
   robot: RobotState,
   randomState: RandomState,
+  sensors: SensorSnapshot,
 ): ExecutionInput => ({
   tick,
   robot: createExecutionRobotSnapshot(robot),
@@ -73,7 +77,7 @@ const createExecutionInput = (
     callStack: [...robot.aiRuntimeState.callStack],
     memory: { values: [...robot.aiRuntimeState.memory.values] },
   },
-  sensors: emptySensors(),
+  sensors,
   randomState: { ...randomState },
   actionStatus: createActionStatusSnapshot(robot.actionState),
 });
@@ -107,12 +111,20 @@ export const updateGameSessionTick = (
       return internalError("Game SessionのGame Ruleが見つかりません");
     }
 
+    const tickStartSession = structuredClone(gameSession);
+    const tickStartBulletIds = new Set(
+      gameSession.worldState.bullets.map(({ id }) => id),
+    );
     let workingWorld = structuredClone(gameSession.worldState);
     workingWorld = {
       ...workingWorld,
       robots: workingWorld.robots.map((robot) => ({
         ...robot,
         actionRequests: createEmptyActionRequests(),
+        actionState:
+          robot.status === "destroyed"
+            ? createEmptyRobotActionState()
+            : robot.actionState,
       })),
     };
     let currentRandomState = { ...workingWorld.randomState };
@@ -127,6 +139,22 @@ export const updateGameSessionTick = (
           `参加者${participant.robotId}に対応するRobot Stateが見つかりません`,
         );
       }
+      if (robot.status === "destroyed") continue;
+
+      const tickStartRobot = tickStartSession.worldState.robots.find(
+        (candidate) => candidate.id === participant.robotId,
+      );
+      if (tickStartRobot === undefined) {
+        return internalError(
+          `参加者${participant.robotId}に対応するTick開始時Robot Stateが見つかりません`,
+        );
+      }
+      const sensors = createSensorSnapshot(
+        tickStartSession,
+        tickStartRobot,
+        dependencies.repository,
+      );
+      if (!sensors.success) return sensors;
 
       const execution = dependencies.aiEngine.execute({
         program: participant.program,
@@ -134,6 +162,7 @@ export const updateGameSessionTick = (
           workingWorld.tick,
           robot,
           currentRandomState,
+          sensors.data,
         ),
         gameRule,
       });
@@ -168,6 +197,7 @@ export const updateGameSessionTick = (
           `参加者${participant.robotId}に対応するRobot Stateが見つかりません`,
         );
       }
+      if (robot.status === "destroyed") continue;
       const actionState = arbitrateRobotActionRequests(
         robot.actionState,
         robot.actionRequests,
@@ -184,15 +214,70 @@ export const updateGameSessionTick = (
       };
     }
 
+    for (const participant of gameSession.participants) {
+      const robot = workingWorld.robots.find(
+        (candidate) => candidate.id === participant.robotId,
+      );
+      if (robot === undefined) {
+        return internalError(
+          `参加者${participant.robotId}に対応するRobot Stateが見つかりません`,
+        );
+      }
+      if (robot.status === "destroyed") continue;
+      const movement = updateMovementAction(
+        { ...gameSession, worldState: workingWorld },
+        robot,
+        dependencies.repository,
+      );
+      if (!movement.success) return movement;
+      workingWorld = {
+        ...workingWorld,
+        robots: replaceRobot(workingWorld.robots, movement.data),
+      };
+    }
+
+    for (const participant of gameSession.participants) {
+      const robot = workingWorld.robots.find(
+        (candidate) => candidate.id === participant.robotId,
+      );
+      if (robot === undefined) {
+        return internalError(
+          `参加者${participant.robotId}に対応するRobot Stateが見つかりません`,
+        );
+      }
+      if (robot.status === "destroyed") continue;
+      const combat = updateCombatAction(
+        { ...gameSession, worldState: workingWorld },
+        robot,
+        workingWorld.nextBulletSequence,
+        dependencies.repository,
+      );
+      if (!combat.success) return combat;
+      workingWorld = {
+        ...workingWorld,
+        robots: replaceRobot(workingWorld.robots, combat.data.robot),
+        bullets:
+          combat.data.createdBullet === null
+            ? workingWorld.bullets
+            : [...workingWorld.bullets, combat.data.createdBullet],
+        nextBulletSequence: combat.data.nextBulletSequence,
+      };
+    }
+
+    const resolvedWorld = resolveBattleTick(
+      gameSession,
+      workingWorld,
+      tickStartBulletIds,
+      dependencies.repository,
+    );
+    if (!resolvedWorld.success) return resolvedWorld;
+
     return {
       success: true,
       data: {
         gameSession: {
           ...structuredClone(gameSession),
-          worldState: {
-            ...workingWorld,
-            tick: (workingWorld.tick + 1) as Int32,
-          },
+          worldState: resolvedWorld.data,
         },
         aiDebugInfoByRobot,
       },

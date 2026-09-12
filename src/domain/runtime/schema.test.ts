@@ -112,4 +112,28 @@ describe("Robot State schema", () => {
     expect(validateRobotState(robot)).toBe(true);
     expect(validateRobotState(input.robot)).toBe(false);
   });
+
+  it("Phase 1の前進中固定小数点進捗を受け付ける", () => {
+    expect(
+      validateRobotState({
+        ...input.robot,
+        actionState: {
+          movement: {
+            current: {
+              request: { type: "forward", distance: 100 },
+              phase: "executing",
+              phaseElapsedTicks: 1,
+              progress: {
+                type: "forward",
+                fixedPosition: { x: 4000, y: 8000 },
+                fixedMovedDistance: 4000,
+              },
+            },
+            next: null,
+          },
+          combat: { current: null, next: null },
+        },
+      }),
+    ).toBe(true);
+  });
 });

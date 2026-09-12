@@ -5,7 +5,7 @@
     "id": "instruction_1157e161-e36f-499c-b330-da32bf4fe9f1",
     "displayName": "Strafe Left",
     "description": "自機を左方向へ横移動させます",
-    "enabled": true,
+    "enabled": false,
     "implementationId": "strafe_left",
     "category": "action",
     "parameters": [],

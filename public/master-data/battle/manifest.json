@@ -1,0 +1,11 @@
+{
+  "files": [
+    { "dataType": "robot_body", "path": "robot_body.json" },
+    { "dataType": "engine", "path": "engine.json" },
+    { "dataType": "sensor", "path": "sensor.json" },
+    { "dataType": "projectile", "path": "projectile.json" },
+    { "dataType": "weapon", "path": "weapon.json" },
+    { "dataType": "map", "path": "map.json" },
+    { "dataType": "game_rule", "path": "game_rule.json" }
+  ]
+}

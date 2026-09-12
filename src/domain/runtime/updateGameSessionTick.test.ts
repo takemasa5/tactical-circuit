@@ -8,12 +8,18 @@ import type {
   RuntimeRobotId,
 } from "../data/ids";
 import type {
+  EngineDefinition,
+  EngineId,
   GameRuleDefinition,
   GameRuleId,
   InstructionDefinition,
   InstructionId,
+  MapDefinition,
   MapId,
+  RobotBodyDefinition,
   RobotBodyId,
+  SensorDefinition,
+  SensorId,
 } from "../masterData/models";
 import type { DataRepository } from "../masterData/repository";
 import type { AIEngine } from "../ai/engine";
@@ -42,6 +48,11 @@ const robotId = (value: number): RuntimeRobotId =>
 const gameRuleId =
   "game_rule_550e8400-e29b-41d4-a716-446655440000" as GameRuleId;
 const mapId = "map_550e8400-e29b-41d4-a716-446655440000" as MapId;
+const bodyId = "robot_body_550e8400-e29b-41d4-a716-446655440000" as RobotBodyId;
+const engineId = "engine_550e8400-e29b-41d4-a716-446655440001" as EngineId;
+const sensorId = "sensor_550e8400-e29b-41d4-a716-446655440002" as SensorId;
+const engineSlotId = "slot_engine";
+const sensorSlotId = "slot_sensor";
 
 const gameRule: GameRuleDefinition = {
   id: gameRuleId,
@@ -55,6 +66,78 @@ const gameRule: GameRuleDefinition = {
   flagNames: ["F1"],
   memorySize: int32(2),
   callStackSize: int32(2),
+};
+
+const body: RobotBodyDefinition = {
+  id: bodyId,
+  displayName: "Body",
+  description: "",
+  enabled: true,
+  weight: int32(0),
+  maxHp: int32(100),
+  maxEnergy: int32(100),
+  heatCapacity: int32(100),
+  size: { width: int32(2), height: int32(2) },
+  slots: [
+    {
+      id: "slot_right",
+      displayName: "Right",
+      category: "weapon",
+      weaponMount: "right_hand",
+    },
+    {
+      id: "slot_left",
+      displayName: "Left",
+      category: "weapon",
+      weaponMount: "left_hand",
+    },
+    { id: engineSlotId, displayName: "Engine", category: "engine" },
+    { id: sensorSlotId, displayName: "Sensor", category: "sensor" },
+  ],
+};
+
+const engine: EngineDefinition = {
+  id: engineId,
+  displayName: "Engine",
+  description: "",
+  enabled: true,
+  maxForwardSpeed: int32(4),
+  maxBackwardSpeed: int32(0),
+  maxStrafeSpeed: int32(0),
+  acceleration: int32(4),
+  turnSpeedDegree: int32(10),
+  forwardPrepareTicks: int32(0),
+  forwardRecoveryTicks: int32(0),
+  backwardPrepareTicks: int32(0),
+  backwardRecoveryTicks: int32(0),
+  strafePrepareTicks: int32(0),
+  strafeRecoveryTicks: int32(0),
+  turnPrepareTicks: int32(0),
+  turnRecoveryTicks: int32(0),
+  blockedCancelTicks: int32(1),
+  energyConsumption: int32(0),
+  weight: int32(0),
+};
+
+const sensor: SensorDefinition = {
+  id: sensorId,
+  displayName: "Sensor",
+  description: "",
+  enabled: true,
+  detectionDistance: int32(1000),
+  fieldOfViewDegree: int32(360),
+  energyConsumption: int32(0),
+  weight: int32(0),
+};
+
+const map: MapDefinition = {
+  id: mapId,
+  displayName: "Map",
+  description: "",
+  enabled: true,
+  size: { width: int32(800), height: int32(450) },
+  obstacles: [],
+  spawnPoints: [],
 };
 
 const runtimeState = (
@@ -111,11 +194,13 @@ const session = (overrides: Partial<GameSession> = {}): GameSession => {
       robotId: runtimeRobot.id,
       robotDesign: {
         id: `robo_${index + 1}` as RobotDesignId,
-        bodyDefinitionId:
-          "robot_body_550e8400-e29b-41d4-a716-446655440000" as RobotBodyId,
+        bodyDefinitionId: bodyId,
         programId: program(index + 1).id,
         initialWeaponHand: null,
-        equipment: {},
+        equipment: {
+          [engineSlotId]: engineId,
+          [sensorSlotId]: sensorId,
+        },
         ammunition: {},
         metadata: {
           name: `Robot ${index + 1}`,
@@ -159,6 +244,10 @@ const repository = (
   ({
     get: (dataType: string, id: string) => {
       if (dataType === "game_rule" && id === gameRuleId) return gameRule;
+      if (dataType === "robot_body" && id === bodyId) return body;
+      if (dataType === "engine" && id === engineId) return engine;
+      if (dataType === "sensor" && id === sensorId) return sensor;
+      if (dataType === "map" && id === mapId) return map;
       if (dataType === "instruction")
         return definitions.get(id as InstructionId);
       return undefined;
@@ -262,7 +351,7 @@ describe("updateGameSessionTick", () => {
                   }
                 : {
                     movement: null,
-                    combat: { type: "switch_weapon", hand: "left" },
+                    combat: null,
                   },
           },
           debugInfo: debugInfo(`robot_${index + 1}`),
@@ -277,14 +366,38 @@ describe("updateGameSessionTick", () => {
       {
         robotId: "robot_1",
         randomValue: 10,
-        sensors: { robots: [], bullets: [] },
+        sensors: {
+          robots: [
+            {
+              id: "robot_2",
+              worldPosition: { x: 20, y: 20 },
+              relativePosition: { x: 10, y: 10 },
+              distance: 14,
+              bearing: 45,
+              status: "active",
+            },
+          ],
+          bullets: [],
+        },
         movementStatus: "running",
         previousRequest: null,
       },
       {
         robotId: "robot_2",
         randomValue: 20,
-        sensors: { robots: [], bullets: [] },
+        sensors: {
+          robots: [
+            {
+              id: "robot_1",
+              worldPosition: { x: 10, y: 10 },
+              relativePosition: { x: -10, y: -10 },
+              distance: 14,
+              bearing: 225,
+              status: "active",
+            },
+          ],
+          bullets: [],
+        },
         movementStatus: "idle",
         previousRequest: null,
       },
@@ -303,7 +416,7 @@ describe("updateGameSessionTick", () => {
     ).toMatchObject({ request: { type: "forward", distance: 100 } });
     expect(
       result.data.gameSession.worldState.robots[1]!.actionState.combat.current,
-    ).toMatchObject({ request: { type: "switch_weapon", hand: "left" } });
+    ).toBeNull();
     expect(
       result.data.aiDebugInfoByRobot.map(({ robotId }) => robotId),
     ).toEqual(["robot_1", "robot_2"]);
@@ -328,7 +441,7 @@ describe("updateGameSessionTick", () => {
                 }
               : {
                   movement: null,
-                  combat: { type: "switch_weapon", hand: "left" },
+                  combat: null,
                 },
         },
         debugInfo: debugInfo(`robot_${index + 1}`),
@@ -340,7 +453,7 @@ describe("updateGameSessionTick", () => {
   it("Wait Actionは同一Tick要求と次TickのActionStatusSnapshotの両方で待機する", () => {
     const startId =
       "instruction_00000000-0000-4000-8000-000000000001" as InstructionId;
-    const switchId =
+    const moveId =
       "instruction_00000000-0000-4000-8000-000000000002" as InstructionId;
     const waitId =
       "instruction_00000000-0000-4000-8000-000000000003" as InstructionId;
@@ -349,7 +462,7 @@ describe("updateGameSessionTick", () => {
     const definitions = new Map<InstructionId, InstructionDefinition>(
       [
         [startId, "start"],
-        [switchId, "switch_weapon"],
+        [moveId, "move_forward"],
         [waitId, "wait_action"],
         [endId, "end"],
       ].map(([id, implementationId]) => [
@@ -378,14 +491,14 @@ describe("updateGameSessionTick", () => {
         },
         {
           id: nodeId(2),
-          instructionId: switchId,
-          parameterValues: { hand: "left" },
+          instructionId: moveId,
+          parameterValues: { distance: int32(100) },
           connections: { next: nodeId(3) },
         },
         {
           id: nodeId(3),
           instructionId: waitId,
-          parameterValues: { category: "combat" },
+          parameterValues: { category: "movement" },
           connections: { next: nodeId(4) },
         },
         {
@@ -421,14 +534,14 @@ describe("updateGameSessionTick", () => {
     expect(first.success).toBe(true);
     if (!first.success) return;
     expect(
-      first.data.gameSession.worldState.robots[0]!.actionRequests.combat,
-    ).toEqual({ type: "switch_weapon", hand: "left" });
+      first.data.gameSession.worldState.robots[0]!.actionRequests.movement,
+    ).toEqual({ type: "forward", distance: 100 });
     expect(
       first.data.gameSession.worldState.robots[0]!.aiRuntimeState.nextNodeId,
     ).toBe(nodeId(3));
     expect(
-      first.data.gameSession.worldState.robots[0]!.actionState.combat.current,
-    ).toMatchObject({ request: { type: "switch_weapon", hand: "left" } });
+      first.data.gameSession.worldState.robots[0]!.actionState.movement.current,
+    ).toMatchObject({ request: { type: "forward", distance: 100 } });
 
     const second = updateGameSessionTick(first.data.gameSession, {
       repository: repository(definitions),
@@ -440,7 +553,7 @@ describe("updateGameSessionTick", () => {
       second.data.gameSession.worldState.robots[0]!.aiRuntimeState.nextNodeId,
     ).toBe(nodeId(3));
     expect(
-      second.data.gameSession.worldState.robots[0]!.actionRequests.combat,
+      second.data.gameSession.worldState.robots[0]!.actionRequests.movement,
     ).toBeNull();
   });
 
@@ -471,7 +584,10 @@ describe("updateGameSessionTick", () => {
           randomState: { value: int32(100 + index) },
           actionRequests:
             index === 2
-              ? { movement: { type: "stop" }, combat: null }
+              ? {
+                  movement: { type: "forward", distance: int32(10) },
+                  combat: null,
+                }
               : createEmptyActionRequests(),
         },
         debugInfo: {
@@ -499,7 +615,7 @@ describe("updateGameSessionTick", () => {
     expect(
       result.data.gameSession.worldState.robots[2]!.actionState.movement
         .current,
-    ).toMatchObject({ request: { type: "stop" } });
+    ).toMatchObject({ request: { type: "forward", distance: 10 } });
   });
 
   it("行動調停できない内部整合性エラーでは入力を変更せずTickを増やさない", () => {

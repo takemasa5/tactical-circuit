@@ -17,6 +17,8 @@ import type {
   ProjectileId,
   RobotBodyDefinition,
   RobotBodyId,
+  SensorDefinition,
+  SensorId,
   WeaponDefinition,
   WeaponId,
 } from "../masterData/models";
@@ -37,19 +39,21 @@ const uuid = (suffix: string): string =>
 
 const startInstructionId = `instruction_${uuid("1")}` as InstructionId;
 const unusedInstructionId = `instruction_${uuid("2")}` as InstructionId;
-const switchWeaponInstructionId = `instruction_${uuid("10")}` as InstructionId;
+const moveForwardInstructionId = `instruction_${uuid("10")}` as InstructionId;
 const waitActionInstructionId = `instruction_${uuid("11")}` as InstructionId;
 const endInstructionId = `instruction_${uuid("12")}` as InstructionId;
 const bodyId = `robot_body_${uuid("3")}` as RobotBodyId;
 const projectileId = `projectile_${uuid("4")}` as ProjectileId;
 const weaponId = `weapon_${uuid("5")}` as WeaponId;
 const engineId = `engine_${uuid("13")}` as EngineId;
+const sensorId = `sensor_${uuid("14")}` as SensorId;
 const mapId = `map_${uuid("6")}` as MapId;
 const gameRuleId = `game_rule_${uuid("7")}` as GameRuleId;
 const programId = `program_${uuid("8")}` as ProgramId;
 const robotDesignId = `robo_${uuid("9")}` as RobotDesignId;
 const weaponSlotId = "slot_right" as SlotId;
 const engineSlotId = "slot_engine" as SlotId;
+const sensorSlotId = "slot_sensor" as SlotId;
 
 const instruction = (
   id: InstructionId,
@@ -94,6 +98,11 @@ const body: RobotBodyDefinition = {
       id: engineSlotId,
       displayName: "Engine",
       category: "engine",
+    },
+    {
+      id: sensorSlotId,
+      displayName: "Sensor",
+      category: "sensor",
     },
   ],
 };
@@ -148,6 +157,17 @@ const engine: EngineDefinition = {
   blockedCancelTicks: int32(0),
   energyConsumption: int32(1),
   weight: int32(5),
+};
+
+const sensor: SensorDefinition = {
+  id: sensorId,
+  displayName: "Sensor",
+  description: "",
+  enabled: true,
+  detectionDistance: int32(1000),
+  fieldOfViewDegree: int32(360),
+  energyConsumption: int32(0),
+  weight: int32(0),
 };
 
 const map: MapDefinition = {
@@ -210,7 +230,11 @@ const robotDesign: RobotDesign = {
   bodyDefinitionId: bodyId,
   programId,
   initialWeaponHand: "right",
-  equipment: { [weaponSlotId]: weaponId, [engineSlotId]: engineId },
+  equipment: {
+    [weaponSlotId]: weaponId,
+    [engineSlotId]: engineId,
+    [sensorSlotId]: sensorId,
+  },
   ammunition: { [weaponSlotId]: int32(3) },
   metadata: {
     name: "Robot",
@@ -238,12 +262,13 @@ const repository = (
     { dataType: "projectile", definition: projectile },
     { dataType: "weapon", definition: weapon },
     { dataType: "engine", definition: engine },
+    { dataType: "sensor", definition: sensor },
     { dataType: "map", definition: map },
     { dataType: "game_rule", definition: gameRule },
   ];
   const result = createDataRepository(
     entries,
-    new Set(["start", "unused", "switch_weapon", "wait_action", "end"]),
+    new Set(["start", "unused", "move_forward", "wait_action", "end"]),
   );
   if (!result.success) throw new Error(JSON.stringify(result.errors));
   return result.data;
@@ -295,7 +320,11 @@ describe("createGameSession", () => {
         energy: 80,
         heat: 0,
         status: "active",
-        partDamage: { [engineSlotId]: 0, [weaponSlotId]: 0 },
+        partDamage: {
+          [engineSlotId]: 0,
+          [sensorSlotId]: 0,
+          [weaponSlotId]: 0,
+        },
         selectedWeaponSlotId: weaponSlotId,
         ammunition: { [weaponSlotId]: 3 },
         actionRequests: { movement: null, combat: null },
@@ -359,6 +388,7 @@ describe("createGameSession", () => {
       { dataType: "projectile", definition: projectile },
       { dataType: "weapon", definition: weapon },
       { dataType: "engine", definition: engine },
+      { dataType: "sensor", definition: sensor },
       { dataType: "map", definition: map },
       { dataType: "game_rule", definition: gameRule },
     ];
@@ -492,17 +522,18 @@ describe("createGameSession", () => {
       {
         dataType: "instruction",
         definition: {
-          ...instruction(switchWeaponInstructionId, 1, "switch_weapon"),
+          ...instruction(moveForwardInstructionId, 1, "move_forward"),
           category: "action",
           parameters: [
             {
-              id: "hand",
-              displayName: "Hand",
-              description: "切替先の手",
-              valueType: "enum",
+              id: "distance",
+              displayName: "Distance",
+              description: "前進距離",
+              valueType: "distance",
               required: true,
-              defaultValue: "right",
-              enumValues: ["right", "left"],
+              defaultValue: 100,
+              minValue: int32(0),
+              maxValue: int32(10_000),
             },
           ],
           outputPaths: [
@@ -550,11 +581,12 @@ describe("createGameSession", () => {
       { dataType: "projectile", definition: projectile },
       { dataType: "weapon", definition: weapon },
       { dataType: "engine", definition: engine },
+      { dataType: "sensor", definition: sensor },
       { dataType: "map", definition: map },
       { dataType: "game_rule", definition: gameRule },
     ];
     const dataRepository = repository(10, entries);
-    const waitCombatProgram: Program = {
+    const waitMovementProgram: Program = {
       ...program,
       nodes: [
         {
@@ -565,14 +597,14 @@ describe("createGameSession", () => {
         },
         {
           id: "node_2" as NodeId,
-          instructionId: switchWeaponInstructionId,
-          parameterValues: { hand: "left" },
+          instructionId: moveForwardInstructionId,
+          parameterValues: { distance: int32(100) },
           connections: { next: "node_3" as NodeId },
         },
         {
           id: "node_3" as NodeId,
           instructionId: waitActionInstructionId,
-          parameterValues: { category: "combat" },
+          parameterValues: { category: "movement" },
           connections: { next: "node_4" as NodeId },
         },
         {
@@ -589,8 +621,8 @@ describe("createGameSession", () => {
       const created = createGameSession({
         ...input(dataRepository),
         participants: [
-          { robotDesign, program: waitCombatProgram },
-          { robotDesign, program: waitCombatProgram },
+          { robotDesign, program: waitMovementProgram },
+          { robotDesign, program: waitMovementProgram },
         ],
       });
       expect(created.success).toBe(true);
@@ -636,16 +668,16 @@ describe("createGameSession", () => {
     ).toEqual(["robot_1", "robot_2"]);
     expect(
       result.data.gameSession.worldState.robots.map(
-        ({ actionRequests }) => actionRequests.combat,
+        ({ actionRequests }) => actionRequests.movement,
       ),
     ).toEqual([null, null]);
     expect(
       result.data.gameSession.worldState.robots.map(
-        ({ actionState }) => actionState.combat.current?.request,
+        ({ actionState }) => actionState.movement.current?.request,
       ),
     ).toEqual([
-      { type: "switch_weapon", hand: "left" },
-      { type: "switch_weapon", hand: "left" },
+      { type: "forward", distance: 100 },
+      { type: "forward", distance: 100 },
     ]);
     expect(
       result.data.gameSession.worldState.robots.map(

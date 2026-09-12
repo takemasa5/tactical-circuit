@@ -2,17 +2,17 @@
 
 ## 目的
 
-AI Engineが生成したカテゴリ別行動要求を、Simulatorが保持する現在行動または次動作へ決定論的に反映する。
+AI Engineが生成したカテゴリ別行動要求を、Simulatorが保持する現在行動へ決定論的に反映する。
 
 ## 調停対象
 
-調停はRobotごとに行い、`movement`と`combat`を独立して処理する。複数Robotを更新する呼出し側は参加者順でRobotごとの調停を実行する。
+調停はactiveなRobotごとに行い、`movement`と`combat`を独立して処理する。複数Robotは参加者順で処理する。destroyedなRobotは調停せず、行動要求、現在行動、および次動作を空にする。
 
-`RobotState.actionRequests`が`null`のカテゴリでは、継続中の現在行動または次動作を取り消さない。
+`RobotState.actionRequests`が`null`のカテゴリでは、継続中の現在行動を取り消さない。
 
-## Phase 5の現在行動採用
+## 現在行動の採用
 
-現在行動がないカテゴリへ新しい要求がある場合、Simulatorは同じTickで現在行動として採用する。採用した現在行動は次を持つ。
+現在行動がないカテゴリへ新しい要求がある場合、同じTickで現在行動として採用する。採用時は次を持つ。
 
 - `phase`: `preparing`
 - `phaseElapsedTicks`: `0`
@@ -22,11 +22,11 @@ AI Engineが生成したカテゴリ別行動要求を、Simulatorが保持す�
 
 要求の同一判定は各命令詳細の「行動要求」に従う。Move Forward/Backwardは`distance`を同一判定に使用せず、Turnは`turnTo`を同一判定に使用しない。
 
-`preparing`中の現在行動に異なる要求が来た場合、現在行動をキャンセルし、新しい要求を`preparing`の現在行動として採用する。
+`preparing`中の現在行動に異なる要求が来た場合、現在行動を破棄し、新しい要求を`preparing`として採用する。
 
-Phase 5には具体的なMovement SystemまたはWeapon Systemが存在しないため、採用した実在の行動を`preparing`から進めず、`phaseElapsedTicks`も増加させない。
+`executing`または`recovering`中は、新しい要求の有無や内容にかかわらず現在行動を維持する。Phase 1では新しい要求を次動作として保持しない。Movement SystemまたはCombat Systemが行動を完了した時点で、現在行動と次動作を`null`にする。
 
-Phase 5の調停では、要求の有無にかかわらず`preparing`以外の現在行動をSimulator全体の内部整合性Errorとする。
+Phase 1で未対応の要求を保持した現在行動は、対応Systemが`inconsistent_session`として拒否する。正式リリース前の旧Programを動かすための互換分岐は追加しない。
 
 ## ActionStatusSnapshot
 

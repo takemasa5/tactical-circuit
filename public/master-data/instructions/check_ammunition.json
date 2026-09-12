@@ -5,7 +5,7 @@
     "id": "instruction_bc1bed70-1c22-43fe-b7d3-75e319e09b5a",
     "displayName": "Check Ammunition",
     "description": "選択中の武器の残弾数を判定します",
-    "enabled": true,
+    "enabled": false,
     "implementationId": "check_ammunition",
     "category": "branch",
     "parameters": [

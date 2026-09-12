@@ -32,6 +32,6 @@ type SimulatorResult<T> =
 
 成功時はWorld Stateの`status`だけを`running`へ変更した新しいGame Sessionを返す。Tick、Robot、Random Stateその他の値は変更しない。
 
-入力が`running`または`finished`の場合は、`invalid_game_status`の失敗結果を返す。Phase 5では`finished`へ遷移する処理を実装しない。
+入力が`running`または`finished`の場合は、`invalid_game_status`の失敗結果を返す。`finished`は勝敗が確定した終端状態であり、再開始できない。
 
 成功と失敗のどちらでも、入力Game Sessionを変更しない。

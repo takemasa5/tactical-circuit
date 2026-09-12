@@ -179,52 +179,54 @@ describe("action request arbitration", () => {
     ).toEqual({ movement: "running", combat: "idle" });
   });
 
-  it("Phase 5で調停できない現在行動段階を内部整合性Errorにする", () => {
-    const actionState = {
+  it("executing中の新しい要求を採用せず現在行動を維持する", () => {
+    const actionState: RobotActionState = {
       ...createEmptyRobotActionState(),
       movement: {
         current: {
-          request: { type: "stop" },
+          request: { type: "forward", distance: int32(10) },
           phase: "executing",
           phaseElapsedTicks: int32(0),
-          progress: {},
+          progress: {
+            type: "forward",
+            fixedPosition: { x: int32(0), y: int32(0) },
+            fixedMovedDistance: int32(1000),
+          },
         },
         next: null,
       },
-    } as unknown as RobotActionState;
+    };
 
-    expect(
-      arbitrateRobotActionRequests(actionState, {
-        movement: { type: "forward", distance: int32(1) },
-        combat: null,
-      }),
-    ).toEqual({
-      success: false,
-      code: "inconsistent_session",
-      message: "Phase 5ではpreparing以外の現在行動を調停できません",
+    const result = arbitrateRobotActionRequests(actionState, {
+      movement: { type: "turn_right", turnTo: int32(90) },
+      combat: null,
     });
+    expect(result).toEqual({ success: true, data: actionState });
+    expect(result.success && result.data).not.toBe(actionState);
   });
 
-  it("要求がnullでも調停できない現在行動段階を内部整合性Errorにする", () => {
-    const actionState = {
+  it("recovering中は要求がnullでも現在行動を維持する", () => {
+    const actionState: RobotActionState = {
       ...createEmptyRobotActionState(),
       combat: {
         current: {
-          request: { type: "melee" },
+          request: {
+            type: "fire",
+            targetDirection: int32(0),
+            targetPosition: { x: int32(0), y: int32(1) },
+          },
           phase: "recovering",
           phaseElapsedTicks: int32(0),
-          progress: {},
+          progress: null,
         },
         next: null,
       },
-    } as unknown as RobotActionState;
+    };
 
-    expect(
-      arbitrateRobotActionRequests(actionState, createEmptyActionRequests()),
-    ).toEqual({
-      success: false,
-      code: "inconsistent_session",
-      message: "Phase 5ではpreparing以外の現在行動を調停できません",
-    });
+    const result = arbitrateRobotActionRequests(
+      actionState,
+      createEmptyActionRequests(),
+    );
+    expect(result).toEqual({ success: true, data: actionState });
   });
 });
