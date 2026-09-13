@@ -532,3 +532,123 @@ h2 {
   white-space: nowrap;
   border: 0;
 }
+
+.battle-app {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: var(--bg);
+}
+
+.battle-header,
+.battle-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 24px;
+  border-color: var(--line);
+  background: var(--panel);
+}
+
+.battle-header {
+  border-bottom: 1px solid var(--line);
+}
+
+.battle-tick {
+  margin: 0;
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+}
+
+.battle-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 240px;
+  min-height: 0;
+  padding: 20px;
+  gap: 20px;
+}
+
+.battle-map {
+  width: 100%;
+  max-height: 100%;
+  border: 1px solid var(--line-bright);
+  background: #090f12;
+}
+
+.battle-map-boundary {
+  fill: transparent;
+  stroke: var(--line);
+}
+
+.battle-obstacle {
+  fill: var(--panel-strong);
+  stroke: var(--line-bright);
+}
+
+.battle-bullet {
+  fill: var(--warning);
+}
+
+.battle-robot rect {
+  fill: var(--accent-dim);
+  stroke: var(--accent);
+}
+
+.battle-robot.destroyed rect {
+  fill: #3b2525;
+  stroke: var(--error);
+}
+
+.battle-robot line {
+  stroke: var(--text);
+  stroke-width: 3;
+}
+
+.battle-robot text {
+  fill: var(--text);
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.battle-status {
+  overflow: auto;
+  padding: 16px;
+  border: 1px solid var(--line);
+  background: var(--panel);
+}
+
+.battle-robot-status {
+  padding: 12px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.battle-robot-status h3 {
+  margin: 0 0 8px;
+  color: var(--accent);
+  font-size: 0.85rem;
+}
+
+.battle-robot-status dl {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 5px;
+  margin: 0;
+  font-size: 0.8rem;
+}
+
+.battle-robot-status dt {
+  color: var(--muted);
+}
+
+.battle-robot-status dd {
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.battle-controls {
+  justify-content: flex-start;
+  gap: 8px;
+  border-top: 1px solid var(--line);
+}

@@ -1,12 +1,15 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 
 import "./App.css";
 import {
   createPhase1OpponentProgram,
   createPhase1PlayerProgram,
 } from "../domain/battle/phase1Programs";
+import { PHASE1_GAME_RULE_ID } from "../domain/battle/fixedBattle";
 import { runFixedBattle, type BattleRun } from "../domain/battle/runBattle";
 import type { ProgramId } from "../domain/data/ids";
+import type { Program } from "../domain/program/models";
+import { BattleView } from "./BattleView";
 import {
   loadEditorMasterData,
   type EditorMasterData,
@@ -19,13 +22,25 @@ const createProgramId = (): ProgramId =>
 export function App() {
   const [masterData, setMasterData] = useState<EditorMasterData | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const battleRunRef = useRef<BattleRun | null>(null);
+  const [battleRun, setBattleRun] = useState<BattleRun | null>(null);
+  const [initialProgram, setInitialProgram] = useState<Program | null>(null);
+  const [playerProgram, setPlayerProgram] = useState<Program | null>(null);
+  const [screen, setScreen] = useState<"editor" | "battle">("editor");
 
   useEffect(() => {
     let active = true;
     void loadEditorMasterData()
       .then((loaded) => {
-        if (active) setMasterData(loaded);
+        if (active) {
+          setInitialProgram(
+            createPhase1PlayerProgram(
+              createProgramId(),
+              loaded.repository,
+              new Date().toISOString(),
+            ),
+          );
+          setMasterData(loaded);
+        }
       })
       .catch(() => {
         if (active)
@@ -36,17 +51,26 @@ export function App() {
     };
   }, []);
 
-  if (masterData !== null) {
+  if (masterData !== null && initialProgram !== null) {
+    const gameRule = masterData.repository.get(
+      "game_rule",
+      PHASE1_GAME_RULE_ID,
+    );
+    if (screen === "battle" && battleRun !== null && gameRule !== undefined) {
+      return (
+        <BattleView
+          battleRun={battleRun}
+          tickLimit={gameRule.tickLimit}
+          onReturnToEditor={() => setScreen("editor")}
+        />
+      );
+    }
     return (
       <ProgramEditor
         instructions={masterData.instructions}
         startInstructionId={masterData.startInstructionId}
         repository={masterData.repository}
-        initialProgram={createPhase1PlayerProgram(
-          createProgramId(),
-          masterData.repository,
-          new Date().toISOString(),
-        )}
+        initialProgram={playerProgram ?? initialProgram}
         onStartBattle={(playerProgram) => {
           const result = runFixedBattle(
             playerProgram,
@@ -59,7 +83,9 @@ export function App() {
           if (!result.success) {
             return { success: false, message: result.message };
           }
-          battleRunRef.current = result.data;
+          setBattleRun(result.data);
+          setPlayerProgram(playerProgram);
+          setScreen("battle");
           return { success: true };
         }}
       />
