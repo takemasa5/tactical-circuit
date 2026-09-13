@@ -82,6 +82,7 @@ type ProgramEditorProps = {
   readonly instructions: readonly InstructionDefinition[];
   readonly startInstructionId: InstructionId;
   readonly repository: DataRepository;
+  readonly initialProgram?: Program;
   readonly createId?: () => ProgramId;
   readonly now?: () => string;
 };
@@ -100,6 +101,15 @@ type SelectionBox = {
   readonly currentX: number;
   readonly currentY: number;
   readonly additive: boolean;
+};
+
+/** `docs/specs/current/editor/layout.md`の右ボタンPan中だけ保持する表示状態。 */
+type CanvasPanState = {
+  readonly pointerId: number;
+  readonly startX: number;
+  readonly startY: number;
+  readonly scrollLeft: number;
+  readonly scrollTop: number;
 };
 
 /** `docs/specs/current/editor/connections.md`の接続ドラッグ中だけ保持する表示状態。 */
@@ -333,6 +343,7 @@ export function ProgramEditor({
   instructions,
   startInstructionId,
   repository,
+  initialProgram,
   createId = defaultCreateId,
   now = () => new Date().toISOString(),
 }: ProgramEditorProps) {
@@ -342,7 +353,9 @@ export function ProgramEditor({
     [instructions],
   );
   const [history, setHistory] = useState<HistoryState>(() =>
-    createHistory(createInitialProgram(startInstructionId, createId, now)),
+    createHistory(
+      initialProgram ?? createInitialProgram(startInstructionId, createId, now),
+    ),
   );
   const program = history.present;
   const programRef = useRef(program);
@@ -352,7 +365,11 @@ export function ProgramEditor({
   const [selection, setSelection] = useState<EditorSelection>(emptySelection);
   const [clipboard, setClipboard] = useState<EditorClipboard | null>(null);
   const [baselineJson, setBaselineJson] = useState<string | null>(null);
-  const [message, setMessage] = useState("新しいProgramを作成しました");
+  const [message, setMessage] = useState(
+    initialProgram === undefined
+      ? "新しいProgramを作成しました"
+      : "プレイヤー用サンプルProgramを表示しています",
+  );
   const [storedProgramIds, setStoredProgramIds] = useState<
     readonly ProgramId[]
   >(() => {
@@ -372,6 +389,8 @@ export function ProgramEditor({
     Readonly<Record<NodeId, Position>>
   >({});
   const [selectionBox, setSelectionBox] = useState<SelectionBox | null>(null);
+  const canvasPanRef = useRef<CanvasPanState | null>(null);
+  const [isCanvasPanning, setIsCanvasPanning] = useState(false);
   const [zoomPercent, setZoomPercent] = useState(100);
   const importInputRef = useRef<HTMLInputElement>(null);
   const zoom = zoomPercent / 100;
@@ -629,6 +648,7 @@ export function ProgramEditor({
   });
 
   const startDrag = (event: ReactPointerEvent<HTMLElement>, nodeId: NodeId) => {
+    if (event.button !== 0) return;
     if ((event.target as HTMLElement).closest("button") !== null) return;
     let selected: ReadonlySet<NodeId>;
     if (event.shiftKey) {
@@ -802,6 +822,7 @@ export function ProgramEditor({
   }, []);
 
   const startRangeSelection = (event: ReactPointerEvent<HTMLElement>) => {
+    if (event.button !== 0) return;
     if (event.target !== event.currentTarget) return;
     const { x, y } = pointerPosition(event);
     event.currentTarget.setPointerCapture(event.pointerId);
@@ -847,6 +868,39 @@ export function ProgramEditor({
     });
     setSelection({ nodeIds, connection: null });
     setSelectionBox(null);
+  };
+
+  const startCanvasPan = (event: ReactPointerEvent<HTMLElement>) => {
+    if (event.button !== 2) return;
+    event.preventDefault();
+    event.currentTarget.setPointerCapture(event.pointerId);
+    canvasPanRef.current = {
+      pointerId: event.pointerId,
+      startX: event.clientX,
+      startY: event.clientY,
+      scrollLeft: event.currentTarget.scrollLeft,
+      scrollTop: event.currentTarget.scrollTop,
+    };
+    setIsCanvasPanning(true);
+  };
+
+  const updateCanvasPan = (event: ReactPointerEvent<HTMLElement>) => {
+    const pan = canvasPanRef.current;
+    if (pan === null || pan.pointerId !== event.pointerId) return;
+    event.currentTarget.scrollLeft =
+      pan.scrollLeft - (event.clientX - pan.startX);
+    event.currentTarget.scrollTop =
+      pan.scrollTop - (event.clientY - pan.startY);
+  };
+
+  const finishCanvasPan = (event: ReactPointerEvent<HTMLElement>) => {
+    const pan = canvasPanRef.current;
+    if (pan === null || pan.pointerId !== event.pointerId) return;
+    canvasPanRef.current = null;
+    setIsCanvasPanning(false);
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    }
   };
 
   const orderedInstructions = [...instructions]
@@ -1005,7 +1059,15 @@ export function ProgramEditor({
           ))}
         </aside>
 
-        <section className="program-canvas" aria-label="Programキャンバス">
+        <section
+          className={`program-canvas${isCanvasPanning ? " panning" : ""}`}
+          aria-label="Programキャンバス"
+          onPointerDown={startCanvasPan}
+          onPointerMove={updateCanvasPan}
+          onPointerUp={finishCanvasPan}
+          onPointerCancel={finishCanvasPan}
+          onContextMenu={(event) => event.preventDefault()}
+        >
           <div
             className="canvas-scroll-area"
             style={{
@@ -1162,6 +1224,7 @@ export function ProgramEditor({
                       type="button"
                       aria-label={`${node.id}へ接続`}
                       onPointerUp={(event) => {
+                        if (event.button !== 0) return;
                         event.stopPropagation();
                         finishConnection(node.id);
                       }}
@@ -1195,6 +1258,7 @@ export function ProgramEditor({
                           key={outputPath.id}
                           title={outputPath.description}
                           onPointerDown={(event) => {
+                            if (event.button !== 0) return;
                             event.stopPropagation();
                             beginConnection(node.id, outputPath.id);
                           }}

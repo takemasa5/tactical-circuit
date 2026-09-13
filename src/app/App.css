@@ -46,7 +46,7 @@ button:disabled {
 
 .loading-shell {
   display: grid;
-  min-height: 100vh;
+  height: 100%;
   place-items: center;
   padding: 24px;
   background:
@@ -66,8 +66,11 @@ button:disabled {
 .editor-app {
   display: grid;
   grid-template-rows: auto auto minmax(0, 1fr) auto;
-  min-width: 1120px;
-  min-height: 100vh;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
   background: var(--bg);
 }
 
@@ -155,8 +158,12 @@ h2 {
 
 .editor-layout {
   display: grid;
-  grid-template-columns: 210px minmax(650px, 1fr) 280px;
+  grid-template-columns: minmax(160px, 210px) minmax(0, 1fr) minmax(
+      220px,
+      280px
+    );
   min-height: 0;
+  overflow: hidden;
 }
 
 .panel {
@@ -188,9 +195,14 @@ h2 {
 
 .program-canvas {
   position: relative;
-  min-height: 620px;
+  min-height: 0;
   overflow: auto;
   background: #090f12;
+}
+
+.program-canvas.panning {
+  cursor: grabbing;
+  user-select: none;
 }
 
 .canvas-scroll-area {

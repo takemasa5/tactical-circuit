@@ -383,6 +383,41 @@ describe("ProgramEditor", () => {
     expect(screen.getByLabelText("Zoom倍率")).toHaveTextContent("100%");
   });
 
+  it("右ボタンドラッグでProgramキャンバスだけをスクロールする", () => {
+    renderEditor();
+    const canvas = screen.getByRole("region", { name: "Programキャンバス" });
+    const node = screen.getByText("node_1").closest("article");
+    if (node === null) throw new Error("Start Nodeが見つかりません");
+    Object.defineProperties(canvas, {
+      setPointerCapture: { value: vi.fn() },
+      hasPointerCapture: { value: vi.fn(() => true) },
+      releasePointerCapture: { value: vi.fn() },
+    });
+    canvas.scrollLeft = 300;
+    canvas.scrollTop = 200;
+
+    fireEvent.pointerDown(node, {
+      button: 2,
+      pointerId: 7,
+      clientX: 100,
+      clientY: 90,
+    });
+    fireEvent.pointerMove(canvas, {
+      pointerId: 7,
+      clientX: 60,
+      clientY: 50,
+    });
+
+    expect(canvas).toHaveClass("panning");
+    expect(canvas.scrollLeft).toBe(340);
+    expect(canvas.scrollTop).toBe(240);
+    expect(node).toHaveStyle({ left: "80px", top: "100px" });
+
+    fireEvent.pointerUp(canvas, { pointerId: 7 });
+    expect(canvas).not.toHaveClass("panning");
+    expect(fireEvent.contextMenu(canvas)).toBe(false);
+  });
+
   it("localStorageへ保存する", async () => {
     const user = userEvent.setup();
     renderEditor();
