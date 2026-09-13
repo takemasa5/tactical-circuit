@@ -14,7 +14,8 @@ import {
 } from "../domain/masterData/repository";
 import { createProgram as createEditorProgram } from "../domain/editor/programOperations";
 import { loadProgram, saveProgram } from "../domain/program/codec";
-import { ProgramEditor } from "./ProgramEditor";
+import type { Program } from "../domain/program/models";
+import { ProgramEditor, type BattleStartResult } from "./ProgramEditor";
 
 class MemoryStorage implements Storage {
   readonly #values = new Map<string, string>();
@@ -159,7 +160,9 @@ const repository = repositoryResult.data;
 const fixedProgramId =
   "program_550e8400-e29b-41d4-a716-446655440000" as ProgramId;
 
-const renderEditor = () =>
+const renderEditor = (
+  onStartBattle?: (program: Program) => BattleStartResult,
+) =>
   render(
     <ProgramEditor
       instructions={instructions}
@@ -167,6 +170,7 @@ const renderEditor = () =>
       repository={repository}
       createId={() => fixedProgramId}
       now={() => "2026-06-29T00:00:00.000Z"}
+      {...(onStartBattle === undefined ? {} : { onStartBattle })}
     />,
   );
 
@@ -238,6 +242,29 @@ describe("ProgramEditor", () => {
 
     expect(screen.getByText("Error 0 / Warning 0")).toBeInTheDocument();
     expect(screen.getByText("問題はありません")).toBeInTheDocument();
+  });
+
+  it("Validator ErrorがあるProgramでは戦闘を開始しない", () => {
+    const startBattle = vi.fn(() => ({ success: true }) as const);
+    renderEditor(startBattle);
+
+    expect(screen.getByRole("button", { name: "戦闘開始" })).toBeDisabled();
+    expect(screen.getByText("Error 1 / Warning 0")).toBeInTheDocument();
+    expect(startBattle).not.toHaveBeenCalled();
+  });
+
+  it("診断がないProgramだけを戦闘開始処理へ渡す", async () => {
+    const user = userEvent.setup();
+    const startBattle = vi.fn(() => ({ success: true }) as const);
+    renderEditor(startBattle);
+
+    await user.click(screen.getByRole("button", { name: "Endcontrol" }));
+    fireEvent.pointerDown(screen.getByRole("button", { name: "Next" }));
+    fireEvent.pointerUp(screen.getByRole("button", { name: "node_2へ接続" }));
+    await user.click(screen.getByRole("button", { name: "戦闘開始" }));
+
+    expect(startBattle).toHaveBeenCalledTimes(1);
+    expect(screen.getByText("固定対戦を生成しました")).toBeInTheDocument();
   });
 
   it("0以上360未満の範囲外の角度を値域エラーにしない", async () => {

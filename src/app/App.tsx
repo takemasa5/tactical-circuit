@@ -1,13 +1,17 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import "./App.css";
+import {
+  createPhase1OpponentProgram,
+  createPhase1PlayerProgram,
+} from "../domain/battle/phase1Programs";
+import { runFixedBattle, type BattleRun } from "../domain/battle/runBattle";
+import type { ProgramId } from "../domain/data/ids";
 import {
   loadEditorMasterData,
   type EditorMasterData,
 } from "./loadEditorMasterData";
 import { ProgramEditor } from "./ProgramEditor";
-import { createPhase1PlayerProgram } from "../domain/battle/phase1Programs";
-import type { ProgramId } from "../domain/data/ids";
 
 const createProgramId = (): ProgramId =>
   `program_${crypto.randomUUID()}` as ProgramId;
@@ -15,6 +19,7 @@ const createProgramId = (): ProgramId =>
 export function App() {
   const [masterData, setMasterData] = useState<EditorMasterData | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const battleRunRef = useRef<BattleRun | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -42,6 +47,21 @@ export function App() {
           masterData.repository,
           new Date().toISOString(),
         )}
+        onStartBattle={(playerProgram) => {
+          const result = runFixedBattle(
+            playerProgram,
+            createPhase1OpponentProgram(
+              masterData.repository,
+              new Date().toISOString(),
+            ),
+            masterData.repository,
+          );
+          if (!result.success) {
+            return { success: false, message: result.message };
+          }
+          battleRunRef.current = result.data;
+          return { success: true };
+        }}
       />
     );
   }

@@ -64,6 +64,10 @@ import type { DataRepository } from "../domain/masterData/repository";
 import type { ParameterValue, Program } from "../domain/program/models";
 import { validateProgram } from "../domain/validator/validateProgram";
 
+export type BattleStartResult =
+  | { readonly success: true }
+  | { readonly success: false; readonly message: string };
+
 const NODE_WIDTH = 190;
 const NODE_HEADER_HEIGHT = 52;
 const NODE_BASE_HEIGHT = 78;
@@ -83,6 +87,7 @@ type ProgramEditorProps = {
   readonly startInstructionId: InstructionId;
   readonly repository: DataRepository;
   readonly initialProgram?: Program;
+  readonly onStartBattle?: (program: Program) => BattleStartResult;
   readonly createId?: () => ProgramId;
   readonly now?: () => string;
 };
@@ -344,6 +349,7 @@ export function ProgramEditor({
   startInstructionId,
   repository,
   initialProgram,
+  onStartBattle,
   createId = defaultCreateId,
   now = () => new Date().toISOString(),
 }: ProgramEditorProps) {
@@ -430,6 +436,23 @@ export function ProgramEditor({
       nodeIds: new Set([item.nodeId, ...item.relatedNodeIds]),
       connection: null,
     });
+  };
+
+  const handleStartBattle = () => {
+    if (errorCount > 0) {
+      setMessage("Validator Errorがあるため戦闘を開始できません");
+      return;
+    }
+    if (onStartBattle === undefined) {
+      setMessage("戦闘開始機能を利用できません");
+      return;
+    }
+    const result = onStartBattle(program);
+    setMessage(
+      result.success
+        ? "固定対戦を生成しました"
+        : `戦闘を開始できません: ${result.message}`,
+    );
   };
 
   const getStorage = (): Storage | null => {
@@ -936,6 +959,13 @@ export function ProgramEditor({
       <nav className="toolbar" aria-label="Program操作">
         <button type="button" onClick={handleNew}>
           新規
+        </button>
+        <button
+          type="button"
+          disabled={errorCount > 0 || onStartBattle === undefined}
+          onClick={handleStartBattle}
+        >
+          戦闘開始
         </button>
         <button type="button" onClick={handleSave}>
           保存
