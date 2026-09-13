@@ -11,6 +11,10 @@ type BattleViewProps = {
   readonly onReturnToEditor: () => void;
 };
 
+const MAP_HEIGHT = 450;
+
+const toSvgY = (worldY: number): number => MAP_HEIGHT - worldY;
+
 const robotName = (robot: RobotState): string =>
   robot.id === "robot_1" ? "PLAYER" : "OPPONENT";
 
@@ -40,7 +44,7 @@ const SnapshotMap = ({ worldState }: { readonly worldState: WorldState }) => (
         className="battle-obstacle"
         key={obstacle.id}
         x={obstacle.position.x - obstacle.size.width / 2}
-        y={obstacle.position.y - obstacle.size.height / 2}
+        y={toSvgY(obstacle.position.y + obstacle.size.height / 2)}
         width={obstacle.size.width}
         height={obstacle.size.height}
       />
@@ -49,7 +53,7 @@ const SnapshotMap = ({ worldState }: { readonly worldState: WorldState }) => (
       <circle
         className="battle-bullet"
         cx={bullet.position.x}
-        cy={bullet.position.y}
+        cy={toSvgY(bullet.position.y)}
         key={bullet.id}
         r="4"
       />
@@ -58,7 +62,7 @@ const SnapshotMap = ({ worldState }: { readonly worldState: WorldState }) => (
       <g
         className={`battle-robot ${robot.status}`}
         key={robot.id}
-        transform={`translate(${robot.position.x} ${robot.position.y}) rotate(${robot.direction})`}
+        transform={`translate(${robot.position.x} ${toSvgY(robot.position.y)}) rotate(${robot.direction})`}
       >
         <rect x="-20" y="-20" width="40" height="40" rx="4" />
         <line x1="0" y1="0" x2="0" y2="-24" />

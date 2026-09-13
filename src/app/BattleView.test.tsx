@@ -18,7 +18,7 @@ const snapshot = (tick: number): WorldState =>
     robots: [
       {
         id: "robot_1",
-        position: { x: 200, y: 225 },
+        position: { x: 200, y: 100 },
         direction: 90,
         currentHp: 100,
         status: "active",
@@ -27,7 +27,7 @@ const snapshot = (tick: number): WorldState =>
       },
       {
         id: "robot_2",
-        position: { x: 600, y: 225 },
+        position: { x: 600, y: 350 },
         direction: 270,
         currentHp: 75,
         status: "active",
@@ -60,6 +60,10 @@ describe("BattleView", () => {
     expect(screen.getByText("Tick 0 / 600")).toBeInTheDocument();
     expect(screen.getAllByText("PLAYER")).toHaveLength(2);
     expect(screen.getAllByText("OPPONENT")).toHaveLength(2);
+    expect(screen.getAllByText("PLAYER")[0]?.closest("g")).toHaveAttribute(
+      "transform",
+      "translate(200 350) rotate(90)",
+    );
 
     await act(() => vi.advanceTimersByTime(100));
     expect(screen.getByText("Tick 1 / 600")).toBeInTheDocument();
