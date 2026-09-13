@@ -82,6 +82,7 @@ type ProgramEditorProps = {
   readonly instructions: readonly InstructionDefinition[];
   readonly startInstructionId: InstructionId;
   readonly repository: DataRepository;
+  readonly initialProgram?: Program;
   readonly createId?: () => ProgramId;
   readonly now?: () => string;
 };
@@ -342,6 +343,7 @@ export function ProgramEditor({
   instructions,
   startInstructionId,
   repository,
+  initialProgram,
   createId = defaultCreateId,
   now = () => new Date().toISOString(),
 }: ProgramEditorProps) {
@@ -351,7 +353,9 @@ export function ProgramEditor({
     [instructions],
   );
   const [history, setHistory] = useState<HistoryState>(() =>
-    createHistory(createInitialProgram(startInstructionId, createId, now)),
+    createHistory(
+      initialProgram ?? createInitialProgram(startInstructionId, createId, now),
+    ),
   );
   const program = history.present;
   const programRef = useRef(program);
@@ -361,7 +365,11 @@ export function ProgramEditor({
   const [selection, setSelection] = useState<EditorSelection>(emptySelection);
   const [clipboard, setClipboard] = useState<EditorClipboard | null>(null);
   const [baselineJson, setBaselineJson] = useState<string | null>(null);
-  const [message, setMessage] = useState("新しいProgramを作成しました");
+  const [message, setMessage] = useState(
+    initialProgram === undefined
+      ? "新しいProgramを作成しました"
+      : "プレイヤー用サンプルProgramを表示しています",
+  );
   const [storedProgramIds, setStoredProgramIds] = useState<
     readonly ProgramId[]
   >(() => {

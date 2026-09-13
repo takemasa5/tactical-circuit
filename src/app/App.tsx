@@ -6,6 +6,11 @@ import {
   type EditorMasterData,
 } from "./loadEditorMasterData";
 import { ProgramEditor } from "./ProgramEditor";
+import { createPhase1PlayerProgram } from "../domain/battle/phase1Programs";
+import type { ProgramId } from "../domain/data/ids";
+
+const createProgramId = (): ProgramId =>
+  `program_${crypto.randomUUID()}` as ProgramId;
 
 export function App() {
   const [masterData, setMasterData] = useState<EditorMasterData | null>(null);
@@ -32,6 +37,11 @@ export function App() {
         instructions={masterData.instructions}
         startInstructionId={masterData.startInstructionId}
         repository={masterData.repository}
+        initialProgram={createPhase1PlayerProgram(
+          createProgramId(),
+          masterData.repository,
+          new Date().toISOString(),
+        )}
       />
     );
   }
