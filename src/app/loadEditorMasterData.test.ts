@@ -7,6 +7,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
   loadEditorMasterData,
+  parseBattleDocumentManifest,
   parseEditorMasterData,
   parseInstructionDocumentManifest,
 } from "./loadEditorMasterData";
@@ -111,6 +112,23 @@ describe("Editor Master Data", () => {
     expect(() =>
       parseInstructionDocumentManifest('{"files":["start.json","start.json"]}'),
     ).toThrow("duplicate file names");
+    expect(() =>
+      parseBattleDocumentManifest(
+        '{"files":[{"dataType":"map","path":"../map.json"}]}',
+      ),
+    ).toThrow("invalid document");
+  });
+
+  it("Battle manifestに記載された固定対戦Master Dataを読み込む", () => {
+    const battleManifest = parseBattleDocumentManifest(
+      readPublicFile("/master-data/battle/manifest.json"),
+    );
+
+    expect(battleManifest.files).toHaveLength(7);
+    expect(battleManifest.files).toContainEqual({
+      dataType: "game_rule",
+      path: "game_rule.json",
+    });
   });
 
   it("固定Start Instructionが存在しない場合は拒否する", () => {
@@ -168,7 +186,11 @@ describe("Editor Master Data", () => {
     ).toThrow("unknown_implementation_id");
   });
 
-  it("ブラウザ読込ではInstruction manifestに記載されたファイルだけを取得する", async () => {
+  it("ブラウザ読込ではInstructionとBattleのmanifestに記載されたファイルだけを取得する", async () => {
+    const battleManifestPath = "/master-data/battle/manifest.json";
+    const battleManifest = parseBattleDocumentManifest(
+      readPublicFile(battleManifestPath),
+    );
     const responses = new Map<string, string>([
       [
         "/master-data/manifest.json",
@@ -178,6 +200,7 @@ describe("Editor Master Data", () => {
         "/master-data/instructions/manifest.json",
         '{"files":["start.json","end.json"]}',
       ],
+      [battleManifestPath, readPublicFile(battleManifestPath)],
       [
         "/master-data/instructions/start.json",
         readPublicFile("/master-data/instructions/start.json"),
@@ -186,6 +209,10 @@ describe("Editor Master Data", () => {
         "/master-data/instructions/end.json",
         readPublicFile("/master-data/instructions/end.json"),
       ],
+      ...battleManifest.files.map(({ path }) => {
+        const documentPath = `/master-data/battle/${path}`;
+        return [documentPath, readPublicFile(documentPath)] as const;
+      }),
     ]);
     const fetchMock = vi
       .spyOn(globalThis, "fetch")
@@ -204,8 +231,10 @@ describe("Editor Master Data", () => {
     expect(fetchMock.mock.calls.map(([input]) => requestPath(input))).toEqual([
       "/master-data/manifest.json",
       "/master-data/instructions/manifest.json",
+      "/master-data/battle/manifest.json",
       "/master-data/instructions/start.json",
       "/master-data/instructions/end.json",
+      ...battleManifest.files.map(({ path }) => `/master-data/battle/${path}`),
     ]);
   });
 
@@ -221,6 +250,9 @@ describe("Editor Master Data", () => {
         return Promise.resolve(
           new Response('{"files":["missing.json"]}', { status: 200 }),
         );
+      }
+      if (path === "/master-data/battle/manifest.json") {
+        return Promise.resolve(new Response('{"files":[]}', { status: 200 }));
       }
       return Promise.resolve(new Response("", { status: 404 }));
     });

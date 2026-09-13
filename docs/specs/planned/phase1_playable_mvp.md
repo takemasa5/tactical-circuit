@@ -81,6 +81,8 @@ Phase 1はReact内の単一ページ状態として、Editor、Battle、Result�
 ### Editor
 
 - 既存Program EditorとValidator結果を表示する
+- アプリ全体をブラウザーの表示領域内へ固定し、ページ自体はスクロールさせない
+- Programキャンバスはスクロールバー、ホイール、および右ボタンドラッグで表示位置を移動できる
 - `戦闘開始`操作を追加する
 - Validator Errorがある場合は開始せず、既存の診断表示を維持する
 - 開始処理が失敗した場合はPlayer Programを保持し、Editor内にエラーを表示する
