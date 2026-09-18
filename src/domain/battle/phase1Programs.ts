@@ -118,19 +118,19 @@ const opponentNodes = (repository: DataRepository): readonly ProgramNode[] => [
     },
     connections: {
       detected: "node_3" as NodeId,
-      not_detected: "node_6" as NodeId,
+      not_detected: "node_3" as NodeId,
     },
   },
   {
     id: "node_3" as NodeId,
-    instructionId: instructionId(repository, "fire"),
-    parameterValues: {},
+    instructionId: instructionId(repository, "turn"),
+    parameterValues: { direction: "right", degree: 10 as Int32 },
     connections: { next: "node_4" as NodeId },
   },
   {
     id: "node_4" as NodeId,
     instructionId: instructionId(repository, "wait_action"),
-    parameterValues: { category: "combat" },
+    parameterValues: { category: "movement" },
     connections: { next: "node_5" as NodeId },
   },
   {
@@ -138,18 +138,6 @@ const opponentNodes = (repository: DataRepository): readonly ProgramNode[] => [
     instructionId: instructionId(repository, "end"),
     parameterValues: {},
     connections: {},
-  },
-  {
-    id: "node_6" as NodeId,
-    instructionId: instructionId(repository, "turn"),
-    parameterValues: { direction: "right", degree: 10 as Int32 },
-    connections: { next: "node_7" as NodeId },
-  },
-  {
-    id: "node_7" as NodeId,
-    instructionId: instructionId(repository, "wait_action"),
-    parameterValues: { category: "movement" },
-    connections: { next: "node_5" as NodeId },
   },
 ];
 
@@ -187,7 +175,7 @@ export const createPhase1OpponentProgram = (
   id: OPPONENT_PROGRAM_ID,
   nodes: opponentNodes(repository),
   startNodeId: "node_1" as NodeId,
-  nextNodeSequence: 8 as Int32,
+  nextNodeSequence: 6 as Int32,
   metadata: metadata("Opponent Program", now),
   editorState: {
     nodePositions: nodePositions([
@@ -196,8 +184,6 @@ export const createPhase1OpponentProgram = (
       ["node_3" as NodeId, position(580, 40)],
       ["node_4" as NodeId, position(830, 40)],
       ["node_5" as NodeId, position(1080, 100)],
-      ["node_6" as NodeId, position(580, 280)],
-      ["node_7" as NodeId, position(830, 280)],
     ]),
     comments: {},
   },

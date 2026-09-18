@@ -49,6 +49,13 @@ describe("Phase 1 Program", () => {
 
     expect(validateProgram(player, repository).diagnostics).toEqual([]);
     expect(validateProgram(opponent, repository).diagnostics).toEqual([]);
+    expect(
+      opponent.nodes.some(
+        (node) =>
+          repository.get("instruction", node.instructionId)
+            ?.implementationId === "fire",
+      ),
+    ).toBe(false);
     expect(runFixedBattle(player, opponent, repository)).toMatchObject({
       success: true,
     });
