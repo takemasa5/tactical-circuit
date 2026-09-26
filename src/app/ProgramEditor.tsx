@@ -69,13 +69,12 @@ export type BattleStartResult =
   | { readonly success: false; readonly message: string };
 
 const NODE_WIDTH = 190;
-const NODE_HEADER_HEIGHT = 52;
-const NODE_BASE_HEIGHT = 78;
-const NODE_PORTS_PADDING = 8;
-const NODE_PARAMETER_ROW_HEIGHT = 38;
-const NODE_PARAMETER_PADDING = 16;
-const OUTPUT_PORT_HEIGHT = 24;
-const OUTPUT_PORT_GAP = 4;
+const NODE_BASE_HEIGHT = 54;
+const NODE_PORTS_TOP = 7;
+const NODE_PARAMETER_ROW_HEIGHT = 22;
+const NODE_PARAMETER_PADDING = 12;
+const OUTPUT_PORT_HEIGHT = 18;
+const OUTPUT_PORT_GAP = 2;
 const INPUT_PORT_CENTER_Y = 24;
 const CANVAS_WIDTH = 2000;
 const CANVAS_HEIGHT = 1200;
@@ -425,7 +424,6 @@ export function ProgramEditor({
     const canvas = canvasRef.current;
     if (canvas === null) return;
     const handleWheel = (event: WheelEvent) => {
-      if (!event.ctrlKey && !event.metaKey) return;
       event.preventDefault();
       if (event.deltaY === 0) return;
       setZoomPercent((current) =>
@@ -548,13 +546,8 @@ export function ProgramEditor({
 
   const handleAddNode = (instruction: InstructionDefinition) => {
     const canvas = canvasRef.current;
-    const outputCount = instruction.outputPaths.length;
-    const portsHeight =
-      NODE_PORTS_PADDING * 2 +
-      outputCount * OUTPUT_PORT_HEIGHT +
-      Math.max(0, outputCount - 1) * OUTPUT_PORT_GAP;
     const estimatedHeight =
-      Math.max(NODE_BASE_HEIGHT, NODE_HEADER_HEIGHT + portsHeight) +
+      NODE_BASE_HEIGHT +
       (instruction.parameters.length > 0
         ? NODE_PARAMETER_PADDING +
           instruction.parameters.length * NODE_PARAMETER_ROW_HEIGHT
@@ -823,11 +816,10 @@ export function ProgramEditor({
       orderedOutputPaths(nodeId).findIndex(({ id }) => id === outputPathId),
     );
     return {
-      x: position.x + NODE_WIDTH,
+      x: position.x + NODE_WIDTH - 1,
       y:
         position.y +
-        NODE_HEADER_HEIGHT +
-        NODE_PORTS_PADDING +
+        NODE_PORTS_TOP +
         OUTPUT_PORT_HEIGHT / 2 +
         outputIndex * (OUTPUT_PORT_HEIGHT + OUTPUT_PORT_GAP),
     };
@@ -835,11 +827,6 @@ export function ProgramEditor({
 
   const nodeHeight = (nodeId: NodeId): number => {
     const node = program.nodes.find(({ id }) => id === nodeId);
-    const outputCount = orderedOutputPaths(nodeId).length;
-    const portsHeight =
-      NODE_PORTS_PADDING * 2 +
-      outputCount * OUTPUT_PORT_HEIGHT +
-      Math.max(0, outputCount - 1) * OUTPUT_PORT_GAP;
     const instruction =
       node === undefined ? undefined : instructionMap.get(node.instructionId);
     const unknownCount =
@@ -851,7 +838,7 @@ export function ProgramEditor({
           ).length;
     const parameterCount = (instruction?.parameters.length ?? 0) + unknownCount;
     return (
-      Math.max(NODE_BASE_HEIGHT, NODE_HEADER_HEIGHT + portsHeight) +
+      NODE_BASE_HEIGHT +
       (parameterCount > 0
         ? NODE_PARAMETER_PADDING + parameterCount * NODE_PARAMETER_ROW_HEIGHT
         : 0)
@@ -1356,7 +1343,7 @@ export function ProgramEditor({
                       }}
                     />
                     <header>
-                      <strong>
+                      <strong title={instruction?.displayName}>
                         {instruction?.displayName ?? "Unknown Instruction"}
                       </strong>
                       <small>{node.id}</small>
@@ -1392,15 +1379,12 @@ export function ProgramEditor({
                           {outputPath.displayName}
                         </button>
                       ))}
-                      {program.editorState.comments[node.id] !== undefined && (
-                        <span
-                          className="comment-indicator"
-                          title="コメントあり"
-                        >
-                          ●
-                        </span>
-                      )}
                     </div>
+                    {program.editorState.comments[node.id] !== undefined && (
+                      <span className="comment-indicator" title="コメントあり">
+                        ●
+                      </span>
+                    )}
                     {(instruction?.parameters.length ?? 0) +
                       Object.keys(node.parameterValues).filter(
                         (id) =>

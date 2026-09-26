@@ -197,7 +197,12 @@ h2 {
   position: relative;
   min-height: 0;
   overflow: auto;
+  scrollbar-width: none;
   background: #090f12;
+}
+
+.program-canvas::-webkit-scrollbar {
+  display: none;
 }
 
 .program-canvas.panning {
@@ -263,7 +268,7 @@ h2 {
   position: absolute;
   z-index: 2;
   width: 190px;
-  min-height: 78px;
+  min-height: 54px;
   border: 1px solid var(--line-bright);
   background: var(--panel-strong);
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
@@ -308,9 +313,20 @@ h2 {
   display: grid;
   height: 52px;
   gap: 2px;
-  padding: 9px 12px;
+  padding: 9px 84px 9px 12px;
   border-bottom: 1px solid var(--line);
   cursor: grab;
+}
+
+.program-node header strong,
+.program-node header small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.program-node header strong {
+  font-size: 0.82rem;
 }
 
 .program-node small {
@@ -319,21 +335,32 @@ h2 {
 }
 
 .node-ports {
+  position: absolute;
+  top: 6px;
+  right: 0;
   display: grid;
-  gap: 4px;
-  padding: 8px;
+  width: 76px;
+  gap: 2px;
 }
 
 .node-parameters {
   margin: 0;
-  padding: 8px;
-  border-top: 1px solid var(--line);
-  font-size: 0.7rem;
+  padding: 6px 8px;
+  font-size: 0.68rem;
 }
 
 .node-parameters > div {
-  height: 38px;
-  overflow-x: auto;
+  display: grid;
+  grid-template-columns: minmax(0, 100px) minmax(0, 1fr);
+  align-items: center;
+  height: 22px;
+  gap: 4px;
+}
+
+.node-parameters dt,
+.node-parameters dd {
+  overflow: hidden;
+  text-overflow: ellipsis;
   white-space: nowrap;
 }
 
@@ -347,35 +374,47 @@ h2 {
 
 .input-port {
   position: absolute;
-  top: 17px;
-  left: -7px;
-  width: 14px;
-  min-height: 14px;
+  top: 15px;
+  left: -9px;
+  width: 16px;
+  height: 16px;
+  min-height: 16px;
   padding: 0;
-  border-radius: 50%;
-  border-color: var(--accent);
-  background: var(--bg);
+  border: 0;
+  background: transparent;
 }
 
-.input-port.connected {
+.input-port::after {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 10px;
+  height: 10px;
+  border: 1px solid var(--accent);
+  border-radius: 50%;
+  background: var(--bg);
+  content: "";
+}
+
+.input-port.connected::after {
   background: var(--accent);
 }
 
 .output-port {
   position: relative;
-  height: 24px;
-  min-height: 24px;
-  padding: 2px 8px;
+  height: 18px;
+  min-height: 18px;
+  padding: 0 6px 0 2px;
   text-align: right;
-  font-size: 0.74rem;
+  font-size: 0.62rem;
 }
 
 .output-port::after {
   position: absolute;
   top: 50%;
-  right: -16px;
-  width: 14px;
-  height: 14px;
+  right: -5px;
+  width: 10px;
+  height: 10px;
   border: 1px solid var(--accent);
   border-radius: 50%;
   background: var(--bg);
@@ -394,8 +433,8 @@ h2 {
 
 .comment-indicator {
   position: absolute;
-  top: 8px;
-  right: 8px;
+  top: 34px;
+  right: 83px;
   color: var(--warning);
   font-size: 0.58rem;
 }

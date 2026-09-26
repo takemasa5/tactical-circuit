@@ -306,8 +306,8 @@ describe("ProgramEditor", () => {
     });
 
     const preview = container.querySelector("line.connection-preview");
-    expect(preview).toHaveAttribute("x1", "270");
-    expect(preview).toHaveAttribute("y1", "172");
+    expect(preview).toHaveAttribute("x1", "269");
+    expect(preview).toHaveAttribute("y1", "116");
     expect(preview).toHaveAttribute("x2", "400");
     expect(preview).toHaveAttribute("y2", "250");
 
@@ -386,10 +386,10 @@ describe("ProgramEditor", () => {
     const sourceNode = detectedPort.closest("article");
     const sourceX = Number.parseInt(sourceNode?.style.left ?? "", 10);
     const sourceY = Number.parseInt(sourceNode?.style.top ?? "", 10);
-    expect(detected).toHaveAttribute("x1", String(sourceX + 190));
-    expect(detected).toHaveAttribute("y1", String(sourceY + 72));
-    expect(notDetected).toHaveAttribute("x1", String(sourceX + 190));
-    expect(notDetected).toHaveAttribute("y1", String(sourceY + 100));
+    expect(detected).toHaveAttribute("x1", String(sourceX + 189));
+    expect(detected).toHaveAttribute("y1", String(sourceY + 16));
+    expect(notDetected).toHaveAttribute("x1", String(sourceX + 189));
+    expect(notDetected).toHaveAttribute("y1", String(sourceY + 36));
 
     fireEvent.click(detectedHitArea!);
     expect(detected).toHaveClass("selected");
@@ -410,11 +410,11 @@ describe("ProgramEditor", () => {
 
     await user.click(screen.getByRole("button", { name: "Zoom Out" }));
     expect(screen.getByLabelText("Zoom倍率")).toHaveTextContent("100%");
-    fireEvent.wheel(screen.getByRole("region", { name: "Programキャンバス" }), {
-      ctrlKey: true,
-      deltaY: -100,
-    });
+    const canvas = screen.getByRole("region", { name: "Programキャンバス" });
+    fireEvent.wheel(canvas, { deltaY: -100 });
     expect(screen.getByLabelText("Zoom倍率")).toHaveTextContent("110%");
+    fireEvent.wheel(canvas, { deltaY: 100 });
+    expect(screen.getByLabelText("Zoom倍率")).toHaveTextContent("100%");
   });
 
   it("新しいNodeを表示中のキャンバス中央に置き、設定値を常時表示する", async () => {
@@ -430,9 +430,13 @@ describe("ProgramEditor", () => {
 
     await user.click(screen.getByRole("button", { name: "Turnaction" }));
     const addedNode = container.querySelectorAll("article.program-node")[1];
-    expect(addedNode).toHaveStyle({ left: "405px", top: "277px" });
+    expect(addedNode).toHaveStyle({ left: "405px", top: "306px" });
     expect(addedNode?.querySelector(".node-parameters")).toHaveTextContent(
       "Degree90",
+    );
+    expect(addedNode?.querySelector(".node-parameters > div")).toHaveAttribute(
+      "title",
+      "Degree: 90",
     );
 
     await user.click(screen.getByRole("button", { name: "Endcontrol" }));
