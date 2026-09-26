@@ -14,7 +14,8 @@ import {
 } from "../domain/masterData/repository";
 import { createProgram as createEditorProgram } from "../domain/editor/programOperations";
 import { loadProgram, saveProgram } from "../domain/program/codec";
-import { ProgramEditor } from "./ProgramEditor";
+import type { Program } from "../domain/program/models";
+import { ProgramEditor, type BattleStartResult } from "./ProgramEditor";
 
 class MemoryStorage implements Storage {
   readonly #values = new Map<string, string>();
@@ -89,14 +90,14 @@ const instructions: readonly InstructionDefinition[] = [
     outputPaths: [
       {
         id: "detected",
-        displayName: "Detected",
+        displayName: "Found",
         description: "敵を検出した場合に進みます",
         required: true,
         displayOrder: 0 as Int32,
       },
       {
         id: "not_detected",
-        displayName: "Not Detected",
+        displayName: "None",
         description: "",
         required: true,
         displayOrder: 1 as Int32,
@@ -159,7 +160,9 @@ const repository = repositoryResult.data;
 const fixedProgramId =
   "program_550e8400-e29b-41d4-a716-446655440000" as ProgramId;
 
-const renderEditor = () =>
+const renderEditor = (
+  onStartBattle?: (program: Program) => BattleStartResult,
+) =>
   render(
     <ProgramEditor
       instructions={instructions}
@@ -167,6 +170,7 @@ const renderEditor = () =>
       repository={repository}
       createId={() => fixedProgramId}
       now={() => "2026-06-29T00:00:00.000Z"}
+      {...(onStartBattle === undefined ? {} : { onStartBattle })}
     />,
   );
 
@@ -211,10 +215,9 @@ describe("ProgramEditor", () => {
       screen.getByRole("button", { name: "Move Forwardaction" }),
     );
 
-    expect(screen.getByText("Speed")).toHaveAttribute(
-      "title",
-      "移動速度を指定します",
-    );
+    expect(
+      screen.getByRole("textbox", { name: "Speed" }).previousElementSibling,
+    ).toHaveAttribute("title", "移動速度を指定します");
   });
 
   it("編集後の診断集計を更新し、診断対象Nodeを強調する", async () => {
@@ -238,6 +241,29 @@ describe("ProgramEditor", () => {
 
     expect(screen.getByText("Error 0 / Warning 0")).toBeInTheDocument();
     expect(screen.getByText("問題はありません")).toBeInTheDocument();
+  });
+
+  it("Validator ErrorがあるProgramでは戦闘を開始しない", () => {
+    const startBattle = vi.fn(() => ({ success: true }) as const);
+    renderEditor(startBattle);
+
+    expect(screen.getByRole("button", { name: "戦闘開始" })).toBeDisabled();
+    expect(screen.getByText("Error 1 / Warning 0")).toBeInTheDocument();
+    expect(startBattle).not.toHaveBeenCalled();
+  });
+
+  it("診断がないProgramだけを戦闘開始処理へ渡す", async () => {
+    const user = userEvent.setup();
+    const startBattle = vi.fn(() => ({ success: true }) as const);
+    renderEditor(startBattle);
+
+    await user.click(screen.getByRole("button", { name: "Endcontrol" }));
+    fireEvent.pointerDown(screen.getByRole("button", { name: "Next" }));
+    fireEvent.pointerUp(screen.getByRole("button", { name: "node_2へ接続" }));
+    await user.click(screen.getByRole("button", { name: "戦闘開始" }));
+
+    expect(startBattle).toHaveBeenCalledTimes(1);
+    expect(screen.getByText("固定対戦を生成しました")).toBeInTheDocument();
   });
 
   it("0以上360未満の範囲外の角度を値域エラーにしない", async () => {
@@ -280,8 +306,8 @@ describe("ProgramEditor", () => {
     });
 
     const preview = container.querySelector("line.connection-preview");
-    expect(preview).toHaveAttribute("x1", "270");
-    expect(preview).toHaveAttribute("y1", "172");
+    expect(preview).toHaveAttribute("x1", "269");
+    expect(preview).toHaveAttribute("y1", "116");
     expect(preview).toHaveAttribute("x2", "400");
     expect(preview).toHaveAttribute("y2", "250");
 
@@ -333,7 +359,7 @@ describe("ProgramEditor", () => {
     await user.click(screen.getByRole("button", { name: "Endcontrol" }));
     await user.click(screen.getByRole("button", { name: "Endcontrol" }));
 
-    const detectedPort = screen.getByRole("button", { name: "Detected" });
+    const detectedPort = screen.getByRole("button", { name: "Found" });
     const node3InputPort = screen.getByRole("button", {
       name: "node_3へ接続",
     });
@@ -342,7 +368,7 @@ describe("ProgramEditor", () => {
 
     fireEvent.pointerDown(detectedPort);
     fireEvent.pointerUp(node3InputPort);
-    fireEvent.pointerDown(screen.getByRole("button", { name: "Not Detected" }));
+    fireEvent.pointerDown(screen.getByRole("button", { name: "None" }));
     fireEvent.pointerUp(screen.getByRole("button", { name: "node_4へ接続" }));
 
     expect(detectedPort).toHaveClass("connected");
@@ -357,10 +383,13 @@ describe("ProgramEditor", () => {
     const detectedHitArea = container.querySelector(
       'line.connection-hit-area[data-output-path-id="detected"]',
     );
-    expect(detected).toHaveAttribute("x1", "510");
-    expect(detected).toHaveAttribute("y1", "172");
-    expect(notDetected).toHaveAttribute("x1", "510");
-    expect(notDetected).toHaveAttribute("y1", "200");
+    const sourceNode = detectedPort.closest("article");
+    const sourceX = Number.parseInt(sourceNode?.style.left ?? "", 10);
+    const sourceY = Number.parseInt(sourceNode?.style.top ?? "", 10);
+    expect(detected).toHaveAttribute("x1", String(sourceX + 189));
+    expect(detected).toHaveAttribute("y1", String(sourceY + 16));
+    expect(notDetected).toHaveAttribute("x1", String(sourceX + 189));
+    expect(notDetected).toHaveAttribute("y1", String(sourceY + 36));
 
     fireEvent.click(detectedHitArea!);
     expect(detected).toHaveClass("selected");
@@ -381,6 +410,74 @@ describe("ProgramEditor", () => {
 
     await user.click(screen.getByRole("button", { name: "Zoom Out" }));
     expect(screen.getByLabelText("Zoom倍率")).toHaveTextContent("100%");
+    const canvas = screen.getByRole("region", { name: "Programキャンバス" });
+    fireEvent.wheel(canvas, { deltaY: -100 });
+    expect(screen.getByLabelText("Zoom倍率")).toHaveTextContent("110%");
+    fireEvent.wheel(canvas, { deltaY: 100 });
+    expect(screen.getByLabelText("Zoom倍率")).toHaveTextContent("100%");
+  });
+
+  it("新しいNodeを表示中のキャンバス中央に置き、設定値を常時表示する", async () => {
+    const user = userEvent.setup();
+    const { container } = renderEditor();
+    const canvas = screen.getByRole("region", { name: "Programキャンバス" });
+    Object.defineProperties(canvas, {
+      clientWidth: { configurable: true, value: 400 },
+      clientHeight: { configurable: true, value: 300 },
+    });
+    canvas.scrollLeft = 300;
+    canvas.scrollTop = 200;
+
+    await user.click(screen.getByRole("button", { name: "Turnaction" }));
+    const addedNode = container.querySelectorAll("article.program-node")[1];
+    expect(addedNode).toHaveStyle({ left: "405px", top: "306px" });
+    expect(addedNode?.querySelector(".node-parameters")).toHaveTextContent(
+      "Degree90",
+    );
+    expect(addedNode?.querySelector(".node-parameters > div")).toHaveAttribute(
+      "title",
+      "Degree: 90",
+    );
+
+    await user.click(screen.getByRole("button", { name: "Endcontrol" }));
+    expect(addedNode?.querySelector(".node-parameters")).toHaveTextContent(
+      "Degree90",
+    );
+  });
+
+  it("右ボタンドラッグでProgramキャンバスだけをスクロールする", () => {
+    renderEditor();
+    const canvas = screen.getByRole("region", { name: "Programキャンバス" });
+    const node = screen.getByText("node_1").closest("article");
+    if (node === null) throw new Error("Start Nodeが見つかりません");
+    Object.defineProperties(canvas, {
+      setPointerCapture: { value: vi.fn() },
+      hasPointerCapture: { value: vi.fn(() => true) },
+      releasePointerCapture: { value: vi.fn() },
+    });
+    canvas.scrollLeft = 300;
+    canvas.scrollTop = 200;
+
+    fireEvent.pointerDown(node, {
+      button: 2,
+      pointerId: 7,
+      clientX: 100,
+      clientY: 90,
+    });
+    fireEvent.pointerMove(canvas, {
+      pointerId: 7,
+      clientX: 60,
+      clientY: 50,
+    });
+
+    expect(canvas).toHaveClass("panning");
+    expect(canvas.scrollLeft).toBe(340);
+    expect(canvas.scrollTop).toBe(240);
+    expect(node).toHaveStyle({ left: "80px", top: "100px" });
+
+    fireEvent.pointerUp(canvas, { pointerId: 7 });
+    expect(canvas).not.toHaveClass("panning");
+    expect(fireEvent.contextMenu(canvas)).toBe(false);
   });
 
   it("localStorageへ保存する", async () => {
@@ -393,11 +490,32 @@ describe("ProgramEditor", () => {
     expect(screen.getByText("保存済み")).toBeInTheDocument();
   });
 
+  it("Node選択中でもProgram名を設定し、保存済み一覧に名前を表示する", async () => {
+    const user = userEvent.setup();
+    renderEditor();
+    await user.click(
+      screen.getByRole("button", { name: "node_1の診断を表示" }),
+    );
+
+    const nameInput = screen.getByRole("textbox", { name: "Program名" });
+    await user.clear(nameInput);
+    await user.type(nameInput, "旋回して前進");
+    await user.click(screen.getByRole("button", { name: "保存" }));
+
+    const selection = screen.getByRole("combobox", {
+      name: "保存済みProgram",
+    });
+    expect(selection).toHaveDisplayValue("旋回して前進");
+    expect(
+      selection.querySelector(`option[value="${fixedProgramId}"]`),
+    ).toHaveTextContent("旋回して前進");
+  });
+
   it("入力欄の編集中も保存ショートカットでlocalStorageへ保存する", async () => {
     const user = userEvent.setup();
     renderEditor();
 
-    const nameInput = screen.getByRole("textbox", { name: "名前" });
+    const nameInput = screen.getByRole("textbox", { name: "Program名" });
     await user.clear(nameInput);
     await user.type(nameInput, "Ctrl Saved");
     await user.keyboard("{Control>}s{/Control}");
@@ -412,7 +530,9 @@ describe("ProgramEditor", () => {
     expect(ctrlSaved.data.metadata.name).toBe("Ctrl Saved");
 
     window.localStorage.clear();
-    const updatedNameInput = screen.getByRole("textbox", { name: "名前" });
+    const updatedNameInput = screen.getByRole("textbox", {
+      name: "Program名",
+    });
     await user.clear(updatedNameInput);
     await user.type(updatedNameInput, "Meta Saved");
     await user.keyboard("{Meta>}s{/Meta}");

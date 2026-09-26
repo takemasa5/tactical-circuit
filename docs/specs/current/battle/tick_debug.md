@@ -1,0 +1,11 @@
+# Battle Tick実行経路表示
+
+Battle画面は表示中のSnapshotに対応するTickのAIデバッグ情報を読み取り、Robotごとに正常終了したNodeを実行順に表示する。条件分岐のNodeでは、実際に選択した出力パスの表示名と接続先Node IDを表示する。
+
+初期SnapshotはTick更新前であり、AI実行前として表示する。撃破済みなどでAIが実行されていないRobotについて、実行経路を作り出さない。AI実行時エラーはそのTickの情報として表示する。
+
+表示処理は生成済みSnapshotとデバッグ情報を変更せず、戦闘結果を再計算しない。
+
+表示中のTickで実行したDetect Enemy Nodeについて、Map上に判定範囲を表示する。範囲の原点と向きには、そのTickの開始時Snapshotにある実行Robotの位置と方向を使用する。角度はRobotの正面を0度として`center_degree ± sensing_degree`とし、`sensing_degree = 180`は全周として描く。距離はNodeの`distance`と装備Sensorの`detectionDistance`の小さい方を使用する。Phase 1固定対戦のSensorは全周のため、Sensor視野角による追加の制限はない。
+
+実行経路にはDetect Enemy Nodeごとに設定距離、Sensor上限、実際の判定距離、および角度を表示する。初期SnapshotやDetect Enemyを実行していないTickには範囲を表示しない。範囲表示は判定の幾何学的な目安であり、境界の整数丸めは表さない。障害物による遮蔽やRobotの状態も表さない。

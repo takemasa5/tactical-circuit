@@ -6,6 +6,7 @@ import {
   type Position,
 } from "../data/common";
 import type { DataRepository } from "../masterData/repository";
+import type { EngineDefinition } from "../masterData/models";
 import type { SlotId } from "../robotDesign/models";
 import {
   DIRECTION_SCALE,
@@ -79,15 +80,77 @@ const withMovement = (
   current: CurrentAction<MovementRequest, MovementProgress> | null,
   position: Position = robot.position,
   velocity: Position = robot.velocity,
+  next: MovementRequest | null = robot.actionState.movement.next,
 ): RobotState => ({
   ...robot,
   position,
   velocity,
   actionState: {
     ...robot.actionState,
-    movement: { current, next: null },
+    movement: { current, next },
   },
 });
+
+const preparingNext = (
+  request: MovementRequest | null,
+): CurrentAction<MovementRequest, MovementProgress> | null =>
+  request === null
+    ? null
+    : {
+        request: { ...request },
+        phase: "preparing",
+        phaseElapsedTicks: 0 as Int32,
+        progress: null,
+      };
+
+const finishMovement = (
+  robot: RobotState,
+  current: CurrentAction<MovementRequest, MovementProgress>,
+  recoveryTicks: Int32,
+  position: Position,
+): RobotState => {
+  const next = robot.actionState.movement.next;
+  return recoveryTicks > 0
+    ? withMovement(
+        robot,
+        {
+          request: { ...current.request },
+          phase: "recovering",
+          phaseElapsedTicks: 0 as Int32,
+          progress: null,
+        },
+        position,
+        { x: 0 as Int32, y: 0 as Int32 },
+      )
+    : withMovement(
+        robot,
+        preparingNext(next),
+        position,
+        { x: 0 as Int32, y: 0 as Int32 },
+        null,
+      );
+};
+
+const movementTiming = (
+  engine: EngineDefinition,
+  request: MovementRequest,
+): { readonly prepare: Int32; readonly recovery: Int32 } | null => {
+  switch (request.type) {
+    case "forward":
+      return {
+        prepare: engine.forwardPrepareTicks,
+        recovery: engine.forwardRecoveryTicks,
+      };
+    case "turn_left":
+    case "turn_right":
+      return {
+        prepare: engine.turnPrepareTicks,
+        recovery: engine.turnRecoveryTicks,
+      };
+    default:
+      return null;
+  }
+};
 
 const beginAction = (
   robot: RobotState,
@@ -141,6 +204,7 @@ const updateForward = (
     { readonly phase: "executing" }
   >,
   speed: Int32,
+  recoveryTicks: Int32,
   bodySize: { readonly width: Int32; readonly height: Int32 },
   mapSize: { readonly width: Int32; readonly height: Int32 },
 ): SimulatorResult<RobotState> => {
@@ -155,10 +219,7 @@ const updateForward = (
   if (remaining <= 0 || speed <= 0) {
     return {
       success: true,
-      data: withMovement(robot, null, robot.position, {
-        x: 0 as Int32,
-        y: 0 as Int32,
-      }),
+      data: finishMovement(robot, current, recoveryTicks, robot.position),
     };
   }
 
@@ -206,14 +267,12 @@ const updateForward = (
 
   return {
     success: true,
-    data: withMovement(
-      robot,
-      nextCurrent,
-      position,
-      completed
-        ? { x: 0 as Int32, y: 0 as Int32 }
-        : { x: velocityX.data, y: velocityY.data },
-    ),
+    data: completed
+      ? finishMovement(robot, current, recoveryTicks, position)
+      : withMovement(robot, nextCurrent, position, {
+          x: velocityX.data,
+          y: velocityY.data,
+        }),
   };
 };
 
@@ -224,6 +283,7 @@ const updateTurn = (
     { readonly phase: "executing" }
   >,
   turnSpeed: Int32,
+  recoveryTicks: Int32,
 ): SimulatorResult<RobotState> => {
   if (
     (current.request.type !== "turn_left" &&
@@ -239,10 +299,7 @@ const updateTurn = (
   if (remaining === 0 || turnSpeed <= 0) {
     return {
       success: true,
-      data: withMovement(robot, null, robot.position, {
-        x: 0 as Int32,
-        y: 0 as Int32,
-      }),
+      data: finishMovement(robot, current, recoveryTicks, robot.position),
     };
   }
 
@@ -256,17 +313,17 @@ const updateTurn = (
   return {
     success: true,
     data: {
-      ...withMovement(
-        robot,
-        completed
-          ? null
-          : {
+      ...(completed
+        ? finishMovement(robot, current, recoveryTicks, robot.position)
+        : withMovement(
+            robot,
+            {
               ...current,
               phaseElapsedTicks: (current.phaseElapsedTicks + 1) as Int32,
             },
-        robot.position,
-        { x: 0 as Int32, y: 0 as Int32 },
-      ),
+            robot.position,
+            { x: 0 as Int32, y: 0 as Int32 },
+          )),
       direction,
     },
   };
@@ -280,15 +337,67 @@ export const updateMovementAction = (
 ): SimulatorResult<RobotState> => {
   const current = robot.actionState.movement.current;
   if (current === null) return { success: true, data: robot };
-  if (current.phase === "recovering") {
-    return movementError("Phase 1のmovement行動はrecoveringを保持しません");
-  }
   const equipment = resolveEquipment(gameSession, robot, repository);
   const map = repository.get("map", gameSession.mapId);
   if (equipment === undefined || map === undefined) {
     return movementError(
       `Robot ${robot.id}のEngine、Body、またはMapを解決できません`,
     );
+  }
+  const timing = movementTiming(equipment.engine, current.request);
+  if (timing === null) {
+    return movementError(
+      `Phase 1で未対応のmovement要求です: ${current.request.type}`,
+    );
+  }
+  if (current.phase === "recovering") {
+    const next = robot.actionState.movement.next;
+    if (timing.recovery === 0) {
+      const promoted = withMovement(
+        robot,
+        preparingNext(next),
+        robot.position,
+        { x: 0 as Int32, y: 0 as Int32 },
+        null,
+      );
+      return next === null
+        ? { success: true, data: promoted }
+        : updateMovementAction(gameSession, promoted, repository);
+    }
+    const elapsed = checkedInt32(current.phaseElapsedTicks + 1);
+    if (!elapsed.success) return elapsed;
+    return {
+      success: true,
+      data:
+        elapsed.data >= timing.recovery
+          ? withMovement(
+              robot,
+              preparingNext(next),
+              robot.position,
+              { x: 0 as Int32, y: 0 as Int32 },
+              null,
+            )
+          : withMovement(
+              robot,
+              { ...current, phaseElapsedTicks: elapsed.data },
+              robot.position,
+              { x: 0 as Int32, y: 0 as Int32 },
+            ),
+    };
+  }
+  if (
+    current.phase === "preparing" &&
+    current.phaseElapsedTicks < timing.prepare
+  ) {
+    const elapsed = checkedInt32(current.phaseElapsedTicks + 1);
+    if (!elapsed.success) return elapsed;
+    return {
+      success: true,
+      data: withMovement(robot, {
+        ...current,
+        phaseElapsedTicks: elapsed.data,
+      }),
+    };
   }
   const executing =
     current.phase === "preparing" ? beginAction(robot, current) : null;
@@ -302,8 +411,14 @@ export const updateMovementAction = (
         robot,
         action,
         equipment.engine.maxForwardSpeed,
+        timing.recovery,
         equipment.body.size,
         map.size,
       )
-    : updateTurn(robot, action, equipment.engine.turnSpeedDegree);
+    : updateTurn(
+        robot,
+        action,
+        equipment.engine.turnSpeedDegree,
+        timing.recovery,
+      );
 };

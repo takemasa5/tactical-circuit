@@ -262,6 +262,14 @@ export type AIRuntimeError = {
 /** `docs/specs/current/ai/00_overview.md`のゲーム進行へ影響しないデバッグ情報。 */
 export type AIDebugInfo = {
   readonly executionTrace: readonly string[];
+  readonly executedSteps: readonly {
+    readonly nodeId: NodeId;
+    readonly instructionId: import("../masterData/models").InstructionId;
+    readonly instructionName: string;
+    readonly selectedOutputPathId: string | null;
+    readonly selectedOutputPathName: string | null;
+    readonly nextNodeId: NodeId | null;
+  }[];
   readonly terminationReason: string;
   readonly runtimeError: AIRuntimeError | null;
   readonly cpuUsed: Int32;

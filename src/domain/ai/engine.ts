@@ -2,6 +2,7 @@ import type { Int32 } from "../data/common";
 import type { NodeId } from "../data/ids";
 import type { DataRepository } from "../masterData/repository";
 import type {
+  AIDebugInfo,
   AIExecutionInput,
   AIExecutionOutput,
   AIRuntimeError,
@@ -36,6 +37,7 @@ type RunState = {
   context: ExecutionContext;
   nextNodeId: NodeId;
   trace: string[];
+  executedSteps: AIDebugInfo["executedSteps"][number][];
   executedNodeCount: number;
   zeroCostNodeCount: number;
 };
@@ -63,6 +65,7 @@ const output = (
   },
   debugInfo: {
     executionTrace: state.trace,
+    executedSteps: state.executedSteps,
     terminationReason,
     runtimeError: error,
     cpuUsed: state.context.cpuUsed,
@@ -82,6 +85,7 @@ export const createAIEngine = (
       context: createExecutionContext(program, executionInput, gameRule),
       nextNodeId: initialNodeId,
       trace: [],
+      executedSteps: [],
       executedNodeCount: 0,
       zeroCostNodeCount: 0,
     };
@@ -181,6 +185,17 @@ export const createAIEngine = (
       state.context = commitCpuCost(applied.context, definition.cpuCost);
       state.executedNodeCount += 1;
       if (definition.cpuCost === 0) state.zeroCostNodeCount += 1;
+      state.executedSteps.push({
+        nodeId: node.id,
+        instructionId: node.instructionId,
+        instructionName: definition.displayName,
+        selectedOutputPathId: result.selectedOutputPathId ?? null,
+        selectedOutputPathName:
+          definition.outputPaths.find(
+            ({ id }) => id === result.selectedOutputPathId,
+          )?.displayName ?? null,
+        nextNodeId: result.nextNodeId,
+      });
 
       if (result.interruptTick) {
         return output(

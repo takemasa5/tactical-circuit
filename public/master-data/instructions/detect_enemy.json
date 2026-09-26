@@ -41,14 +41,14 @@
     "outputPaths": [
       {
         "id": "detected",
-        "displayName": "Detected",
+        "displayName": "Found",
         "description": "敵機が範囲内に存在した場合",
         "required": true,
         "displayOrder": 0
       },
       {
         "id": "not_detected",
-        "displayName": "Not Detected",
+        "displayName": "None",
         "description": "範囲内に敵機が存在しなかった場合",
         "required": true,
         "displayOrder": 1

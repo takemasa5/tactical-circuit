@@ -33,9 +33,10 @@ import {
   exportProgram,
   hasUnsavedChanges,
   importProgram,
-  listStoredProgramIds,
+  listStoredPrograms,
   loadProgramFromStorage,
   saveProgramToStorage,
+  type StoredProgramSummary,
 } from "../domain/editor/persistence";
 import {
   addNode,
@@ -64,12 +65,17 @@ import type { DataRepository } from "../domain/masterData/repository";
 import type { ParameterValue, Program } from "../domain/program/models";
 import { validateProgram } from "../domain/validator/validateProgram";
 
+export type BattleStartResult =
+  | { readonly success: true }
+  | { readonly success: false; readonly message: string };
+
 const NODE_WIDTH = 190;
-const NODE_HEADER_HEIGHT = 52;
-const NODE_BASE_HEIGHT = 78;
-const NODE_PORTS_PADDING = 8;
-const OUTPUT_PORT_HEIGHT = 24;
-const OUTPUT_PORT_GAP = 4;
+const NODE_BASE_HEIGHT = 54;
+const NODE_PORTS_TOP = 7;
+const NODE_PARAMETER_ROW_HEIGHT = 22;
+const NODE_PARAMETER_PADDING = 12;
+const OUTPUT_PORT_HEIGHT = 18;
+const OUTPUT_PORT_GAP = 2;
 const INPUT_PORT_CENTER_Y = 24;
 const CANVAS_WIDTH = 2000;
 const CANVAS_HEIGHT = 1200;
@@ -82,6 +88,8 @@ type ProgramEditorProps = {
   readonly instructions: readonly InstructionDefinition[];
   readonly startInstructionId: InstructionId;
   readonly repository: DataRepository;
+  readonly initialProgram?: Program;
+  readonly onStartBattle?: (program: Program) => BattleStartResult;
   readonly createId?: () => ProgramId;
   readonly now?: () => string;
 };
@@ -100,6 +108,15 @@ type SelectionBox = {
   readonly currentX: number;
   readonly currentY: number;
   readonly additive: boolean;
+};
+
+/** `docs/specs/current/editor/layout.md`の右ボタンPan中だけ保持する表示状態。 */
+type CanvasPanState = {
+  readonly pointerId: number;
+  readonly startX: number;
+  readonly startY: number;
+  readonly scrollLeft: number;
+  readonly scrollTop: number;
 };
 
 /** `docs/specs/current/editor/connections.md`の接続ドラッグ中だけ保持する表示状態。 */
@@ -187,6 +204,23 @@ const numericTypes = new Set([
   "heat",
   "ammunition",
 ]);
+
+const parameterDisplayValue = (value: ParameterValue | undefined): string => {
+  if (value === undefined) return "未設定";
+  if (typeof value !== "object") return String(value);
+  switch (value.type) {
+    case "register_reference":
+      return value.registerName;
+    case "flag_reference":
+      return value.flagName;
+    case "memory_reference":
+      return value.indexRegisterName;
+    case "node_reference":
+      return value.nodeId;
+    case "master_data_reference":
+      return value.id;
+  }
+};
 
 const ParameterField = ({
   definition,
@@ -333,6 +367,8 @@ export function ProgramEditor({
   instructions,
   startInstructionId,
   repository,
+  initialProgram,
+  onStartBattle,
   createId = defaultCreateId,
   now = () => new Date().toISOString(),
 }: ProgramEditorProps) {
@@ -342,7 +378,9 @@ export function ProgramEditor({
     [instructions],
   );
   const [history, setHistory] = useState<HistoryState>(() =>
-    createHistory(createInitialProgram(startInstructionId, createId, now)),
+    createHistory(
+      initialProgram ?? createInitialProgram(startInstructionId, createId, now),
+    ),
   );
   const program = history.present;
   const programRef = useRef(program);
@@ -352,12 +390,16 @@ export function ProgramEditor({
   const [selection, setSelection] = useState<EditorSelection>(emptySelection);
   const [clipboard, setClipboard] = useState<EditorClipboard | null>(null);
   const [baselineJson, setBaselineJson] = useState<string | null>(null);
-  const [message, setMessage] = useState("新しいProgramを作成しました");
-  const [storedProgramIds, setStoredProgramIds] = useState<
-    readonly ProgramId[]
+  const [message, setMessage] = useState(
+    initialProgram === undefined
+      ? "新しいProgramを作成しました"
+      : "プレイヤー用サンプルProgramを表示しています",
+  );
+  const [storedPrograms, setStoredPrograms] = useState<
+    readonly StoredProgramSummary[]
   >(() => {
     try {
-      const result = listStoredProgramIds(window.localStorage);
+      const result = listStoredPrograms(window.localStorage);
       return result.success ? result.data : [];
     } catch {
       return [];
@@ -372,9 +414,33 @@ export function ProgramEditor({
     Readonly<Record<NodeId, Position>>
   >({});
   const [selectionBox, setSelectionBox] = useState<SelectionBox | null>(null);
+  const canvasPanRef = useRef<CanvasPanState | null>(null);
+  const [isCanvasPanning, setIsCanvasPanning] = useState(false);
   const [zoomPercent, setZoomPercent] = useState(100);
   const importInputRef = useRef<HTMLInputElement>(null);
+  const canvasRef = useRef<HTMLElement>(null);
   const zoom = zoomPercent / 100;
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (canvas === null) return;
+    const handleWheel = (event: WheelEvent) => {
+      event.preventDefault();
+      if (event.deltaY === 0) return;
+      setZoomPercent((current) =>
+        Math.max(
+          MIN_ZOOM_PERCENT,
+          Math.min(
+            MAX_ZOOM_PERCENT,
+            current +
+              (event.deltaY < 0 ? ZOOM_STEP_PERCENT : -ZOOM_STEP_PERCENT),
+          ),
+        ),
+      );
+    };
+    canvas.addEventListener("wheel", handleWheel, { passive: false });
+    return () => canvas.removeEventListener("wheel", handleWheel);
+  }, []);
 
   const dirty = hasUnsavedChanges(baselineJson, program);
   const selectedNode =
@@ -413,6 +479,23 @@ export function ProgramEditor({
     });
   };
 
+  const handleStartBattle = () => {
+    if (errorCount > 0) {
+      setMessage("Validator Errorがあるため戦闘を開始できません");
+      return;
+    }
+    if (onStartBattle === undefined) {
+      setMessage("戦闘開始機能を利用できません");
+      return;
+    }
+    const result = onStartBattle(program);
+    setMessage(
+      result.success
+        ? "固定対戦を生成しました"
+        : `戦闘を開始できません: ${result.message}`,
+    );
+  };
+
   const getStorage = (): Storage | null => {
     try {
       return window.localStorage;
@@ -425,8 +508,8 @@ export function ProgramEditor({
   const refreshStoredPrograms = () => {
     const storage = getStorage();
     if (storage === null) return;
-    const result = listStoredProgramIds(storage);
-    if (result.success) setStoredProgramIds(result.data);
+    const result = listStoredPrograms(storage);
+    if (result.success) setStoredPrograms(result.data);
     else setMessage(result.message);
   };
 
@@ -463,12 +546,40 @@ export function ProgramEditor({
   };
 
   const handleAddNode = (instruction: InstructionDefinition) => {
+    const canvas = canvasRef.current;
+    const estimatedHeight =
+      NODE_BASE_HEIGHT +
+      (instruction.parameters.length > 0
+        ? NODE_PARAMETER_PADDING +
+          instruction.parameters.length * NODE_PARAMETER_ROW_HEIGHT
+        : 0);
+    const centerX =
+      canvas === null || canvas.clientWidth === 0
+        ? CANVAS_WIDTH / 2
+        : (canvas.scrollLeft + canvas.clientWidth / 2) / zoom;
+    const centerY =
+      canvas === null || canvas.clientHeight === 0
+        ? CANVAS_HEIGHT / 2
+        : (canvas.scrollTop + canvas.clientHeight / 2) / zoom;
     const result = addNode(
       program,
       instruction,
       {
-        x: (80 + (program.nodes.length % 3) * 240) as Int32,
-        y: (100 + Math.floor(program.nodes.length / 3) * 160) as Int32,
+        x: Math.round(
+          Math.max(
+            0,
+            Math.min(CANVAS_WIDTH - NODE_WIDTH, centerX - NODE_WIDTH / 2),
+          ),
+        ) as Int32,
+        y: Math.round(
+          Math.max(
+            0,
+            Math.min(
+              CANVAS_HEIGHT - estimatedHeight,
+              centerY - estimatedHeight / 2,
+            ),
+          ),
+        ) as Int32,
       },
       now(),
     );
@@ -629,6 +740,7 @@ export function ProgramEditor({
   });
 
   const startDrag = (event: ReactPointerEvent<HTMLElement>, nodeId: NodeId) => {
+    if (event.button !== 0) return;
     if ((event.target as HTMLElement).closest("button") !== null) return;
     let selected: ReadonlySet<NodeId>;
     if (event.shiftKey) {
@@ -705,23 +817,33 @@ export function ProgramEditor({
       orderedOutputPaths(nodeId).findIndex(({ id }) => id === outputPathId),
     );
     return {
-      x: position.x + NODE_WIDTH,
+      x: position.x + NODE_WIDTH - 1,
       y:
         position.y +
-        NODE_HEADER_HEIGHT +
-        NODE_PORTS_PADDING +
+        NODE_PORTS_TOP +
         OUTPUT_PORT_HEIGHT / 2 +
         outputIndex * (OUTPUT_PORT_HEIGHT + OUTPUT_PORT_GAP),
     };
   };
 
   const nodeHeight = (nodeId: NodeId): number => {
-    const outputCount = orderedOutputPaths(nodeId).length;
-    const portsHeight =
-      NODE_PORTS_PADDING * 2 +
-      outputCount * OUTPUT_PORT_HEIGHT +
-      Math.max(0, outputCount - 1) * OUTPUT_PORT_GAP;
-    return Math.max(NODE_BASE_HEIGHT, NODE_HEADER_HEIGHT + portsHeight);
+    const node = program.nodes.find(({ id }) => id === nodeId);
+    const instruction =
+      node === undefined ? undefined : instructionMap.get(node.instructionId);
+    const unknownCount =
+      node === undefined
+        ? 0
+        : Object.keys(node.parameterValues).filter(
+            (id) =>
+              !instruction?.parameters.some((parameter) => parameter.id === id),
+          ).length;
+    const parameterCount = (instruction?.parameters.length ?? 0) + unknownCount;
+    return (
+      NODE_BASE_HEIGHT +
+      (parameterCount > 0
+        ? NODE_PARAMETER_PADDING + parameterCount * NODE_PARAMETER_ROW_HEIGHT
+        : 0)
+    );
   };
 
   const finishConnection = (targetNodeId: NodeId) => {
@@ -802,6 +924,7 @@ export function ProgramEditor({
   }, []);
 
   const startRangeSelection = (event: ReactPointerEvent<HTMLElement>) => {
+    if (event.button !== 0) return;
     if (event.target !== event.currentTarget) return;
     const { x, y } = pointerPosition(event);
     event.currentTarget.setPointerCapture(event.pointerId);
@@ -849,6 +972,39 @@ export function ProgramEditor({
     setSelectionBox(null);
   };
 
+  const startCanvasPan = (event: ReactPointerEvent<HTMLElement>) => {
+    if (event.button !== 2) return;
+    event.preventDefault();
+    event.currentTarget.setPointerCapture(event.pointerId);
+    canvasPanRef.current = {
+      pointerId: event.pointerId,
+      startX: event.clientX,
+      startY: event.clientY,
+      scrollLeft: event.currentTarget.scrollLeft,
+      scrollTop: event.currentTarget.scrollTop,
+    };
+    setIsCanvasPanning(true);
+  };
+
+  const updateCanvasPan = (event: ReactPointerEvent<HTMLElement>) => {
+    const pan = canvasPanRef.current;
+    if (pan === null || pan.pointerId !== event.pointerId) return;
+    event.currentTarget.scrollLeft =
+      pan.scrollLeft - (event.clientX - pan.startX);
+    event.currentTarget.scrollTop =
+      pan.scrollTop - (event.clientY - pan.startY);
+  };
+
+  const finishCanvasPan = (event: ReactPointerEvent<HTMLElement>) => {
+    const pan = canvasPanRef.current;
+    if (pan === null || pan.pointerId !== event.pointerId) return;
+    canvasPanRef.current = null;
+    setIsCanvasPanning(false);
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    }
+  };
+
   const orderedInstructions = [...instructions]
     .filter(({ enabled }) => enabled)
     .sort(
@@ -866,7 +1022,20 @@ export function ProgramEditor({
           <h1>Tactical Circuit</h1>
         </div>
         <div className="program-status">
-          <strong>{program.metadata.name}</strong>
+          <TextCommitField
+            label="Program名"
+            value={program.metadata.name}
+            onCommit={(name) =>
+              commitProgram(
+                updateProgramMetadata(
+                  program,
+                  { ...program.metadata, name },
+                  now(),
+                ),
+                "Program名を変更しました",
+              )
+            }
+          />
           <span>{dirty ? "未保存" : "保存済み"}</span>
           <span
             className={
@@ -883,6 +1052,13 @@ export function ProgramEditor({
         <button type="button" onClick={handleNew}>
           新規
         </button>
+        <button
+          type="button"
+          disabled={errorCount > 0 || onStartBattle === undefined}
+          onClick={handleStartBattle}
+        >
+          戦闘開始
+        </button>
         <button type="button" onClick={handleSave}>
           保存
         </button>
@@ -894,9 +1070,11 @@ export function ProgramEditor({
           }
         >
           <option value="">保存済みProgramを選択</option>
-          {storedProgramIds.map((programId) => (
-            <option key={programId} value={programId}>
-              {programId}
+          {storedPrograms.map(({ id, name }) => (
+            <option key={id} value={id}>
+              {storedPrograms.filter((item) => item.name === name).length > 1
+                ? `${name} (${id.slice(-8)})`
+                : name}
             </option>
           ))}
         </select>
@@ -962,7 +1140,7 @@ export function ProgramEditor({
             )
           }
         >
-          −
+          縮小
         </button>
         <span
           className="zoom-value"
@@ -984,7 +1162,7 @@ export function ProgramEditor({
             )
           }
         >
-          ＋
+          拡大
         </button>
       </nav>
 
@@ -1005,7 +1183,16 @@ export function ProgramEditor({
           ))}
         </aside>
 
-        <section className="program-canvas" aria-label="Programキャンバス">
+        <section
+          ref={canvasRef}
+          className={`program-canvas${isCanvasPanning ? " panning" : ""}`}
+          aria-label="Programキャンバス"
+          onPointerDown={startCanvasPan}
+          onPointerMove={updateCanvasPan}
+          onPointerUp={finishCanvasPan}
+          onPointerCancel={finishCanvasPan}
+          onContextMenu={(event) => event.preventDefault()}
+        >
           <div
             className="canvas-scroll-area"
             style={{
@@ -1162,6 +1349,7 @@ export function ProgramEditor({
                       type="button"
                       aria-label={`${node.id}へ接続`}
                       onPointerUp={(event) => {
+                        if (event.button !== 0) return;
                         event.stopPropagation();
                         finishConnection(node.id);
                       }}
@@ -1171,7 +1359,7 @@ export function ProgramEditor({
                       }}
                     />
                     <header>
-                      <strong>
+                      <strong title={instruction?.displayName}>
                         {instruction?.displayName ?? "Unknown Instruction"}
                       </strong>
                       <small>{node.id}</small>
@@ -1195,6 +1383,7 @@ export function ProgramEditor({
                           key={outputPath.id}
                           title={outputPath.description}
                           onPointerDown={(event) => {
+                            if (event.button !== 0) return;
                             event.stopPropagation();
                             beginConnection(node.id, outputPath.id);
                           }}
@@ -1206,15 +1395,52 @@ export function ProgramEditor({
                           {outputPath.displayName}
                         </button>
                       ))}
-                      {program.editorState.comments[node.id] !== undefined && (
-                        <span
-                          className="comment-indicator"
-                          title="コメントあり"
-                        >
-                          ●
-                        </span>
-                      )}
                     </div>
+                    {program.editorState.comments[node.id] !== undefined && (
+                      <span className="comment-indicator" title="コメントあり">
+                        ●
+                      </span>
+                    )}
+                    {(instruction?.parameters.length ?? 0) +
+                      Object.keys(node.parameterValues).filter(
+                        (id) =>
+                          !instruction?.parameters.some(
+                            (parameter) => parameter.id === id,
+                          ),
+                      ).length >
+                      0 && (
+                      <dl className="node-parameters">
+                        {instruction?.parameters.map((parameter) => (
+                          <div
+                            key={parameter.id}
+                            title={`${parameter.displayName}: ${parameterDisplayValue(node.parameterValues[parameter.id])}`}
+                          >
+                            <dt>{parameter.displayName}</dt>
+                            <dd>
+                              {parameterDisplayValue(
+                                node.parameterValues[parameter.id],
+                              )}
+                            </dd>
+                          </div>
+                        ))}
+                        {Object.entries(node.parameterValues)
+                          .filter(
+                            ([id]) =>
+                              !instruction?.parameters.some(
+                                (parameter) => parameter.id === id,
+                              ),
+                          )
+                          .map(([id, value]) => (
+                            <div
+                              key={id}
+                              title={`${id}: ${parameterDisplayValue(value)}`}
+                            >
+                              <dt>{id}（未定義）</dt>
+                              <dd>{parameterDisplayValue(value)}</dd>
+                            </div>
+                          ))}
+                      </dl>
+                    )}
                   </article>
                 );
               })}
@@ -1266,20 +1492,6 @@ export function ProgramEditor({
             </dl>
           ) : selectedNode === undefined ? (
             <>
-              <TextCommitField
-                label="名前"
-                value={program.metadata.name}
-                onCommit={(name) =>
-                  commitProgram(
-                    updateProgramMetadata(
-                      program,
-                      { ...program.metadata, name },
-                      now(),
-                    ),
-                    "Program名を変更しました",
-                  )
-                }
-              />
               <TextCommitField
                 label="作者"
                 value={program.metadata.author}

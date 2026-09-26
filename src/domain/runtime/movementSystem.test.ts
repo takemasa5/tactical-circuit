@@ -17,6 +17,7 @@ import {
   createEmptyActionRequests,
   createEmptyRobotActionState,
 } from "./factories";
+import { arbitrateRobotActionRequests } from "./actionArbitration";
 import type { GameSession, RobotState } from "./models";
 import { updateMovementAction } from "./movementSystem";
 
@@ -86,14 +87,17 @@ const map: MapDefinition = {
   spawnPoints: [],
 };
 
-const repository = {
-  get: (dataType: string) => {
-    if (dataType === "robot_body") return body;
-    if (dataType === "engine") return engine;
-    if (dataType === "map") return map;
-    return undefined;
-  },
-} as unknown as DataRepository;
+const repositoryFor = (selectedEngine: EngineDefinition): DataRepository =>
+  ({
+    get: (dataType: string) => {
+      if (dataType === "robot_body") return body;
+      if (dataType === "engine") return selectedEngine;
+      if (dataType === "map") return map;
+      return undefined;
+    },
+  }) as unknown as DataRepository;
+
+const repository = repositoryFor(engine);
 
 const program: Program = {
   id: "program_10000000-0000-4000-8000-000000000010" as ProgramId,
@@ -169,8 +173,11 @@ const session = (robot: RobotState): GameSession => ({
   },
 });
 
-const update = (robot: RobotState): RobotState => {
-  const result = updateMovementAction(session(robot), robot, repository);
+const update = (
+  robot: RobotState,
+  activeRepository: DataRepository = repository,
+): RobotState => {
+  const result = updateMovementAction(session(robot), robot, activeRepository);
   if (!result.success) throw new Error(result.message);
   return result.data;
 };
@@ -250,5 +257,131 @@ describe("updateMovementAction", () => {
     const updated = update(robot);
     expect(updated.position).toEqual(robot.position);
     expect(updated.actionState.movement.current).toBeNull();
+  });
+
+  it("Turn実動作を前進要求で止め、Engineの予備・事後Tickを適用する", () => {
+    const timedRepository = repositoryFor({
+      ...engine,
+      turnPrepareTicks: int32(1),
+      forwardPrepareTicks: int32(2),
+      forwardRecoveryTicks: int32(1),
+    });
+    let robot: RobotState = {
+      ...baseRobot(),
+      actionState: {
+        ...createEmptyRobotActionState(),
+        movement: {
+          current: {
+            request: { type: "turn_right", turnTo: int32(180) },
+            phase: "executing",
+            phaseElapsedTicks: int32(1),
+            progress: { type: "turn_right" },
+          },
+          next: null,
+        },
+      },
+    };
+    const arbitration = arbitrateRobotActionRequests(robot.actionState, {
+      movement: { type: "forward", distance: int32(4) },
+      combat: null,
+    });
+    if (!arbitration.success) throw new Error(arbitration.message);
+    robot = update(
+      { ...robot, actionState: arbitration.data },
+      timedRepository,
+    );
+    expect(robot.direction).toBe(90);
+    expect(robot.position.x).toBe(200);
+    expect(robot.actionState.movement.current).toMatchObject({
+      request: { type: "forward" },
+      phase: "preparing",
+      phaseElapsedTicks: 1,
+    });
+
+    robot = update(robot, timedRepository);
+    expect(robot.position.x).toBe(200);
+    robot = update(robot, timedRepository);
+    expect(robot.position.x).toBe(204);
+    expect(robot.actionState.movement.current?.phase).toBe("recovering");
+    robot = update(robot, timedRepository);
+    expect(robot.actionState.movement.current).toBeNull();
+  });
+
+  it("Turnの予備動作1 Tickでは旋回せず、次Tickから旋回する", () => {
+    const timedRepository = repositoryFor({
+      ...engine,
+      turnPrepareTicks: int32(1),
+    });
+    let robot: RobotState = {
+      ...baseRobot(),
+      actionState: {
+        ...createEmptyRobotActionState(),
+        movement: {
+          current: {
+            request: { type: "turn_right", turnTo: int32(100) },
+            phase: "preparing",
+            phaseElapsedTicks: int32(0),
+            progress: null,
+          },
+          next: null,
+        },
+      },
+    };
+    robot = update(robot, timedRepository);
+    expect(robot.direction).toBe(90);
+    expect(robot.actionState.movement.current).toMatchObject({
+      phase: "preparing",
+      phaseElapsedTicks: 1,
+    });
+    robot = update(robot, timedRepository);
+    expect(robot.direction).toBe(100);
+    expect(robot.actionState.movement.current).toBeNull();
+  });
+
+  it("前進をTurnでキャンセルしたTickは前進せず、事後・予備動作後に旋回する", () => {
+    const timedRepository = repositoryFor({
+      ...engine,
+      forwardRecoveryTicks: int32(1),
+      turnPrepareTicks: int32(1),
+    });
+    let robot: RobotState = {
+      ...baseRobot(),
+      actionState: {
+        ...createEmptyRobotActionState(),
+        movement: {
+          current: {
+            request: { type: "forward", distance: int32(20) },
+            phase: "executing",
+            phaseElapsedTicks: int32(1),
+            progress: {
+              type: "forward",
+              fixedPosition: { x: int32(200000), y: int32(225000) },
+              fixedMovedDistance: int32(0),
+            },
+          },
+          next: null,
+        },
+      },
+    };
+    const arbitration = arbitrateRobotActionRequests(robot.actionState, {
+      movement: { type: "turn_right", turnTo: int32(100) },
+      combat: null,
+    });
+    if (!arbitration.success) throw new Error(arbitration.message);
+    robot = update(
+      { ...robot, actionState: arbitration.data },
+      timedRepository,
+    );
+    expect(robot.position).toEqual({ x: 200, y: 225 });
+    expect(robot.actionState.movement.current).toMatchObject({
+      request: { type: "turn_right" },
+      phase: "preparing",
+      phaseElapsedTicks: 0,
+    });
+
+    robot = update(robot, timedRepository);
+    expect(robot.direction).toBe(90);
+    robot = update(robot, timedRepository);
+    expect(robot.direction).toBe(100);
   });
 });

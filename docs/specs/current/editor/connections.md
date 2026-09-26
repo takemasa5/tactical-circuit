@@ -72,7 +72,7 @@ requiredな出力パスの接続も編集途中では削除できる。不足し
 
 # 表示順
 
-Node内の出力ポートはInstruction Definitionの`displayOrder`昇順で表示する。同じ`displayOrder`の場合は出力パスIDの文字列昇順とする。
+Node右上の出力ポートはInstruction Definitionの`displayOrder`昇順で縦に表示する。同じ`displayOrder`の場合は出力パスIDの文字列昇順とする。
 
 作成済み接続線の接続元は、対応する出力ポートの右辺中央とする。Node右辺の共通位置へまとめて接続しない。接続先は接続先Nodeの左辺にある入力ポートの中央とする。
 

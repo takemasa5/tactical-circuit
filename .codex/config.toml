@@ -1,0 +1,14 @@
+sandbox_mode = "workspace-write"
+
+[sandbox_workspace_write]
+network_access = true
+writable_roots = [
+    "/Users/takedamasaaki/.codex/automations/automation"
+]
+
+[features.network_proxy]
+enabled = true
+
+[features.network_proxy.domains]
+"**.github.com" = "allow"
+"**.githubusercontent.com" = "allow"

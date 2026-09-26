@@ -98,8 +98,12 @@ const detectEnemy: InstructionImplementation = (input) => {
         parameter<Int32>(input, "sensing_degree"),
       ),
   );
+  const outputPathId = detected ? "detected" : "not_detected";
   return succeed(
-    input.node.connections[detected ? "detected" : "not_detected"] as NodeId,
+    input.node.connections[outputPathId] as NodeId,
+    undefined,
+    false,
+    outputPathId,
   );
 };
 
@@ -112,8 +116,12 @@ const detectBullet: InstructionImplementation = (input) => {
       parameter<Int32>(input, "sensing_degree"),
     ),
   );
+  const outputPathId = detected ? "detected" : "not_detected";
   return succeed(
-    input.node.connections[detected ? "detected" : "not_detected"] as NodeId,
+    input.node.connections[outputPathId] as NodeId,
+    undefined,
+    false,
+    outputPathId,
   );
 };
 
@@ -126,7 +134,12 @@ const checkAmmunition: InstructionImplementation = (input) => {
     ammunition >= parameter<Int32>(input, "threshold")
       ? "at_least"
       : "less_than";
-  return succeed(input.node.connections[output] as NodeId);
+  return succeed(
+    input.node.connections[output] as NodeId,
+    undefined,
+    false,
+    output,
+  );
 };
 
 const fire: InstructionImplementation = (input) => {

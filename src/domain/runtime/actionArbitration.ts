@@ -129,16 +129,67 @@ const arbitrateCategory = <TRequest, TProgress>(
   };
 };
 
+const arbitrateMovement = (
+  state: ActionCategoryState<MovementRequest, MovementProgress>,
+  request: MovementRequest | null,
+): SimulatorResult<ActionCategoryState<MovementRequest, MovementProgress>> => {
+  if (
+    request === null ||
+    state.current?.phase === "preparing" ||
+    state.current === null
+  ) {
+    return arbitrateCategory(
+      state,
+      request,
+      cloneMovementRequest,
+      movementRequestsAreSame,
+    );
+  }
+
+  if (state.current.phase === "executing") {
+    if (movementRequestsAreSame(state.current.request, request)) {
+      return {
+        success: true,
+        data: cloneActionCategoryState(state, cloneMovementRequest),
+      };
+    }
+    return {
+      success: true,
+      data: {
+        current: {
+          request: cloneMovementRequest(state.current.request)!,
+          phase: "recovering",
+          phaseElapsedTicks: zeroTicks,
+          progress: null,
+        },
+        next: cloneMovementRequest(request),
+      },
+    };
+  }
+
+  return {
+    success: true,
+    data: {
+      current: {
+        ...state.current,
+        request: cloneMovementRequest(state.current.request)!,
+      },
+      next:
+        state.next !== null && movementRequestsAreSame(state.next, request)
+          ? cloneMovementRequest(state.next)
+          : cloneMovementRequest(request),
+    },
+  };
+};
+
 /** `docs/specs/current/simulator/action_arbitration.md`のカテゴリ別行動要求調停。 */
 export const arbitrateRobotActionRequests = (
   actionState: RobotActionState,
   actionRequests: ActionRequests,
 ): SimulatorResult<RobotActionState> => {
-  const movement = arbitrateCategory<MovementRequest, MovementProgress>(
+  const movement = arbitrateMovement(
     actionState.movement,
     actionRequests.movement,
-    cloneMovementRequest,
-    movementRequestsAreSame,
   );
   if (!movement.success) {
     return movement;

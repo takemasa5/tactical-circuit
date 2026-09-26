@@ -50,7 +50,7 @@ Phase 1のUIは利用者へ構成選択を求めず、実装済みの`docs/specs
 
 プレイヤー用サンプルProgramは、前進、前進完了待機、索敵、射撃、射撃間隔の完了待機を経てEndへ到達する。敵を検出しない分岐では旋回、旋回完了待機を経てEndへ到達する。各Endの次TickはStartから再開する。
 
-相手用固定Programは、索敵、射撃、射撃間隔の完了待機を経てEndへ到達する。敵を検出しない分岐では旋回、旋回完了待機を経てEndへ到達する。
+相手用固定Programは、索敵後に敵を検出したかどうかにかかわらず、旋回、旋回完了待機を経てEndへ到達する。Phase 1の相手用固定ProgramはFireを実行しない。
 
 両ProgramのDetect Enemyは、距離1000、中心角0度、半角180度を使用する。プレイヤー用サンプルのMove Forwardは距離40、敵非検出時のTurnは右10度とする。相手用固定Programの敵非検出時のTurnも右10度とする。
 
@@ -81,6 +81,8 @@ Phase 1はReact内の単一ページ状態として、Editor、Battle、Result�
 ### Editor
 
 - 既存Program EditorとValidator結果を表示する
+- アプリ全体をブラウザーの表示領域内へ固定し、ページ自体はスクロールさせない
+- Programキャンバスはスクロールバー、ホイール、および右ボタンドラッグで表示位置を移動できる
 - `戦闘開始`操作を追加する
 - Validator Errorがある場合は開始せず、既存の診断表示を維持する
 - 開始処理が失敗した場合はPlayer Programを保持し、Editor内にエラーを表示する
@@ -89,6 +91,7 @@ Phase 1はReact内の単一ページ状態として、Editor、Battle、Result�
 
 - Map、両Robot、Bullet、現在Tick、Tick上限を表示する
 - Robotごとに名前、HP、残弾、状態を表示する
+- 表示中のTickでRobotごとに正常終了したNodeと、条件分岐が選択した出力パスを実行順に表示する。初期SnapshotはAI実行前として表示する
 - 開始時は初期Snapshotから10 Tick/秒で自動再生する
 - `一時停止`、`再開`、`Editorへ戻る`を提供する
 - Editorへ戻ってもPlayer Programを変更または破棄しない
@@ -100,7 +103,7 @@ Phase 1はReact内の単一ページ状態として、Editor、Battle、Result�
 - `最初から再生`と`Editorへ戻る`を提供する
 - `最初から再生`は同じSnapshot配列の初期Snapshotへ戻り、自動再生する
 
-高度な演出、戦闘ログ、シークバー、速度変更、およびレスポンシブ対応はPhase 1に含めない。
+高度な演出、シークバー、速度変更、およびレスポンシブ対応はPhase 1に含めない。
 
 ## Acceptance Scenario
 
