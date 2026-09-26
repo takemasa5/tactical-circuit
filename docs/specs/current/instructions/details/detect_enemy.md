@@ -46,7 +46,7 @@ Robotの正面を0度、時計回りを正とする判定範囲の中心角を�
 ## 出力パス
 
 - `detected`（表示名 `Found`）: 条件を満たす敵Robotが1件以上存在する場合
-- `not_detected`（表示名 `Not Found`）: 条件を満たす敵Robotが存在しない場合
+- `not_detected`（表示名 `None`）: 条件を満たす敵Robotが存在しない場合
 
 どちらもrequiredな出力パスとする。選択した出力パスに対応する実行中Nodeの接続先を`nextNodeId`として返す。
 

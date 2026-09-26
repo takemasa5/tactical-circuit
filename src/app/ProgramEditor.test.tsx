@@ -97,7 +97,7 @@ const instructions: readonly InstructionDefinition[] = [
       },
       {
         id: "not_detected",
-        displayName: "Not Found",
+        displayName: "None",
         description: "",
         required: true,
         displayOrder: 1 as Int32,
@@ -368,7 +368,7 @@ describe("ProgramEditor", () => {
 
     fireEvent.pointerDown(detectedPort);
     fireEvent.pointerUp(node3InputPort);
-    fireEvent.pointerDown(screen.getByRole("button", { name: "Not Found" }));
+    fireEvent.pointerDown(screen.getByRole("button", { name: "None" }));
     fireEvent.pointerUp(screen.getByRole("button", { name: "node_4へ接続" }));
 
     expect(detectedPort).toHaveClass("connected");

@@ -48,7 +48,7 @@
       },
       {
         "id": "not_detected",
-        "displayName": "Not Found",
+        "displayName": "None",
         "description": "範囲内に敵機が存在しなかった場合",
         "required": true,
         "displayOrder": 1
