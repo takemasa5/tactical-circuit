@@ -152,7 +152,7 @@ describe("BattleView", () => {
                   instructionId: "instruction_2" as InstructionId,
                   instructionName: "Detect Enemy",
                   selectedOutputPathId: "not_detected",
-                  selectedOutputPathName: "Not Detected",
+                  selectedOutputPathName: "Not Found",
                   nextNodeId: null,
                 },
               ],
@@ -178,7 +178,7 @@ describe("BattleView", () => {
     const path = screen.getByRole("region", { name: "Tickの実行経路" });
     expect(path).toHaveTextContent("node_1 Start");
     expect(path).toHaveTextContent("node_2 Detect Enemy");
-    expect(path).toHaveTextContent("Not Detected");
+    expect(path).toHaveTextContent("Not Found");
     expect(path.textContent?.indexOf("node_1")).toBeLessThan(
       path.textContent?.indexOf("node_2") ?? 0,
     );

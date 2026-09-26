@@ -71,7 +71,10 @@ describe("Editor Master Data", () => {
         },
       ],
     });
-    expect(byImplementationId.get("detect_enemy")?.outputPaths).toHaveLength(2);
+    expect(byImplementationId.get("detect_enemy")?.outputPaths).toMatchObject([
+      { id: "detected", displayName: "Found" },
+      { id: "not_detected", displayName: "Not Found" },
+    ]);
     expect(
       byImplementationId
         .get("detect_enemy")

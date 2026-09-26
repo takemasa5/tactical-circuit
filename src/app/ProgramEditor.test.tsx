@@ -90,14 +90,14 @@ const instructions: readonly InstructionDefinition[] = [
     outputPaths: [
       {
         id: "detected",
-        displayName: "Detected",
+        displayName: "Found",
         description: "敵を検出した場合に進みます",
         required: true,
         displayOrder: 0 as Int32,
       },
       {
         id: "not_detected",
-        displayName: "Not Detected",
+        displayName: "Not Found",
         description: "",
         required: true,
         displayOrder: 1 as Int32,
@@ -359,7 +359,7 @@ describe("ProgramEditor", () => {
     await user.click(screen.getByRole("button", { name: "Endcontrol" }));
     await user.click(screen.getByRole("button", { name: "Endcontrol" }));
 
-    const detectedPort = screen.getByRole("button", { name: "Detected" });
+    const detectedPort = screen.getByRole("button", { name: "Found" });
     const node3InputPort = screen.getByRole("button", {
       name: "node_3へ接続",
     });
@@ -368,7 +368,7 @@ describe("ProgramEditor", () => {
 
     fireEvent.pointerDown(detectedPort);
     fireEvent.pointerUp(node3InputPort);
-    fireEvent.pointerDown(screen.getByRole("button", { name: "Not Detected" }));
+    fireEvent.pointerDown(screen.getByRole("button", { name: "Not Found" }));
     fireEvent.pointerUp(screen.getByRole("button", { name: "node_4へ接続" }));
 
     expect(detectedPort).toHaveClass("connected");
