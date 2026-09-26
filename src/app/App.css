@@ -113,6 +113,15 @@ h2 {
   text-align: right;
 }
 
+.program-status .field {
+  text-align: left;
+}
+
+.program-status .field input {
+  width: 220px;
+  padding: 6px 8px;
+}
+
 .program-status span {
   color: var(--warning);
   font-size: 0.75rem;

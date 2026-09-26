@@ -28,6 +28,12 @@ export type ProgramExport = {
   readonly json: string;
 };
 
+/** `docs/specs/current/editor/persistence.md`の保存済みProgram選択欄に表示する情報。 */
+export type StoredProgramSummary = {
+  readonly id: ProgramId;
+  readonly name: string;
+};
+
 const storageKey = (programId: ProgramId): string =>
   `${PROGRAM_KEY_PREFIX}${programId}`;
 
@@ -106,6 +112,27 @@ export const loadProgramFromStorage = (
     success: true,
     data: { program: loaded.data, json: saveProgram(loaded.data) },
   };
+};
+
+/** 保存済みProgramのIDと名前を、ID順で返す。不正な保存データはIDを表示名に使う。 */
+export const listStoredPrograms = (
+  storage: Storage,
+): PersistenceResult<readonly StoredProgramSummary[]> => {
+  const listed = listStoredProgramIds(storage);
+  if (!listed.success) return listed;
+  const summaries: StoredProgramSummary[] = [];
+  for (const id of listed.data) {
+    const loaded = loadProgramFromStorage(storage, id);
+    if (!loaded.success && loaded.code === "storage_unavailable") return loaded;
+    summaries.push({
+      id,
+      name:
+        loaded.success && loaded.data.program.metadata.name.trim() !== ""
+          ? loaded.data.program.metadata.name
+          : id,
+    });
+  }
+  return { success: true, data: summaries };
 };
 
 /** 現在のProgramをファイル出力可能な値へ変換する。 */

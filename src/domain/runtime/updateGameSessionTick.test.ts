@@ -269,6 +269,57 @@ const scriptedEngine = (
 };
 
 describe("updateGameSessionTick", () => {
+  it("前Tickから旋回中でもMove Forward要求を採用して同Tickの旋回を止める", () => {
+    const initial = session();
+    const turningRobot = robot(1, {
+      actionState: {
+        ...createEmptyRobotActionState(),
+        movement: {
+          current: {
+            request: { type: "turn_right", turnTo: int32(90) },
+            phase: "executing",
+            phaseElapsedTicks: int32(1),
+            progress: { type: "turn_right" },
+          },
+          next: null,
+        },
+      },
+    });
+    const input = session({
+      worldState: {
+        ...initial.worldState,
+        robots: [turningRobot, robot(2)],
+      },
+    });
+    const result = updateGameSessionTick(input, {
+      repository: repository(),
+      aiEngine: scriptedEngine(({ executionInput }) => ({
+        executionResult: {
+          aiRuntimeState: executionInput.aiRuntimeState,
+          randomState: executionInput.randomState,
+          actionRequests: {
+            movement:
+              executionInput.robot.id === turningRobot.id
+                ? { type: "forward", distance: int32(100) }
+                : null,
+            combat: null,
+          },
+        },
+        debugInfo: debugInfo("move"),
+      })),
+    });
+
+    expect(result.success).toBe(true);
+    if (!result.success) return;
+    const updated = result.data.gameSession.worldState.robots[0]!;
+    expect(updated.direction).toBe(0);
+    expect(updated.position).toEqual({ x: 10, y: 14 });
+    expect(updated.actionState.movement.current).toMatchObject({
+      request: { type: "forward", distance: 100 },
+      phase: "executing",
+    });
+  });
+
   it("running以外とTickオーバーフローを入力不変で拒否する", () => {
     const ready = session({
       worldState: { ...session().worldState, status: "ready" },

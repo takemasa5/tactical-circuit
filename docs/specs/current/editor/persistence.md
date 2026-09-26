@@ -42,6 +42,8 @@ localStorageが利用できない場合と、容量不足などにより書き�
 
 Save ManagerはlocalStorageに保存されているProgramをProgram IDによって識別できる形でEditorへ提示する。ユーザーが対象を選択した後、そのJSON文字列を`loadProgram`で読み込む。
 
+Editorの保存済みProgram選択欄はProgram名を表示し、選択値にはProgram IDを使用する。同名のProgramはID末尾を添えて区別する。名前が空または保存データが不正な場合はProgram IDを表示し、読込時のエラー処理は維持する。
+
 読込時はJSON Envelope、バージョン、JSON構造、ID形式、数値範囲を検証する。
 
 読込成功時は以下を行う。

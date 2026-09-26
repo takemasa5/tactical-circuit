@@ -33,9 +33,10 @@ import {
   exportProgram,
   hasUnsavedChanges,
   importProgram,
-  listStoredProgramIds,
+  listStoredPrograms,
   loadProgramFromStorage,
   saveProgramToStorage,
+  type StoredProgramSummary,
 } from "../domain/editor/persistence";
 import {
   addNode,
@@ -394,11 +395,11 @@ export function ProgramEditor({
       ? "新しいProgramを作成しました"
       : "プレイヤー用サンプルProgramを表示しています",
   );
-  const [storedProgramIds, setStoredProgramIds] = useState<
-    readonly ProgramId[]
+  const [storedPrograms, setStoredPrograms] = useState<
+    readonly StoredProgramSummary[]
   >(() => {
     try {
-      const result = listStoredProgramIds(window.localStorage);
+      const result = listStoredPrograms(window.localStorage);
       return result.success ? result.data : [];
     } catch {
       return [];
@@ -507,8 +508,8 @@ export function ProgramEditor({
   const refreshStoredPrograms = () => {
     const storage = getStorage();
     if (storage === null) return;
-    const result = listStoredProgramIds(storage);
-    if (result.success) setStoredProgramIds(result.data);
+    const result = listStoredPrograms(storage);
+    if (result.success) setStoredPrograms(result.data);
     else setMessage(result.message);
   };
 
@@ -1021,7 +1022,20 @@ export function ProgramEditor({
           <h1>Tactical Circuit</h1>
         </div>
         <div className="program-status">
-          <strong>{program.metadata.name}</strong>
+          <TextCommitField
+            label="Program名"
+            value={program.metadata.name}
+            onCommit={(name) =>
+              commitProgram(
+                updateProgramMetadata(
+                  program,
+                  { ...program.metadata, name },
+                  now(),
+                ),
+                "Program名を変更しました",
+              )
+            }
+          />
           <span>{dirty ? "未保存" : "保存済み"}</span>
           <span
             className={
@@ -1056,9 +1070,11 @@ export function ProgramEditor({
           }
         >
           <option value="">保存済みProgramを選択</option>
-          {storedProgramIds.map((programId) => (
-            <option key={programId} value={programId}>
-              {programId}
+          {storedPrograms.map(({ id, name }) => (
+            <option key={id} value={id}>
+              {storedPrograms.filter((item) => item.name === name).length > 1
+                ? `${name} (${id.slice(-8)})`
+                : name}
             </option>
           ))}
         </select>
@@ -1476,20 +1492,6 @@ export function ProgramEditor({
             </dl>
           ) : selectedNode === undefined ? (
             <>
-              <TextCommitField
-                label="名前"
-                value={program.metadata.name}
-                onCommit={(name) =>
-                  commitProgram(
-                    updateProgramMetadata(
-                      program,
-                      { ...program.metadata, name },
-                      now(),
-                    ),
-                    "Program名を変更しました",
-                  )
-                }
-              />
               <TextCommitField
                 label="作者"
                 value={program.metadata.author}

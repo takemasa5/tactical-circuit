@@ -10,6 +10,7 @@ import {
   hasUnsavedChanges,
   importProgram,
   listStoredProgramIds,
+  listStoredPrograms,
   loadProgramFromStorage,
   saveProgramToStorage,
 } from "./persistence";
@@ -83,6 +84,10 @@ describe("Program persistence", () => {
       success: true,
       data: [programId],
     });
+    expect(listStoredPrograms(storage)).toEqual({
+      success: true,
+      data: [{ id: programId, name: "Test" }],
+    });
     const loaded = loadProgramFromStorage(storage, programId);
     expect(loaded.success).toBe(true);
     if (loaded.success) expect(loaded.data.program).toEqual(program);
@@ -139,6 +144,10 @@ describe("Program persistence", () => {
     expect(loadProgramFromStorage(storage, programId)).toMatchObject({
       success: false,
       code: "invalid_program",
+    });
+    expect(listStoredPrograms(storage)).toEqual({
+      success: true,
+      data: [{ id: programId, name: programId }],
     });
   });
 });

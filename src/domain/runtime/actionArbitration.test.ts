@@ -179,7 +179,7 @@ describe("action request arbitration", () => {
     ).toEqual({ movement: "running", combat: "idle" });
   });
 
-  it("executing中の新しい要求を採用せず現在行動を維持する", () => {
+  it("executing中の異なるmovement要求で現在行動をキャンセルし次動作を保持する", () => {
     const actionState: RobotActionState = {
       ...createEmptyRobotActionState(),
       movement: {
@@ -201,8 +201,52 @@ describe("action request arbitration", () => {
       movement: { type: "turn_right", turnTo: int32(90) },
       combat: null,
     });
-    expect(result).toEqual({ success: true, data: actionState });
+    expect(result).toEqual({
+      success: true,
+      data: {
+        ...actionState,
+        movement: {
+          current: {
+            request: { type: "forward", distance: 10 },
+            phase: "recovering",
+            phaseElapsedTicks: 0,
+            progress: null,
+          },
+          next: { type: "turn_right", turnTo: 90 },
+        },
+      },
+    });
     expect(result.success && result.data).not.toBe(actionState);
+  });
+
+  it("実行中のTurnをMove Forwardでキャンセルし、同種のTurn要求では目標を変更しない", () => {
+    const actionState: RobotActionState = {
+      ...createEmptyRobotActionState(),
+      movement: {
+        current: {
+          request: { type: "turn_right", turnTo: int32(180) },
+          phase: "executing",
+          phaseElapsedTicks: int32(2),
+          progress: { type: "turn_right" },
+        },
+        next: null,
+      },
+    };
+
+    const sameType = arbitrateRobotActionRequests(actionState, {
+      movement: { type: "turn_right", turnTo: int32(270) },
+      combat: null,
+    });
+    expect(sameType).toEqual({ success: true, data: actionState });
+
+    const differentType = arbitrateRobotActionRequests(actionState, {
+      movement: { type: "forward", distance: int32(20) },
+      combat: null,
+    });
+    expect(differentType.success && differentType.data.movement).toMatchObject({
+      current: { phase: "recovering", request: { type: "turn_right" } },
+      next: { type: "forward", distance: 20 },
+    });
   });
 
   it("recovering中は要求がnullでも現在行動を維持する", () => {

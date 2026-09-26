@@ -490,11 +490,32 @@ describe("ProgramEditor", () => {
     expect(screen.getByText("保存済み")).toBeInTheDocument();
   });
 
+  it("Node選択中でもProgram名を設定し、保存済み一覧に名前を表示する", async () => {
+    const user = userEvent.setup();
+    renderEditor();
+    await user.click(
+      screen.getByRole("button", { name: "node_1の診断を表示" }),
+    );
+
+    const nameInput = screen.getByRole("textbox", { name: "Program名" });
+    await user.clear(nameInput);
+    await user.type(nameInput, "旋回して前進");
+    await user.click(screen.getByRole("button", { name: "保存" }));
+
+    const selection = screen.getByRole("combobox", {
+      name: "保存済みProgram",
+    });
+    expect(selection).toHaveDisplayValue("旋回して前進");
+    expect(
+      selection.querySelector(`option[value="${fixedProgramId}"]`),
+    ).toHaveTextContent("旋回して前進");
+  });
+
   it("入力欄の編集中も保存ショートカットでlocalStorageへ保存する", async () => {
     const user = userEvent.setup();
     renderEditor();
 
-    const nameInput = screen.getByRole("textbox", { name: "名前" });
+    const nameInput = screen.getByRole("textbox", { name: "Program名" });
     await user.clear(nameInput);
     await user.type(nameInput, "Ctrl Saved");
     await user.keyboard("{Control>}s{/Control}");
@@ -509,7 +530,9 @@ describe("ProgramEditor", () => {
     expect(ctrlSaved.data.metadata.name).toBe("Ctrl Saved");
 
     window.localStorage.clear();
-    const updatedNameInput = screen.getByRole("textbox", { name: "名前" });
+    const updatedNameInput = screen.getByRole("textbox", {
+      name: "Program名",
+    });
     await user.clear(updatedNameInput);
     await user.type(updatedNameInput, "Meta Saved");
     await user.keyboard("{Meta>}s{/Meta}");

@@ -24,7 +24,11 @@ AI Engineが生成したカテゴリ別行動要求を、Simulatorが保持す�
 
 `preparing`中の現在行動に異なる要求が来た場合、現在行動を破棄し、新しい要求を`preparing`として採用する。
 
-`executing`または`recovering`中は、新しい要求の有無や内容にかかわらず現在行動を維持する。Phase 1では新しい要求を次動作として保持しない。Movement SystemまたはCombat Systemが行動を完了した時点で、現在行動と次動作を`null`にする。
+`movement`の`executing`中に同一要求が来た場合、現在行動の進捗と完了目標を維持する。異なる`type`の要求が来た場合は現在行動の実動作をキャンセルして`recovering`へ移し、新しい要求を`next`へ保持する。`recovering`中の新しい移動要求は`next`へ保持し、異なる`type`なら置き換える。`next`と同じ`type`の要求は完了目標を変更しない。
+
+`movement`の事後動作が完了した時点で`next`があれば新しい`preparing`の現在行動へ移す。事後動作が0 TickならキャンセルしたTickに次動作の予備動作を開始できる。現在行動と`next`の両方がない場合は`idle`に戻る。
+
+`combat`の`executing`または`recovering`中は新しい要求を採用せず、現在行動を維持する。Phase 1のFireは次動作を保持しない。
 
 Phase 1で未対応の要求を保持した現在行動は、対応Systemが`inconsistent_session`として拒否する。正式リリース前の旧Programを動かすための互換分岐は追加しない。
 

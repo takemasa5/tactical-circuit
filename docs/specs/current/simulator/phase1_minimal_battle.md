@@ -20,7 +20,7 @@ Phase 1固定対戦は次のMaster Dataを使用する。
 
 - Map: 800×450、Obstacleなし、Spawnは`(200, 225)`の90度と`(600, 225)`の270度
 - Robot Body: 40×40、HP 100、Energy 100、Heat Capacity 100
-- Engine: 前進4座標/Tick、旋回10度/Tick、prepareとrecoveryは0
+- Engine: 前進4座標/Tick、旋回10度/Tick。Move Forwardのprepareは2 Tick、recoveryは1 Tick。Turnのprepareは1 Tick、recoveryは0 Tick
 - Sensor: 距離1000、視野360度
 - Weapon: Damage 25、装弾数12、発射間隔10 Tick、Bullet寿命50 Tick
 - Projectile: 速度20座標/Tick、8×8、爆発なし
@@ -42,7 +42,9 @@ Tick開始時の各active Robotについて、装備Sensorの検出距離と視�
 
 ## Movement
 
-Move ForwardとTurnは要求採用Tickに`preparing`から`executing`へ遷移し、同Tickから効果を適用する。prepareとrecoveryは0である。同じ種類の要求を受けても進捗と完了目標を変更しない。`executing`または`recovering`中の新しい要求は採用しない。
+Move ForwardとTurnの予備動作と事後動作はEngine Definitionの対応するTick数に従う。予備動作が0 Tickなら採用Tickから実動作を適用する。予備動作がN Tickなら採用TickからN Tickは効果を適用せず、次Tickから実動作を適用する。事後動作が0 Tickなら実動作の完了Tickに現在行動を終了する。事後動作がN Tickなら実動作の完了後にN Tickを経て現在行動を終了する。
+
+同じ`type`の要求を受けても進捗と完了目標を変更しない。実動作中の異なる移動系要求は現在行動をキャンセルし、事後動作の後で新しい行動の予備動作へ移る。事後動作が0 TickならキャンセルしたTickに新しい行動の予備動作を開始する。戦闘系要求は移動系行動をキャンセルしない。
 
 Move Forwardはスケール1000の内部位置と累積実移動距離を`MovementProgress`へ保持する。1 Tickに前進速度と残り距離の小さい方まで進み、World Stateの位置と速度は整数へ丸める。Robot矩形がMap境界を越える移動は、最後に有効な整数位置で終了する。要求距離へ到達した場合または1座標単位も進めない場合に行動を終了し、速度を0へ戻す。
 
