@@ -651,6 +651,26 @@ h2 {
   stroke: var(--line);
 }
 
+.battle-sensor-range {
+  fill: rgb(71 194 164 / 16%);
+  stroke: var(--accent);
+  stroke-width: 1.5;
+  pointer-events: none;
+}
+
+.battle-sensor-range.opponent {
+  fill: rgb(226 157 76 / 12%);
+  stroke: var(--warning);
+}
+
+.battle-sensor-origin {
+  fill: var(--accent);
+}
+
+.battle-sensor-range.opponent .battle-sensor-origin {
+  fill: var(--warning);
+}
+
 .battle-obstacle {
   fill: var(--panel-strong);
   stroke: var(--line-bright);
@@ -735,6 +755,15 @@ h2 {
 .battle-debug-path {
   display: block;
   color: var(--warning);
+}
+
+.battle-debug-sensor {
+  display: block;
+  color: var(--muted);
+}
+
+.battle-debug-note {
+  color: var(--muted);
 }
 
 .battle-robot-status dt {

@@ -60,6 +60,7 @@ export function App() {
       return (
         <BattleView
           battleRun={battleRun}
+          repository={masterData.repository}
           tickLimit={gameRule.tickLimit}
           onReturnToEditor={() => setScreen("editor")}
         />

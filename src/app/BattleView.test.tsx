@@ -11,6 +11,7 @@ import type { BattleRun } from "../domain/battle/runBattle";
 import type { Int32 } from "../domain/data/common";
 import type { NodeId, RuntimeRobotId } from "../domain/data/ids";
 import type { InstructionId } from "../domain/masterData/models";
+import type { DataRepository } from "../domain/masterData/repository";
 import type { WorldState } from "../domain/runtime/models";
 import { BattleView } from "./BattleView";
 
@@ -46,10 +47,21 @@ const snapshot = (tick: number): WorldState =>
   }) as unknown as WorldState;
 
 const battleRun: BattleRun = {
-  finalGameSession: {} as BattleRun["finalGameSession"],
+  finalGameSession: {
+    participants: [],
+  } as unknown as BattleRun["finalGameSession"],
   snapshots: [snapshot(0), snapshot(1)],
   aiDebugInfoByTick: [],
 };
+
+const repository = {
+  get: (type: string, id: string) => {
+    if (type === "sensor") return { detectionDistance: 1000 };
+    if (type === "instruction" && id === "instruction_2")
+      return { implementationId: "detect_enemy" };
+    return undefined;
+  },
+} as DataRepository;
 
 describe("BattleView", () => {
   afterEach(() => {
@@ -63,6 +75,7 @@ describe("BattleView", () => {
     render(
       <BattleView
         battleRun={battleRun}
+        repository={repository}
         tickLimit={600 as Int32}
         onReturnToEditor={onReturnToEditor}
       />,
@@ -92,6 +105,7 @@ describe("BattleView", () => {
           ...battleRun,
           snapshots: [0, 1, 2, 3, 4].map(snapshot),
         }}
+        repository={repository}
         tickLimit={600 as Int32}
         onReturnToEditor={() => undefined}
       />,
@@ -168,6 +182,7 @@ describe("BattleView", () => {
     render(
       <BattleView
         battleRun={run}
+        repository={repository}
         tickLimit={600 as Int32}
         onReturnToEditor={() => undefined}
       />,
@@ -182,5 +197,94 @@ describe("BattleView", () => {
     expect(path.textContent?.indexOf("node_1")).toBeLessThan(
       path.textContent?.indexOf("node_2") ?? 0,
     );
+  });
+
+  it("実行したDetect EnemyをTick開始位置からSensor上限付きで描画する", async () => {
+    vi.useFakeTimers();
+    const run: BattleRun = {
+      ...battleRun,
+      finalGameSession: {
+        participants: [
+          {
+            robotId: "robot_1",
+            program: {
+              nodes: [
+                {
+                  id: "node_2",
+                  parameterValues: {
+                    distance: 1500,
+                    center_degree: 0,
+                    sensing_degree: 15,
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      } as unknown as BattleRun["finalGameSession"],
+      snapshots: [
+        snapshot(0),
+        {
+          ...snapshot(1),
+          robots: [
+            {
+              ...snapshot(1).robots[0]!,
+              position: { x: 250 as Int32, y: 100 as Int32 },
+            },
+            snapshot(1).robots[1]!,
+          ],
+        },
+      ],
+      aiDebugInfoByTick: [
+        [
+          {
+            robotId: "robot_1" as RuntimeRobotId,
+            debugInfo: {
+              executionTrace: [],
+              executedSteps: [
+                {
+                  nodeId: "node_2" as NodeId,
+                  instructionId: "instruction_2" as InstructionId,
+                  instructionName: "Detect Enemy",
+                  selectedOutputPathId: "not_detected",
+                  selectedOutputPathName: "None",
+                  nextNodeId: null,
+                },
+              ],
+              terminationReason: "",
+              runtimeError: null,
+              cpuUsed: 1 as Int32,
+              executedNodeCount: 1 as Int32,
+            },
+          },
+        ],
+      ],
+    };
+    const { container } = render(
+      <BattleView
+        battleRun={run}
+        repository={repository}
+        tickLimit={600 as Int32}
+        onReturnToEditor={() => undefined}
+      />,
+    );
+    expect(container.querySelector(".battle-sensor-range")).toBeNull();
+    await act(() => vi.advanceTimersByTime(100));
+    const range = container.querySelector(".battle-sensor-range");
+    expect(range).not.toBeNull();
+    expect(range?.querySelector(".battle-sensor-origin")).toHaveAttribute(
+      "cx",
+      "200",
+    );
+    expect(range?.querySelector(".battle-sensor-origin")).toHaveAttribute(
+      "cy",
+      "350",
+    );
+    expect(range?.querySelector("path")?.getAttribute("d")).toMatch(
+      /L 1200 349\.999/,
+    );
+    expect(
+      screen.getByText(/判定距離 1000 \(設定 1500 \/ Sensor上限 1000\)/),
+    ).toBeInTheDocument();
   });
 });
