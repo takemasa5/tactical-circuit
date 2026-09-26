@@ -84,6 +84,50 @@ describe("BattleView", () => {
     expect(onReturnToEditor).toHaveBeenCalledTimes(1);
   });
 
+  it("再生速度を切り替え、一時停止と再開を同じボタンで操作できる", async () => {
+    vi.useFakeTimers();
+    render(
+      <BattleView
+        battleRun={{
+          ...battleRun,
+          snapshots: [0, 1, 2, 3, 4].map(snapshot),
+        }}
+        tickLimit={600 as Int32}
+        onReturnToEditor={() => undefined}
+      />,
+    );
+
+    const speed = screen.getByRole("combobox", { name: "再生速度" });
+    expect(speed).toHaveValue("100");
+    expect(
+      screen.getAllByRole("button", { name: /一時停止|再開/ }),
+    ).toHaveLength(1);
+
+    fireEvent.change(speed, { target: { value: "10" } });
+    await act(() => vi.advanceTimersByTime(999));
+    expect(screen.getByText("Tick 0 / 600")).toBeInTheDocument();
+    await act(() => vi.advanceTimersByTime(1));
+    expect(screen.getByText("Tick 1 / 600")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "一時停止" }));
+    await act(() => vi.advanceTimersByTime(2000));
+    expect(screen.getByText("Tick 1 / 600")).toBeInTheDocument();
+
+    fireEvent.change(speed, { target: { value: "25" } });
+    fireEvent.click(screen.getByRole("button", { name: "再開" }));
+    await act(() => vi.advanceTimersByTime(400));
+    expect(screen.getByText("Tick 2 / 600")).toBeInTheDocument();
+
+    fireEvent.change(speed, { target: { value: "75" } });
+    await act(() => vi.advanceTimersByTime(133));
+    expect(screen.getByText("Tick 3 / 600")).toBeInTheDocument();
+
+    fireEvent.change(speed, { target: { value: "100" } });
+    await act(() => vi.advanceTimersByTime(100));
+    expect(screen.getByText("Tick 4 / 600")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "一時停止" })).toBeDisabled();
+  });
+
   it("表示中のTickに対応する実行Nodeと選択分岐を順番に表示する", async () => {
     vi.useFakeTimers();
     const run: BattleRun = {

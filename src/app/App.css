@@ -742,3 +742,14 @@ h2 {
   gap: 8px;
   border-top: 1px solid var(--line);
 }
+
+.battle-controls label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.battle-controls select {
+  min-height: 34px;
+  padding: 6px;
+}

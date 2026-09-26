@@ -12,6 +12,10 @@ type BattleViewProps = {
 };
 
 const MAP_HEIGHT = 450;
+const PLAYBACK_SPEEDS = [10, 25, 75, 100] as const;
+/** `docs/specs/current/battle/playback.md`の再生速度選択肢。 */
+type PlaybackSpeed = (typeof PLAYBACK_SPEEDS)[number];
+const TICKS_PER_SECOND_AT_FULL_SPEED = 10;
 
 const toSvgY = (worldY: number): number => MAP_HEIGHT - worldY;
 
@@ -81,6 +85,7 @@ export function BattleView({
 }: BattleViewProps) {
   const [snapshotIndex, setSnapshotIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(true);
+  const [playbackSpeed, setPlaybackSpeed] = useState<PlaybackSpeed>(100);
   const currentSnapshot = battleRun.snapshots[snapshotIndex]!;
   const currentDebugInfo =
     snapshotIndex === 0
@@ -90,13 +95,18 @@ export function BattleView({
 
   useEffect(() => {
     if (!isPlaying || atLastSnapshot) return;
-    const timer = window.setInterval(() => {
-      setSnapshotIndex((current) =>
-        Math.min(current + 1, battleRun.snapshots.length - 1),
-      );
-    }, 100);
+    const timer = window.setInterval(
+      () => {
+        setSnapshotIndex((current) =>
+          Math.min(current + 1, battleRun.snapshots.length - 1),
+        );
+      },
+      Math.round(
+        1000 / (TICKS_PER_SECOND_AT_FULL_SPEED * (playbackSpeed / 100)),
+      ),
+    );
     return () => window.clearInterval(timer);
-  }, [atLastSnapshot, battleRun.snapshots.length, isPlaying]);
+  }, [atLastSnapshot, battleRun.snapshots.length, isPlaying, playbackSpeed]);
 
   return (
     <main className="battle-app">
@@ -168,19 +178,28 @@ export function BattleView({
       </section>
 
       <footer className="battle-controls">
+        <label>
+          再生速度
+          <select
+            aria-label="再生速度"
+            value={playbackSpeed}
+            onChange={(event) =>
+              setPlaybackSpeed(Number(event.target.value) as PlaybackSpeed)
+            }
+          >
+            {PLAYBACK_SPEEDS.map((speed) => (
+              <option key={speed} value={speed}>
+                {speed}%
+              </option>
+            ))}
+          </select>
+        </label>
         <button
           type="button"
-          disabled={!isPlaying || atLastSnapshot}
-          onClick={() => setIsPlaying(false)}
+          disabled={atLastSnapshot}
+          onClick={() => setIsPlaying((current) => !current)}
         >
-          一時停止
-        </button>
-        <button
-          type="button"
-          disabled={isPlaying || atLastSnapshot}
-          onClick={() => setIsPlaying(true)}
-        >
-          再開
+          {isPlaying ? "一時停止" : "再開"}
         </button>
         <button type="button" onClick={onReturnToEditor}>
           Editorへ戻る
