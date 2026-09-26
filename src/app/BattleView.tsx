@@ -82,6 +82,10 @@ export function BattleView({
   const [snapshotIndex, setSnapshotIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(true);
   const currentSnapshot = battleRun.snapshots[snapshotIndex]!;
+  const currentDebugInfo =
+    snapshotIndex === 0
+      ? []
+      : (battleRun.aiDebugInfoByTick[snapshotIndex - 1] ?? []);
   const atLastSnapshot = snapshotIndex >= battleRun.snapshots.length - 1;
 
   useEffect(() => {
@@ -108,7 +112,44 @@ export function BattleView({
 
       <section className="battle-layout" aria-label="Battle">
         <SnapshotMap worldState={currentSnapshot} />
-        <aside className="battle-status" aria-label="Robot状態">
+        <aside className="battle-status" aria-label="戦闘情報">
+          <section className="battle-debug" aria-label="Tickの実行経路">
+            <h2>Tick {currentSnapshot.tick} の実行経路</h2>
+            {snapshotIndex === 0 && <p>戦闘開始前です</p>}
+            {snapshotIndex > 0 && currentDebugInfo.length === 0 && (
+              <p>このTickでAIは実行されていません</p>
+            )}
+            {currentDebugInfo.map(({ robotId, debugInfo }) => (
+              <section key={robotId} aria-label={`${robotId}の実行経路`}>
+                <h3>{robotId === "robot_1" ? "PLAYER" : "OPPONENT"}</h3>
+                {debugInfo.executedSteps.length === 0 ? (
+                  <p>実行したノードはありません</p>
+                ) : (
+                  <ol>
+                    {debugInfo.executedSteps.map((step, index) => (
+                      <li key={`${index}:${step.nodeId}`}>
+                        <span>
+                          {step.nodeId} {step.instructionName}
+                        </span>
+                        {step.selectedOutputPathId !== null && (
+                          <span className="battle-debug-path">
+                            →{" "}
+                            {step.selectedOutputPathName ??
+                              step.selectedOutputPathId}
+                            {step.nextNodeId !== null &&
+                              ` (${step.nextNodeId})`}
+                          </span>
+                        )}
+                      </li>
+                    ))}
+                  </ol>
+                )}
+                {debugInfo.runtimeError !== null && (
+                  <p role="alert">{debugInfo.runtimeError.message}</p>
+                )}
+              </section>
+            ))}
+          </section>
           <h2>Robots</h2>
           {currentSnapshot.robots.map((robot) => (
             <section className="battle-robot-status" key={robot.id}>

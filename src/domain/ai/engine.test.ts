@@ -244,6 +244,47 @@ describe("AI Engine integration", () => {
       targetDirection: 10,
       targetPosition: { x: 300, y: 400 },
     });
+    expect(
+      result.debugInfo.executedSteps.map(
+        ({ nodeId, selectedOutputPathId }) => ({
+          nodeId,
+          selectedOutputPathId,
+        }),
+      ),
+    ).toEqual([
+      { nodeId: nodeId(1), selectedOutputPathId: null },
+      { nodeId: nodeId(2), selectedOutputPathId: "detected" },
+      { nodeId: nodeId(3), selectedOutputPathId: null },
+      { nodeId: nodeId(4), selectedOutputPathId: null },
+    ]);
+  });
+
+  it("同じ接続先でも実際に選択した分岐を記録する", () => {
+    const testProgram = program([
+      { implementationId: "start", connections: { next: nodeId(2) } },
+      {
+        implementationId: "detect_enemy",
+        parameters: {
+          distance: int32(500),
+          center_degree: int32(0),
+          sensing_degree: int32(20),
+        },
+        connections: { detected: nodeId(3), not_detected: nodeId(3) },
+      },
+      { implementationId: "end" },
+    ]);
+    const detected = execute(
+      testProgram,
+      executionInput({ sensors: { robots: [enemy()], bullets: [] } }),
+    );
+    const notDetected = execute(testProgram);
+
+    expect(detected.debugInfo.executedSteps[1]?.selectedOutputPathId).toBe(
+      "detected",
+    );
+    expect(notDetected.debugInfo.executedSteps[1]?.selectedOutputPathId).toBe(
+      "not_detected",
+    );
   });
 
   it("Switch Weapon → Wait combat → Fireで同一Tick要求を待機対象にする", () => {

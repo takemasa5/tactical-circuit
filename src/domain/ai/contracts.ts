@@ -17,6 +17,7 @@ export type InstructionExecutionInput = {
 /** `docs/specs/current/instructions/instruction_model.md`の正常な命令実行結果。 */
 export type InstructionExecutionResult = {
   readonly nextNodeId: NodeId | null;
+  readonly selectedOutputPathId?: string;
   readonly contextChanges: ExecutionContextChanges;
   readonly interruptTick: boolean;
 };
@@ -54,9 +55,15 @@ export const succeed = (
   nextNodeId: NodeId | null,
   contextChanges = createEmptyContextChanges(),
   interruptTick = false,
+  selectedOutputPathId?: string,
 ): InstructionExecutionOutcome => ({
   success: true,
-  result: { nextNodeId, contextChanges, interruptTick },
+  result: {
+    nextNodeId,
+    contextChanges,
+    interruptTick,
+    ...(selectedOutputPathId === undefined ? {} : { selectedOutputPathId }),
+  },
 });
 
 export const fail = (

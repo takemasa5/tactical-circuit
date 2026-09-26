@@ -1,8 +1,16 @@
-import { act, fireEvent, render, screen } from "@testing-library/react";
+import {
+  act,
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+} from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import type { BattleRun } from "../domain/battle/runBattle";
 import type { Int32 } from "../domain/data/common";
+import type { NodeId, RuntimeRobotId } from "../domain/data/ids";
+import type { InstructionId } from "../domain/masterData/models";
 import type { WorldState } from "../domain/runtime/models";
 import { BattleView } from "./BattleView";
 
@@ -44,7 +52,10 @@ const battleRun: BattleRun = {
 };
 
 describe("BattleView", () => {
-  afterEach(() => vi.useRealTimers());
+  afterEach(() => {
+    cleanup();
+    vi.useRealTimers();
+  });
 
   it("Snapshotを10 Tick/秒で再生し、Editorへ戻れる", async () => {
     vi.useFakeTimers();
@@ -71,5 +82,61 @@ describe("BattleView", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Editorへ戻る" }));
     expect(onReturnToEditor).toHaveBeenCalledTimes(1);
+  });
+
+  it("表示中のTickに対応する実行Nodeと選択分岐を順番に表示する", async () => {
+    vi.useFakeTimers();
+    const run: BattleRun = {
+      ...battleRun,
+      aiDebugInfoByTick: [
+        [
+          {
+            robotId: "robot_1" as RuntimeRobotId,
+            debugInfo: {
+              executionTrace: [],
+              executedSteps: [
+                {
+                  nodeId: "node_1" as NodeId,
+                  instructionId: "instruction_1" as InstructionId,
+                  instructionName: "Start",
+                  selectedOutputPathId: null,
+                  selectedOutputPathName: null,
+                  nextNodeId: null,
+                },
+                {
+                  nodeId: "node_2" as NodeId,
+                  instructionId: "instruction_2" as InstructionId,
+                  instructionName: "Detect Enemy",
+                  selectedOutputPathId: "not_detected",
+                  selectedOutputPathName: "Not Detected",
+                  nextNodeId: null,
+                },
+              ],
+              terminationReason: "命令によりTickの実行を中断しました",
+              runtimeError: null,
+              cpuUsed: 1 as Int32,
+              executedNodeCount: 2 as Int32,
+            },
+          },
+        ],
+      ],
+    };
+    render(
+      <BattleView
+        battleRun={run}
+        tickLimit={600 as Int32}
+        onReturnToEditor={() => undefined}
+      />,
+    );
+    expect(screen.getByText("戦闘開始前です")).toBeInTheDocument();
+
+    await act(() => vi.advanceTimersByTime(100));
+    const path = screen.getByRole("region", { name: "Tickの実行経路" });
+    expect(path).toHaveTextContent("node_1 Start");
+    expect(path).toHaveTextContent("node_2 Detect Enemy");
+    expect(path).toHaveTextContent("Not Detected");
+    expect(path.textContent?.indexOf("node_1")).toBeLessThan(
+      path.textContent?.indexOf("node_2") ?? 0,
+    );
   });
 });

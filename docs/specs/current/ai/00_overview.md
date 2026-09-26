@@ -257,6 +257,14 @@ AI実行エンジンはデバッグ情報を生成する。
 ```ts
 type AIDebugInfo = {
   readonly executionTrace: readonly string[];
+  readonly executedSteps: readonly {
+    readonly nodeId: NodeId;
+    readonly instructionId: InstructionId;
+    readonly instructionName: string;
+    readonly selectedOutputPathId: string | null;
+    readonly selectedOutputPathName: string | null;
+    readonly nextNodeId: NodeId | null;
+  }[];
   readonly terminationReason: string;
   readonly runtimeError: AIRuntimeError | null;
   readonly cpuUsed: Int32;
@@ -269,6 +277,8 @@ type AIDebugInfo = {
 ```text
 at {implementationId} ({nodeId}, {instructionId})
 ```
+
+`executedSteps`は正常終了したNodeを実行順に保持する。命令の表示名を`instructionName`に保持する。条件分岐では選択した出力パスIDと表示名を`selectedOutputPathId`と`selectedOutputPathName`に保持し、それ以外は`null`とする。`nextNodeId`は命令が返した値を保持し、Endでは`null`とする。実行時エラーやCPU不足で完了しなかったNodeは含めない。
 
 正常終了したNodeと実行時エラーになったNodeを`executionTrace`へ含める。CPU不足または実行Node数上限により実行しなかったNodeは含めない。`executedNodeCount`へ加算するのは正常終了したNodeだけとする。
 

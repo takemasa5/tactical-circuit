@@ -215,10 +215,9 @@ describe("ProgramEditor", () => {
       screen.getByRole("button", { name: "Move Forwardaction" }),
     );
 
-    expect(screen.getByText("Speed")).toHaveAttribute(
-      "title",
-      "移動速度を指定します",
-    );
+    expect(
+      screen.getByRole("textbox", { name: "Speed" }).previousElementSibling,
+    ).toHaveAttribute("title", "移動速度を指定します");
   });
 
   it("編集後の診断集計を更新し、診断対象Nodeを強調する", async () => {
@@ -384,10 +383,13 @@ describe("ProgramEditor", () => {
     const detectedHitArea = container.querySelector(
       'line.connection-hit-area[data-output-path-id="detected"]',
     );
-    expect(detected).toHaveAttribute("x1", "510");
-    expect(detected).toHaveAttribute("y1", "172");
-    expect(notDetected).toHaveAttribute("x1", "510");
-    expect(notDetected).toHaveAttribute("y1", "200");
+    const sourceNode = detectedPort.closest("article");
+    const sourceX = Number.parseInt(sourceNode?.style.left ?? "", 10);
+    const sourceY = Number.parseInt(sourceNode?.style.top ?? "", 10);
+    expect(detected).toHaveAttribute("x1", String(sourceX + 190));
+    expect(detected).toHaveAttribute("y1", String(sourceY + 72));
+    expect(notDetected).toHaveAttribute("x1", String(sourceX + 190));
+    expect(notDetected).toHaveAttribute("y1", String(sourceY + 100));
 
     fireEvent.click(detectedHitArea!);
     expect(detected).toHaveClass("selected");
@@ -408,6 +410,35 @@ describe("ProgramEditor", () => {
 
     await user.click(screen.getByRole("button", { name: "Zoom Out" }));
     expect(screen.getByLabelText("Zoom倍率")).toHaveTextContent("100%");
+    fireEvent.wheel(screen.getByRole("region", { name: "Programキャンバス" }), {
+      ctrlKey: true,
+      deltaY: -100,
+    });
+    expect(screen.getByLabelText("Zoom倍率")).toHaveTextContent("110%");
+  });
+
+  it("新しいNodeを表示中のキャンバス中央に置き、設定値を常時表示する", async () => {
+    const user = userEvent.setup();
+    const { container } = renderEditor();
+    const canvas = screen.getByRole("region", { name: "Programキャンバス" });
+    Object.defineProperties(canvas, {
+      clientWidth: { configurable: true, value: 400 },
+      clientHeight: { configurable: true, value: 300 },
+    });
+    canvas.scrollLeft = 300;
+    canvas.scrollTop = 200;
+
+    await user.click(screen.getByRole("button", { name: "Turnaction" }));
+    const addedNode = container.querySelectorAll("article.program-node")[1];
+    expect(addedNode).toHaveStyle({ left: "405px", top: "277px" });
+    expect(addedNode?.querySelector(".node-parameters")).toHaveTextContent(
+      "Degree90",
+    );
+
+    await user.click(screen.getByRole("button", { name: "Endcontrol" }));
+    expect(addedNode?.querySelector(".node-parameters")).toHaveTextContent(
+      "Degree90",
+    );
   });
 
   it("右ボタンドラッグでProgramキャンバスだけをスクロールする", () => {

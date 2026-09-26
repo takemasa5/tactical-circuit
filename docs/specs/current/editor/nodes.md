@@ -47,7 +47,7 @@ Node IDには現在の`nextNodeSequence`を使用し、`node_{連番}`形式で�
 
 既定値は複製して保持し、Instruction Definitionが持つ値を変更しない。
 
-配置位置は符号付き32bit整数の座標とし、`editorState.nodePositions`へ保存する。
+配置位置は符号付き32bit整数の座標とし、`editorState.nodePositions`へ保存する。InstructionパレットからNodeを追加する場合は、現在表示中のProgramキャンバス中央に新しいNodeの中心を配置する。Zoom倍率とスクロール位置を考慮し、キャンバス範囲内に収める。
 
 `nextNodeSequence`を増加できない場合、または入力位置が範囲外の場合は作成に失敗する。
 

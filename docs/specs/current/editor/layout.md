@@ -56,7 +56,7 @@ InstructionパレットにはData Repositoryが公開する有効なInstruction 
 
 Instructionはカテゴリごとに分類し、各項目に少なくとも表示名を表示する。同じカテゴリ内では表示名、Instruction IDの順で文字列昇順に並べる。
 
-Instructionを選択してキャンバス位置を指定することでNodeを作成できる。
+Instructionパレットの項目を選択すると、現在表示中のProgramキャンバス中央にNodeを作成する。
 
 無効なInstruction Definitionを参照する既存Nodeはキャンバスから削除せず、Instructionを解決できないNodeとして表示する。
 
@@ -75,6 +75,7 @@ Node位置には`editorState.nodePositions`の論理座標を使用する。表�
 - 入力となる接続領域
 - 定義された出力パスごとの出力ポート
 - コメントが存在することを示す表示
+- 定義された全Parameterの名前と現在値（未設定の場合も含む）
 
 接続は接続元の出力ポートから接続先Nodeの入力領域まで描画する。描画順はNodeや接続の意味および実行順へ影響しない。
 
@@ -87,6 +88,8 @@ ProgramキャンバスはNode、接続、接続プレビュー、選択範囲を
 Zoom倍率は50%から200%までの範囲とし、Zoom InとZoom Outでは10%ずつ変更する。初期値は100%とする。
 
 Zoom倍率とスクロール位置は編集セッション中だけ使用するUI状態とし、Programへ保存しない。Zoom操作はProgramを変更せず、UndoとRedoの履歴へ追加しない。
+
+Programキャンバス上でCtrlまたはCommandを押しながらホイール操作した場合もZoom倍率を10%ずつ変更する。
 
 Node移動、範囲選択、接続操作では、Zoom倍率を考慮して画面座標をProgramの論理座標へ変換する。
 

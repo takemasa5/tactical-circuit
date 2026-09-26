@@ -72,6 +72,8 @@ const NODE_WIDTH = 190;
 const NODE_HEADER_HEIGHT = 52;
 const NODE_BASE_HEIGHT = 78;
 const NODE_PORTS_PADDING = 8;
+const NODE_PARAMETER_ROW_HEIGHT = 38;
+const NODE_PARAMETER_PADDING = 16;
 const OUTPUT_PORT_HEIGHT = 24;
 const OUTPUT_PORT_GAP = 4;
 const INPUT_PORT_CENTER_Y = 24;
@@ -202,6 +204,23 @@ const numericTypes = new Set([
   "heat",
   "ammunition",
 ]);
+
+const parameterDisplayValue = (value: ParameterValue | undefined): string => {
+  if (value === undefined) return "未設定";
+  if (typeof value !== "object") return String(value);
+  switch (value.type) {
+    case "register_reference":
+      return value.registerName;
+    case "flag_reference":
+      return value.flagName;
+    case "memory_reference":
+      return value.indexRegisterName;
+    case "node_reference":
+      return value.nodeId;
+    case "master_data_reference":
+      return value.id;
+  }
+};
 
 const ParameterField = ({
   definition,
@@ -399,7 +418,30 @@ export function ProgramEditor({
   const [isCanvasPanning, setIsCanvasPanning] = useState(false);
   const [zoomPercent, setZoomPercent] = useState(100);
   const importInputRef = useRef<HTMLInputElement>(null);
+  const canvasRef = useRef<HTMLElement>(null);
   const zoom = zoomPercent / 100;
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (canvas === null) return;
+    const handleWheel = (event: WheelEvent) => {
+      if (!event.ctrlKey && !event.metaKey) return;
+      event.preventDefault();
+      if (event.deltaY === 0) return;
+      setZoomPercent((current) =>
+        Math.max(
+          MIN_ZOOM_PERCENT,
+          Math.min(
+            MAX_ZOOM_PERCENT,
+            current +
+              (event.deltaY < 0 ? ZOOM_STEP_PERCENT : -ZOOM_STEP_PERCENT),
+          ),
+        ),
+      );
+    };
+    canvas.addEventListener("wheel", handleWheel, { passive: false });
+    return () => canvas.removeEventListener("wheel", handleWheel);
+  }, []);
 
   const dirty = hasUnsavedChanges(baselineJson, program);
   const selectedNode =
@@ -505,12 +547,45 @@ export function ProgramEditor({
   };
 
   const handleAddNode = (instruction: InstructionDefinition) => {
+    const canvas = canvasRef.current;
+    const outputCount = instruction.outputPaths.length;
+    const portsHeight =
+      NODE_PORTS_PADDING * 2 +
+      outputCount * OUTPUT_PORT_HEIGHT +
+      Math.max(0, outputCount - 1) * OUTPUT_PORT_GAP;
+    const estimatedHeight =
+      Math.max(NODE_BASE_HEIGHT, NODE_HEADER_HEIGHT + portsHeight) +
+      (instruction.parameters.length > 0
+        ? NODE_PARAMETER_PADDING +
+          instruction.parameters.length * NODE_PARAMETER_ROW_HEIGHT
+        : 0);
+    const centerX =
+      canvas === null || canvas.clientWidth === 0
+        ? CANVAS_WIDTH / 2
+        : (canvas.scrollLeft + canvas.clientWidth / 2) / zoom;
+    const centerY =
+      canvas === null || canvas.clientHeight === 0
+        ? CANVAS_HEIGHT / 2
+        : (canvas.scrollTop + canvas.clientHeight / 2) / zoom;
     const result = addNode(
       program,
       instruction,
       {
-        x: (80 + (program.nodes.length % 3) * 240) as Int32,
-        y: (100 + Math.floor(program.nodes.length / 3) * 160) as Int32,
+        x: Math.round(
+          Math.max(
+            0,
+            Math.min(CANVAS_WIDTH - NODE_WIDTH, centerX - NODE_WIDTH / 2),
+          ),
+        ) as Int32,
+        y: Math.round(
+          Math.max(
+            0,
+            Math.min(
+              CANVAS_HEIGHT - estimatedHeight,
+              centerY - estimatedHeight / 2,
+            ),
+          ),
+        ) as Int32,
       },
       now(),
     );
@@ -759,12 +834,28 @@ export function ProgramEditor({
   };
 
   const nodeHeight = (nodeId: NodeId): number => {
+    const node = program.nodes.find(({ id }) => id === nodeId);
     const outputCount = orderedOutputPaths(nodeId).length;
     const portsHeight =
       NODE_PORTS_PADDING * 2 +
       outputCount * OUTPUT_PORT_HEIGHT +
       Math.max(0, outputCount - 1) * OUTPUT_PORT_GAP;
-    return Math.max(NODE_BASE_HEIGHT, NODE_HEADER_HEIGHT + portsHeight);
+    const instruction =
+      node === undefined ? undefined : instructionMap.get(node.instructionId);
+    const unknownCount =
+      node === undefined
+        ? 0
+        : Object.keys(node.parameterValues).filter(
+            (id) =>
+              !instruction?.parameters.some((parameter) => parameter.id === id),
+          ).length;
+    const parameterCount = (instruction?.parameters.length ?? 0) + unknownCount;
+    return (
+      Math.max(NODE_BASE_HEIGHT, NODE_HEADER_HEIGHT + portsHeight) +
+      (parameterCount > 0
+        ? NODE_PARAMETER_PADDING + parameterCount * NODE_PARAMETER_ROW_HEIGHT
+        : 0)
+    );
   };
 
   const finishConnection = (targetNodeId: NodeId) => {
@@ -1046,7 +1137,7 @@ export function ProgramEditor({
             )
           }
         >
-          −
+          縮小
         </button>
         <span
           className="zoom-value"
@@ -1068,7 +1159,7 @@ export function ProgramEditor({
             )
           }
         >
-          ＋
+          拡大
         </button>
       </nav>
 
@@ -1090,6 +1181,7 @@ export function ProgramEditor({
         </aside>
 
         <section
+          ref={canvasRef}
           className={`program-canvas${isCanvasPanning ? " panning" : ""}`}
           aria-label="Programキャンバス"
           onPointerDown={startCanvasPan}
@@ -1309,6 +1401,46 @@ export function ProgramEditor({
                         </span>
                       )}
                     </div>
+                    {(instruction?.parameters.length ?? 0) +
+                      Object.keys(node.parameterValues).filter(
+                        (id) =>
+                          !instruction?.parameters.some(
+                            (parameter) => parameter.id === id,
+                          ),
+                      ).length >
+                      0 && (
+                      <dl className="node-parameters">
+                        {instruction?.parameters.map((parameter) => (
+                          <div
+                            key={parameter.id}
+                            title={`${parameter.displayName}: ${parameterDisplayValue(node.parameterValues[parameter.id])}`}
+                          >
+                            <dt>{parameter.displayName}</dt>
+                            <dd>
+                              {parameterDisplayValue(
+                                node.parameterValues[parameter.id],
+                              )}
+                            </dd>
+                          </div>
+                        ))}
+                        {Object.entries(node.parameterValues)
+                          .filter(
+                            ([id]) =>
+                              !instruction?.parameters.some(
+                                (parameter) => parameter.id === id,
+                              ),
+                          )
+                          .map(([id, value]) => (
+                            <div
+                              key={id}
+                              title={`${id}: ${parameterDisplayValue(value)}`}
+                            >
+                              <dt>{id}（未定義）</dt>
+                              <dd>{parameterDisplayValue(value)}</dd>
+                            </div>
+                          ))}
+                      </dl>
+                    )}
                   </article>
                 );
               })}

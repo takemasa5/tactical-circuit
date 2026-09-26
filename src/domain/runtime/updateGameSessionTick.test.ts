@@ -232,6 +232,7 @@ const session = (overrides: Partial<GameSession> = {}): GameSession => {
 
 const debugInfo = (label: string): AIDebugInfo => ({
   executionTrace: [label],
+  executedSteps: [],
   terminationReason: label,
   runtimeError: null,
   cpuUsed: int32(1),
